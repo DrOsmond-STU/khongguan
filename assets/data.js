@@ -393,11 +393,298 @@ window.KG = (function () {
       meta: 'Sejak 30 Jun 2026 · tenggat CAPA 30 Sep' }
   ];
 
+  /* ─── 11. Manajemen Pelatihan ─── */
+  const pelatihan = [
+    { id: 'TRN-2026-021', nama: 'Petugas K3 Umum (AK3U)', jenis: 'Wajib Regulasi', target: 4,
+      rencanaTgl: '14–19 Sep 2026', rencanaPeserta: 4, aktualTgl: '14–19 Sep 2026', aktualPeserta: 4,
+      penyelenggara: 'PJK3 Sucofindo', status: 'Selesai', biaya: '28,0' },
+    { id: 'TRN-2026-022', nama: 'Operator Forklift — Penyegaran SIO', jenis: 'Wajib Regulasi', target: 12,
+      rencanaTgl: '11 Sep 2026', rencanaPeserta: 12, aktualTgl: '11 Sep 2026', aktualPeserta: 12,
+      penyelenggara: 'Disnaker Bekasi', status: 'Selesai', biaya: '9,6' },
+    { id: 'TRN-2026-023', nama: 'Tanggap Darurat & Pemadam Kebakaran', jenis: 'Internal', target: 40,
+      rencanaTgl: '17 Sep 2026', rencanaPeserta: 40, aktualTgl: '17 Sep 2026', aktualPeserta: 34,
+      penyelenggara: 'Tim QHSE internal', status: 'Selesai', biaya: '3,2' },
+    { id: 'TRN-2026-024', nama: 'Bekerja di Ruang Terbatas (Confined Space)', jenis: 'Wajib Regulasi', target: 8,
+      rencanaTgl: '25–26 Sep 2026', rencanaPeserta: 8, aktualTgl: '—', aktualPeserta: 0,
+      penyelenggara: 'PJK3 Mutiara Mutu', status: 'Terjadwal', biaya: '14,0' },
+    { id: 'TRN-2026-025', nama: 'Ahli K3 Pesawat Uap (Boiler)', jenis: 'Wajib Regulasi', target: 2,
+      rencanaTgl: '05–09 Okt 2026', rencanaPeserta: 2, aktualTgl: '—', aktualPeserta: 0,
+      penyelenggara: 'PJK3 Sucofindo', status: 'Terjadwal', biaya: '18,5' },
+    { id: 'TRN-2026-026', nama: 'Induksi K3 Pekerja Baru — Batch IX', jenis: 'Internal', target: 22,
+      rencanaTgl: '02 Sep 2026', rencanaPeserta: 22, aktualTgl: '02 Sep 2026', aktualPeserta: 22,
+      penyelenggara: 'Tim QHSE internal', status: 'Selesai', biaya: '0,8' },
+    { id: 'TRN-2026-027', nama: 'Higiene Industri & Keamanan Pangan', jenis: 'Internal', target: 60,
+      rencanaTgl: '08 Agu 2026', rencanaPeserta: 60, aktualTgl: '—', aktualPeserta: 0,
+      penyelenggara: 'QA & QHSE', status: 'Tertunda', biaya: '5,5' },
+    { id: 'TRN-2026-028', nama: 'Penanganan Limbah B3 & Manifes', jenis: 'Refreshment', target: 6,
+      rencanaTgl: '29 Sep 2026', rencanaPeserta: 6, aktualTgl: '—', aktualPeserta: 0,
+      penyelenggara: 'Tim QHSE internal', status: 'Terjadwal', biaya: '1,2' }
+  ];
+
+  const sertifikasi = [
+    { nama: 'Ahli K3 Umum', pemegang: 'Fadli Saldi', nomor: 'SER.5382/AK3U/2023', berlaku: '14 Mar 2027', sisa: 174 },
+    { nama: 'Ahli K3 Pesawat Uap', pemegang: 'Bambang Sutrisno', nomor: 'SER.1120/PUBT/2023', berlaku: '30 Okt 2026', sisa: 39 },
+    { nama: 'SIO Operator Forklift', pemegang: '12 operator', nomor: 'SIO kolektif Disnaker', berlaku: '11 Sep 2031', sisa: 1816 },
+    { nama: 'Teknisi K3 Listrik', pemegang: 'Hendra Gunawan', nomor: 'SER.0741/LIS/2022', berlaku: '08 Okt 2026', sisa: 17 },
+    { nama: 'Petugas P3K di Tempat Kerja', pemegang: '8 petugas', nomor: 'SER.2210/P3K/2024', berlaku: '22 Feb 2027', sisa: 154 },
+    { nama: 'Regu Penanggulangan Kebakaran Kelas D', pemegang: '16 anggota', nomor: 'SER.3390/DAMKAR/2024', berlaku: '05 Jun 2027', sisa: 257 }
+  ];
+
+  /* ─── 12. Manajemen Risiko ─── */
+  const risikoKonteks = {
+    lingkup: 'Seluruh proses produksi biskuit dan wafer di Pabrik Cibitung, termasuk gudang bahan baku, gudang barang jadi, utilitas (boiler, kompresor, IPAL), dan pekerjaan kontraktor di dalam area pabrik.',
+    internal: [
+      'Empat lini produksi berjalan 2 shift, 412 pekerja tetap dan 38 pekerja kontrak harian',
+      'Dua boiler pipa api berbahan bakar gas, salah satunya berumur 14 tahun',
+      'TPS Limbah B3 berizin dengan kapasitas simpan 90 hari',
+      'Perputaran pekerja kontrak harian relatif tinggi pada masa puncak produksi Ramadan'
+    ],
+    eksternal: [
+      'Sertifikasi ISO 45001 dan ISO 14001 dengan surveillance tahunan',
+      'Audit SMK3 PP 50/2012 dengan target tingkat penilaian lanjutan',
+      'Pemeriksaan berkala Disnaker dan Dinas Lingkungan Hidup Kabupaten Bekasi',
+      'Baku mutu air limbah Permen LHK 5/2014 dan emisi Permen LHK 11/2021'
+    ],
+    kriteria: 'Risiko dinilai dengan matriks 5×5 (Kemungkinan × Keparahan). Skor 15–25 tidak dapat diterima dan wajib diturunkan sebelum pekerjaan berjalan; 10–14 memerlukan persetujuan Manajer Area; 5–9 dikendalikan dengan tenggat 30 hari; 1–4 dipantau.'
+  };
+
+  const risikoRegister = [
+    { id: 'RSK-2026-001', proses: 'Utilitas — Boiler', ancaman: 'Ledakan pesawat uap akibat katup pengaman gagal',
+      penyebab: 'Dudukan katup pengaman aus, uji berkala terlewat', dampak: 'Korban jiwa, pabrik berhenti total',
+      L: 2, S: 5, opsi: 'Kurangi', mitigasi: 'Uji katup pengaman tiap 3 bulan oleh PJK3, penggantian katup boiler 2, sertifikasi ulang kelayakan operasi',
+      pj: 'Bambang Sutrisno', target: '30 Okt 2026', sisaL: 1, sisaS: 5, reviu: '01 Okt 2026', status: 'Dalam Proses' },
+    { id: 'RSK-2026-002', proses: 'Logistik — Forklift', ancaman: 'Tabrakan forklift dengan pejalan kaki',
+      penyebab: 'Jalur pejalan kaki tidak terpisah, titik buta di persimpangan', dampak: 'Cedera berat sampai fatal',
+      L: 4, S: 4, opsi: 'Kurangi', mitigasi: 'Marka jalur pejalan kaki terpisah, cermin cembung di 6 persimpangan, pembatas kecepatan 8 km/jam, blue spot light',
+      pj: 'Agus Prasetyo', target: '15 Nov 2026', sisaL: 2, sisaS: 4, reviu: '05 Okt 2026', status: 'Dalam Proses' },
+    { id: 'RSK-2026-003', proses: 'Produksi — Oven', ancaman: 'Luka bakar uap dan permukaan panas',
+      penyebab: 'Prosedur pembuangan kondensat tidak lengkap, pekerja baru', dampak: 'Cedera hilang waktu kerja',
+      L: 3, S: 3, opsi: 'Kurangi', mitigasi: 'Revisi SOP dengan waktu tunggu penurunan tekanan, isolasi permukaan panas, APD lengan tahan panas',
+      pj: 'Hendra Gunawan', target: '02 Okt 2026', sisaL: 2, sisaS: 2, reviu: '10 Okt 2026', status: 'Dalam Proses' },
+    { id: 'RSK-2026-004', proses: 'Lingkungan — IPAL', ancaman: 'Air limbah melewati baku mutu terbuang ke badan air',
+      penyebab: 'Beban minyak dan lemak dari pencucian tangki tidak terjadwal', dampak: 'Sanksi administratif, pencemaran, publikasi negatif',
+      L: 3, S: 4, opsi: 'Kurangi', mitigasi: 'Grease trap tambahan di jalur pencucian, penjadwalan pencucian tangki, uji harian minyak dan lemak',
+      pj: 'Yuni Astuti', target: '20 Okt 2026', sisaL: 2, sisaS: 3, reviu: '28 Sep 2026', status: 'Dalam Proses' },
+    { id: 'RSK-2026-005', proses: 'Gudang — Penyimpanan', ancaman: 'Kebakaran gudang barang jadi',
+      penyebab: 'Beban api tinggi dari karton, instalasi listrik lama', dampak: 'Kerugian material besar, henti produksi',
+      L: 2, S: 5, opsi: 'Transfer', mitigasi: 'Sprinkler otomatis, thermografi panel tahunan, asuransi properti dan gangguan usaha',
+      pj: 'Rahmat Hidayat', target: '31 Des 2026', sisaL: 1, sisaS: 4, reviu: '15 Okt 2026', status: 'Terbuka' },
+    { id: 'RSK-2026-006', proses: 'Kontraktor — Pekerjaan berisiko tinggi', ancaman: 'Kecelakaan pekerja vendor di dalam area pabrik',
+      penyebab: 'Induksi K3 tidak konsisten, pengawasan tidak melekat', dampak: 'Cedera, tuntutan hukum, henti pekerjaan',
+      L: 3, S: 4, opsi: 'Kurangi', mitigasi: 'Induksi K3 wajib sebelum izin terbit, verifikasi asuransi tenaga kerja, pengawas melekat untuk pekerjaan panas dan ruang terbatas',
+      pj: 'Fadli Saldi', target: '30 Sep 2026', sisaL: 2, sisaS: 3, reviu: '30 Sep 2026', status: 'Dalam Proses' },
+    { id: 'RSK-2026-007', proses: 'Produksi — Higiene', ancaman: 'Kontaminasi benda asing pada produk',
+      penyebab: 'Serpihan logam dari ayakan aus, kebijakan benda longgar belum ketat', dampak: 'Penarikan produk, kerugian reputasi',
+      L: 2, S: 4, opsi: 'Kurangi', mitigasi: 'Metal detector di ujung lini, pemeriksaan ayakan mingguan, kebijakan benda longgar dan perhiasan',
+      pj: 'Dewi Kartika', target: '10 Okt 2026', sisaL: 1, sisaS: 4, reviu: '12 Okt 2026', status: 'Dalam Proses' },
+    { id: 'RSK-2026-008', proses: 'Ergonomi — Packing', ancaman: 'Gangguan otot rangka akibat gerakan berulang',
+      penyebab: 'Postur berdiri statis 8 jam, tinggi meja tidak dapat disetel', dampak: 'Absensi meningkat, keluhan kronis',
+      L: 4, S: 2, opsi: 'Kurangi', mitigasi: 'Meja dapat disetel, rotasi tugas tiap 2 jam, senam peregangan sebelum shift',
+      pj: 'Siti Nurhaliza', target: '25 Nov 2026', sisaL: 2, sisaS: 2, reviu: '20 Okt 2026', status: 'Terbuka' }
+  ];
+
+  /* ─── 13. Dokumen Internal ─── */
+  const dokInternal = [
+    { id: 'KGM-01', level: 1, jenis: 'Manual', judul: 'Manual Sistem Manajemen QHSE Terpadu', rev: 4,
+      terbit: '02 Feb 2026', tinjau: '02 Feb 2027', pemilik: 'Management Representative', status: 'Berlaku' },
+    { id: 'KGK-01', level: 1, jenis: 'Kebijakan', judul: 'Kebijakan K3 dan Lingkungan', rev: 3,
+      terbit: '14 Jan 2025', tinjau: '14 Jan 2026', pemilik: 'Plant Manager', status: 'Kedaluwarsa' },
+    { id: 'KGK-02', level: 1, jenis: 'Kebijakan', judul: 'Kebijakan Hak Menghentikan Pekerjaan Tidak Aman', rev: 1,
+      terbit: '10 Mar 2026', tinjau: '10 Mar 2027', pemilik: 'Plant Manager', status: 'Berlaku' },
+    { id: 'KGP-04', level: 2, jenis: 'Prosedur', judul: 'Prosedur Identifikasi Bahaya, Penilaian & Pengendalian Risiko', rev: 5,
+      terbit: '18 Mar 2026', tinjau: '18 Mar 2027', pemilik: 'QHSE Supervisor', status: 'Berlaku' },
+    { id: 'KGP-07', level: 2, jenis: 'Prosedur', judul: 'Prosedur Pelaporan & Investigasi Insiden', rev: 6,
+      terbit: '05 Sep 2026', tinjau: '05 Sep 2027', pemilik: 'QHSE Supervisor', status: 'Berlaku' },
+    { id: 'KGP-09', level: 2, jenis: 'Prosedur', judul: 'Prosedur Izin Kerja Berisiko Tinggi', rev: 3,
+      terbit: '22 Apr 2026', tinjau: '22 Apr 2027', pemilik: 'QHSE Supervisor', status: 'Berlaku' },
+    { id: 'KGP-12', level: 2, jenis: 'Prosedur', judul: 'Prosedur Tanggap Darurat & Evakuasi', rev: 4,
+      terbit: '30 Jun 2026', tinjau: '30 Jun 2027', pemilik: 'Koordinator Tanggap Darurat', status: 'Berlaku' },
+    { id: 'KGP-15', level: 2, jenis: 'Prosedur', judul: 'Prosedur Pengelolaan Limbah B3', rev: 2,
+      terbit: '11 Mei 2026', tinjau: '11 Mei 2027', pemilik: 'Petugas Lingkungan', status: 'Dalam Revisi' },
+    { id: 'KGI-22', level: 3, jenis: 'Instruksi Kerja', judul: 'IK Pembuangan Kondensat Oven Tunnel', rev: 2,
+      terbit: '20 Sep 2026', tinjau: '20 Sep 2027', pemilik: 'Supervisor Produksi', status: 'Dalam Revisi' },
+    { id: 'KGI-28', level: 3, jenis: 'Instruksi Kerja', judul: 'IK Lockout–Tagout Panel Listrik', rev: 3,
+      terbit: '08 Jul 2026', tinjau: '08 Jul 2027', pemilik: 'Supervisor Maintenance', status: 'Berlaku' },
+    { id: 'KGI-31', level: 3, jenis: 'Instruksi Kerja', judul: 'IK Masuk Ruang Terbatas & Uji Gas', rev: 1,
+      terbit: '15 Agu 2026', tinjau: '15 Agu 2027', pemilik: 'QHSE Supervisor', status: 'Berlaku' },
+    { id: 'KGF-05', level: 4, jenis: 'Formulir', judul: 'Formulir JSEA & Izin Kerja', rev: 3,
+      terbit: '22 Apr 2026', tinjau: '22 Apr 2027', pemilik: 'QHSE Supervisor', status: 'Berlaku' },
+    { id: 'KGF-11', level: 4, jenis: 'Formulir', judul: 'Formulir Observasi Perilaku Aman', rev: 2,
+      terbit: '03 Feb 2026', tinjau: '03 Feb 2027', pemilik: 'QHSE Supervisor', status: 'Berlaku' },
+    { id: 'KGF-18', level: 4, jenis: 'Formulir', judul: 'Formulir P2H Forklift Harian', rev: 4,
+      terbit: '19 Jan 2026', tinjau: '19 Jan 2027', pemilik: 'Supervisor Logistik', status: 'Berlaku' }
+  ];
+
+  /* ─── 14. Dokumen Eksternal (Compliance) ─── */
+  const dokEksternal = [
+    { id: 'CMP-001', jenis: 'Sertifikat Sistem', judul: 'Sertifikat ISO 45001:2018', penerbit: 'TÜV Rheinland',
+      nomor: '01 121 2023 0045', terbit: '20 Okt 2023', berlaku: '19 Okt 2026', sisa: 28 },
+    { id: 'CMP-002', jenis: 'Sertifikat Sistem', judul: 'Sertifikat ISO 14001:2015', penerbit: 'TÜV Rheinland',
+      nomor: '01 104 2023 0046', terbit: '20 Okt 2023', berlaku: '19 Okt 2026', sisa: 28 },
+    { id: 'CMP-003', jenis: 'Sertifikat Sistem', judul: 'Sertifikat SMK3 PP 50/2012 — Tingkat Lanjutan', penerbit: 'Kemnaker RI',
+      nomor: 'SMK3/1284/2024', terbit: '08 Apr 2024', berlaku: '07 Apr 2027', sisa: 198 },
+    { id: 'CMP-004', jenis: 'Izin Lingkungan', judul: 'Persetujuan Teknis Pembuangan Air Limbah', penerbit: 'DLH Kab. Bekasi',
+      nomor: '660/312/DLH/2024', terbit: '15 Mei 2024', berlaku: '14 Mei 2029', sisa: 965 },
+    { id: 'CMP-005', jenis: 'Izin Lingkungan', judul: 'Izin Penyimpanan Sementara Limbah B3', penerbit: 'DLH Kab. Bekasi',
+      nomor: '660/118/TPS-B3/2022', terbit: '15 Mar 2022', berlaku: '14 Mar 2027', sisa: 174 },
+    { id: 'CMP-006', jenis: 'Izin Peralatan', judul: 'Surat Keterangan Layak Operasi Boiler 1', penerbit: 'Disnaker Prov. Jabar',
+      nomor: 'SKLO/PUBT/0891/2025', terbit: '12 Jul 2025', berlaku: '11 Jul 2027', sisa: 293 },
+    { id: 'CMP-007', jenis: 'Izin Peralatan', judul: 'Surat Keterangan Layak Operasi Boiler 2', penerbit: 'Disnaker Prov. Jabar',
+      nomor: 'SKLO/PUBT/0654/2024', terbit: '01 Jul 2024', berlaku: '30 Jun 2026', sisa: -83 },
+    { id: 'CMP-008', jenis: 'Izin Peralatan', judul: 'Riksa Uji Instalasi Penyalur Petir', penerbit: 'PJK3 Sucofindo',
+      nomor: 'RU/IPP/2024/0233', terbit: '18 Nov 2024', berlaku: '17 Nov 2026', sisa: 57 },
+    { id: 'CMP-009', jenis: 'Izin Peralatan', judul: 'Riksa Uji Instalasi Listrik & Thermografi', penerbit: 'PJK3 Sucofindo',
+      nomor: 'RU/LIS/2025/0117', terbit: '24 Feb 2025', berlaku: '23 Feb 2027', sisa: 155 },
+    { id: 'CMP-010', jenis: 'Pelaporan Wajib', judul: 'Laporan P2K3 Triwulan II 2026', penerbit: 'Disnaker Kab. Bekasi',
+      nomor: 'menunggu pengiriman', terbit: '—', berlaku: '10 Sep 2026', sisa: -11 },
+    { id: 'CMP-011', jenis: 'Pelaporan Wajib', judul: 'Laporan Swapantau IPAL Triwulan III 2026', penerbit: 'DLH Kab. Bekasi',
+      nomor: 'dalam penyusunan', terbit: '—', berlaku: '10 Okt 2026', sisa: 19 },
+    { id: 'CMP-012', jenis: 'Pelaporan Wajib', judul: 'Neraca Limbah B3 Triwulan III 2026', penerbit: 'DLH Kab. Bekasi',
+      nomor: 'dalam penyusunan', terbit: '—', berlaku: '10 Okt 2026', sisa: 19 }
+  ];
+
+  /* ─── 15. Safety Checklist ─── */
+  const checklistHarian = [
+    { id: 'CHK-2026-1841', nama: 'P2H Forklift', frekuensi: 'Setiap shift', area: 'Gudang & Logistik',
+      shift: 'Shift 1', pj: 'Agus Prasetyo', butir: 18, selesai: 18, temuan: 1, status: 'Selesai', waktu: '06:40' },
+    { id: 'CHK-2026-1842', nama: 'Pra-nyala Boiler', frekuensi: 'Harian', area: 'Ruang Boiler',
+      shift: 'Shift 1', pj: 'Bambang Sutrisno', butir: 14, selesai: 14, temuan: 0, status: 'Selesai', waktu: '05:20' },
+    { id: 'CHK-2026-1843', nama: 'Kepatuhan APD Lini Produksi', frekuensi: 'Harian', area: 'Line 1 – Line 4',
+      shift: 'Shift 1', pj: 'Dewi Kartika', butir: 12, selesai: 12, temuan: 2, status: 'Selesai', waktu: '07:05' },
+    { id: 'CHK-2026-1844', nama: 'Kebersihan & Kerapian Area (5R)', frekuensi: 'Harian', area: 'Seluruh area produksi',
+      shift: 'Shift 1', pj: 'Siti Nurhaliza', butir: 20, selesai: 13, temuan: 3, status: 'Dalam Proses', waktu: '08:15' },
+    { id: 'CHK-2026-1845', nama: 'Ruang Panel & Genset', frekuensi: 'Harian', area: 'Ruang Panel Utama',
+      shift: 'Shift 1', pj: 'Hendra Gunawan', butir: 10, selesai: 0, temuan: 0, status: 'Terbuka', waktu: '—' },
+    { id: 'CHK-2026-1846', nama: 'P2H Forklift', frekuensi: 'Setiap shift', area: 'Gudang & Logistik',
+      shift: 'Shift 2', pj: 'Rahmat Hidayat', butir: 18, selesai: 0, temuan: 0, status: 'Terbuka', waktu: '—' }
+  ];
+
+  const checklistP2H = [
+    { butir: 'Rem kaki dan rem tangan berfungsi', jawab: 'Sesuai' },
+    { butir: 'Klakson dan alarm mundur berbunyi', jawab: 'Sesuai' },
+    { butir: 'Lampu kerja dan blue spot light menyala', jawab: 'Sesuai' },
+    { butir: 'Garpu tidak retak dan pengunci terpasang', jawab: 'Sesuai' },
+    { butir: 'Rantai angkat dilumasi dan tidak aus', jawab: 'Tidak Sesuai',
+      catatan: 'Rantai angkat FL-03 kering dan berkarat ringan. Unit dikeluarkan dari operasi sampai dilumasi.' },
+    { butir: 'Kebocoran oli hidrolik tidak ditemukan', jawab: 'Sesuai' },
+    { butir: 'Ban tidak gundul dan tekanan cukup', jawab: 'Sesuai' },
+    { butir: 'Sabuk pengaman operator berfungsi', jawab: 'Sesuai' },
+    { butir: 'APAR di unit terpasang dan bertekanan', jawab: 'Sesuai' },
+    { butir: 'Kartu SIO operator masih berlaku', jawab: 'Sesuai' }
+  ];
+
+  /* ─── 16. Observasi Perilaku ─── */
+  const obsKategori = [
+    { nama: 'Alat Pelindung Diri', aman: 284, berisiko: 18 },
+    { nama: 'Posisi & Postur Tubuh', aman: 231, berisiko: 34 },
+    { nama: 'Alat & Peralatan Kerja', aman: 198, berisiko: 12 },
+    { nama: 'Kepatuhan Prosedur', aman: 176, berisiko: 27 },
+    { nama: 'Kerapian & Kebersihan', aman: 203, berisiko: 9 },
+    { nama: 'Reaksi Terhadap Pengamat', aman: 241, berisiko: 6 }
+  ];
+
+  const observasi = [
+    { id: 'OBS-2026-0612', observer: 'Fadli Saldi', area: 'Line 4 — Packing', tanggal: '20 Sep 2026',
+      aman: 11, berisiko: 2, kategori: 'Posisi & Postur Tubuh',
+      catatan: 'Dua pekerja mengangkat karton 15 kg dengan punggung membungkuk, bukan menekuk lutut.',
+      tindakan: 'Peragaan teknik angkat di tempat, disepakati rotasi tugas tiap 2 jam.' },
+    { id: 'OBS-2026-0611', observer: 'Dewi Kartika', area: 'Line 1 — Mixing', tanggal: '20 Sep 2026',
+      aman: 9, berisiko: 1, kategori: 'Alat Pelindung Diri',
+      catatan: 'Satu pekerja menurunkan masker saat menuang tepung dari sak.',
+      tindakan: 'Diskusi singkat soal paparan debu tepung; masker cadangan disediakan di titik tuang.' },
+    { id: 'OBS-2026-0610', observer: 'Agus Prasetyo', area: 'Gudang Bahan Baku', tanggal: '19 Sep 2026',
+      aman: 14, berisiko: 0, kategori: '—',
+      catatan: 'Seluruh perilaku teramati aman. Operator forklift berhenti penuh di setiap persimpangan.',
+      tindakan: 'Apresiasi disampaikan di safety talk pagi berikutnya.' },
+    { id: 'OBS-2026-0609', observer: 'Hendra Gunawan', area: 'Workshop Maintenance', tanggal: '19 Sep 2026',
+      aman: 8, berisiko: 3, kategori: 'Kepatuhan Prosedur',
+      catatan: 'Penggerindaan dilakukan tanpa memasang pelindung percikan dan tanpa memeriksa area sekitar.',
+      tindakan: 'Pekerjaan dihentikan sementara, pelindung dipasang, IK penggerindaan dibahas ulang.' },
+    { id: 'OBS-2026-0608', observer: 'Rina Wulandari', area: 'Ruang Boiler', tanggal: '18 Sep 2026',
+      aman: 12, berisiko: 1, kategori: 'Alat & Peralatan Kerja',
+      catatan: 'Kunci pas digunakan sebagai pengganti kunci momen pada sambungan pipa uap.',
+      tindakan: 'Kunci momen disediakan di panel alat ruang boiler.' }
+  ];
+
+  /* ─── 17. Dashboard Eksekutif ─── */
+  const pabrikKinerja = [
+    { nama: 'Cibitung', pekerja: 412, trir: '0,44', ltifr: '1,84', manhours: '2.740.000',
+      insiden: 6, bahaya: 87, capa: '82%', smk3: '91%', status: 'Perhatian' },
+    { nama: 'Bekasi', pekerja: 298, trir: '0,30', ltifr: '1,01', manhours: '1.980.000',
+      insiden: 3, bahaya: 71, capa: '94%', smk3: '95%', status: 'Baik' },
+    { nama: 'Semarang', pekerja: 214, trir: '0,56', ltifr: '2,11', manhours: '1.420.000',
+      insiden: 4, bahaya: 38, capa: '68%', smk3: '84%', status: 'Kritis' },
+    { nama: 'Medan', pekerja: 147, trir: '0,41', ltifr: '2,04', manhours: '980.000',
+      insiden: 2, bahaya: 44, capa: '88%', smk3: '89%', status: 'Baik' }
+  ];
+
+  const programStrategis = [
+    { nama: 'Pemisahan jalur pejalan kaki & forklift', target: '4 pabrik', capai: 2, dari: 4, tenggat: 'Des 2026', status: 'Dalam Proses' },
+    { nama: 'Sertifikasi ulang ISO 45001 & 14001', target: 'Surveillance Okt', capai: 0, dari: 1, tenggat: 'Okt 2026', status: 'Terjadwal' },
+    { nama: 'Program Observasi Perilaku Aman', target: '400 observasi/bulan', capai: 302, dari: 400, tenggat: 'Berjalan', status: 'Dalam Proses' },
+    { nama: 'Penggantian boiler tua Cibitung', target: 'Boiler 2', capai: 0, dari: 1, tenggat: 'Q2 2027', status: 'Terbuka' },
+    { nama: 'Nihil kecelakaan hilang waktu kerja', target: '4 pabrik sepanjang 2026', capai: 3, dari: 4, tenggat: 'Des 2026', status: 'Dalam Proses' }
+  ];
+
+  const trenTrir = [
+    { bln: 'Okt', v: 0.71 }, { bln: 'Nov', v: 0.68 }, { bln: 'Des', v: 0.74 }, { bln: 'Jan', v: 0.66 },
+    { bln: 'Feb', v: 0.61 }, { bln: 'Mar', v: 0.58 }, { bln: 'Apr', v: 0.55 }, { bln: 'Mei', v: 0.52 },
+    { bln: 'Jun', v: 0.49 }, { bln: 'Jul', v: 0.47 }, { bln: 'Ags', v: 0.45 }, { bln: 'Sep', v: 0.42 }
+  ];
+
+  /* ─── 18. Notifikasi ─── */
+  const notifikasi = [
+    { id: 'N-901', jenis: 'critical', modul: 'Dokumen Eksternal', judul: 'SKLO Boiler 2 sudah kedaluwarsa 83 hari',
+      isi: 'Surat Keterangan Layak Operasi boiler 2 berakhir 30 Jun 2026. Pengoperasian boiler tanpa SKLO adalah pelanggaran regulasi.',
+      waktu: '08:12 hari ini', baca: false, aksi: 'docext' },
+    { id: 'N-900', jenis: 'critical', modul: 'CAPA', judul: 'CAPA-2026-0124 terlambat 11 hari',
+      isi: 'Laporan P2K3 triwulan II belum dikirim ke Disnaker. Tenggat 10 Sep 2026, penanggung jawab Fadli Saldi.',
+      waktu: '08:00 hari ini', baca: false, aksi: 'capa' },
+    { id: 'N-899', jenis: 'high', modul: 'Work Permit', judul: 'WP-2026-0913 tertahan 18 jam di verifikasi QHSE',
+      isi: 'Izin ruang terbatas menunggu hasil uji gas O₂/LEL/H₂S. Eskalasi otomatis ke Plant Manager pada jam ke-24.',
+      waktu: '07:45 hari ini', baca: false, aksi: 'permit' },
+    { id: 'N-898', jenis: 'high', modul: 'Pelatihan', judul: 'Sertifikat Teknisi K3 Listrik berakhir 17 hari lagi',
+      isi: 'Sertifikat atas nama Hendra Gunawan berlaku sampai 08 Okt 2026. Pendaftaran penyegaran perlu dilakukan sekarang.',
+      waktu: '06:30 hari ini', baca: true, aksi: 'training' },
+    { id: 'N-897', jenis: 'high', modul: 'Environment', judul: 'Minyak & lemak IPAL melewati baku mutu',
+      isi: 'Hasil uji 15 Sep menunjukkan 14 mg/L terhadap ambang 10 mg/L. Uji ulang wajib dalam 14 hari.',
+      waktu: 'Kemarin 16:20', baca: true, aksi: 'environment' },
+    { id: 'N-896', jenis: 'medium', modul: 'Insiden', judul: 'INC-2026-0318 menunggu investigasi akar masalah',
+      isi: 'Accident berkeparahan Serius di Line 3. Investigasi 5-Why belum lengkap, status belum dapat naik ke Terverifikasi.',
+      waktu: 'Kemarin 14:05', baca: true, aksi: 'incident' },
+    { id: 'N-895', jenis: 'medium', modul: 'Dokumen Internal', judul: 'Kebijakan K3 dan Lingkungan lewat masa tinjau',
+      isi: 'KGK-01 revisi 3 seharusnya ditinjau ulang 14 Jan 2026. Perubahan struktur organisasi Mei 2026 belum tercermin.',
+      waktu: 'Kemarin 09:40', baca: true, aksi: 'docint' },
+    { id: 'N-894', jenis: 'medium', modul: 'Safety Checklist', judul: 'P2H Forklift shift 2 belum dikerjakan',
+      isi: 'CHK-2026-1846 belum dimulai. Forklift tidak boleh dioperasikan sebelum P2H selesai.',
+      waktu: 'Kemarin 08:15', baca: true, aksi: 'checklist' },
+    { id: 'N-893', jenis: 'low', modul: 'CAPA', judul: 'CAPA-2026-0138 ditutup dan diverifikasi',
+      isi: 'Cermin cembung dan marka pejalan kaki persimpangan B2 terpasang, bukti foto terlampir.',
+      waktu: '2 hari lalu', baca: true, aksi: 'capa' },
+    { id: 'N-892', jenis: 'info', modul: 'SHE Activity', judul: 'Safety Talk bahaya uap panas — 24 peserta',
+      isi: 'ACT-2026-0091 tersimpan dengan daftar hadir terpindai. Jam-orang otomatis masuk ke KPI Jam Pelatihan K3.',
+      waktu: '2 hari lalu', baca: true, aksi: 'activity' }
+  ];
+
+  const aturanNotifikasi = [
+    { peristiwa: 'Insiden Accident dilaporkan', kanal: 'Aplikasi + WhatsApp + Email', penerima: 'QHSE, Plant Manager, Supervisor Area', segera: 'Seketika' },
+    { peristiwa: 'Izin kerja menunggu > 24 jam', kanal: 'Aplikasi + Email', penerima: 'Plant Manager', segera: 'Eskalasi otomatis' },
+    { peristiwa: 'CAPA lewat tenggat', kanal: 'Aplikasi + Email', penerima: 'Penanggung jawab + atasan langsung', segera: 'Harian sampai ditutup' },
+    { peristiwa: 'Dokumen compliance H-60', kanal: 'Aplikasi + Email', penerima: 'Pemilik dokumen, QHSE', segera: 'H-60, H-30, H-14, H-7' },
+    { peristiwa: 'Sertifikat personel H-60', kanal: 'Aplikasi + Email', penerima: 'Pemegang, HRD, QHSE', segera: 'H-60, H-30, H-14' },
+    { peristiwa: 'Nilai lingkungan melewati baku mutu', kanal: 'Aplikasi + WhatsApp', penerima: 'Petugas Lingkungan, Plant Manager', segera: 'Seketika' },
+    { peristiwa: 'Checklist shift belum dikerjakan', kanal: 'Aplikasi', penerima: 'Penanggung jawab shift', segera: '2 jam setelah shift mulai' }
+  ];
+
   return {
     plant, periode, user, lokasi, orang,
     insiden, inspeksi, checklistAPAR, izin, jsea, bahaya,
     audit, temuanAudit, elemenSMK3, lingkungan,
     kpiLagging, kpiLeading, trenInsiden, trenBahaya,
-    kegiatan, capa, aktivitas, perhatian
+    kegiatan, capa, aktivitas, perhatian,
+    pelatihan, sertifikasi, risikoKonteks, risikoRegister,
+    dokInternal, dokEksternal, checklistHarian, checklistP2H,
+    obsKategori, observasi, pabrikKinerja, programStrategis, trenTrir,
+    notifikasi, aturanNotifikasi
   };
 })();
