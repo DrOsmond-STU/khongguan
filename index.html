@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KG SafeGuard — Purwarupa QHSE Khong Guan Group</title>
+<meta name="description" content="Purwarupa aplikasi QHSE Khong Guan Group: sepuluh modul dari pelaporan insiden sampai CAPA.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/app.css">
+<link rel="icon" href="assets/img/mark.svg">
+</head>
+<body>
+
+<div class="shell">
+  <nav class="sidebar" aria-label="Modul QHSE">
+    <div class="brand">
+      <span class="brand-mark">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 2.5 4.5 5.5v6c0 4.6 3.1 8.6 7.5 10 4.4-1.4 7.5-5.4 7.5-10v-6L12 2.5Z"/>
+          <path d="m8.8 12 2.2 2.2 4.2-4.4"/>
+        </svg>
+      </span>
+      <span>
+        <span class="brand-name">KG SafeGuard</span><br>
+        <span class="brand-tag">QHSE · KHONG GUAN</span>
+      </span>
+    </div>
+
+    <div id="nav"></div>
+
+    <div class="sidebar-user">
+      <span class="avatar">FS</span>
+      <span>
+        <span class="user-name">Fadli Saldi</span><br>
+        <span class="user-role">QHSE Supervisor · Cibitung</span>
+      </span>
+    </div>
+  </nav>
+
+  <div class="main">
+    <div class="topbar-mobile">
+      <button id="menu-btn" class="icon-btn" aria-label="Buka menu modul"
+              style="background:rgba(255,255,255,.16);color:inherit">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.75" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <span class="t" id="mobile-title">Dashboard &amp; Laporan</span>
+    </div>
+    <main id="view"></main>
+  </div>
+</div>
+
+<button class="fab" data-act="lapor-bahaya" aria-label="Lapor bahaya cepat">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 10v4"/><path d="M12 17h.01"/>
+  </svg>
+</button>
+
+<div id="modal-host" hidden></div>
+
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
