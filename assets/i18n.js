@@ -552,6 +552,276 @@ window.KGI18N = (function () {
     'Kirim Undangan': 'Send Invitation',
     'Modul': 'Module', 'Baca': 'View', 'Isi': 'Create', 'Verifikasi': 'Verify', 'Kelola': 'Administer',
 
+    /* ── Tautan ke aplikasi lapangan ── */
+    "Aplikasi Lapangan Android":
+      "Android Field App",
+    "Untuk petugas yang bekerja di lantai produksi, gudang, dan area utilitas":
+      "For staff working on the production floor, in the warehouse and around the utilities",
+    "Alamat":
+      "Address",
+    "Akun":
+      "Account",
+    "Sama dengan aplikasi ini — masuk sekali, berlaku di keduanya":
+      "The same as this app — sign in once, it holds for both",
+    "Kiriman dari lapangan":
+      "Field submissions",
+    "Belum ada":
+      "None yet",
+    "Buka Aplikasi Lapangan":
+      "Open the Field App",
+    "Laporan yang dikirim dari aplikasi lapangan muncul di modul Laporan Bahaya, Incident, dan Observasi Perilaku, ditandai sebagai kiriman lapangan. Yang berstatus Antre belum melewati verifikasi QHSE, jadi belum dihitung dalam angka KPI mana pun.":
+      "Reports sent from the field app appear in the Hazard Report, Incident and Behaviour Observation modules, marked as field submissions. Anything still Queued has not passed QHSE verification, so it counts towards no KPI figure yet.",
+    "Kiriman lapangan belum melewati verifikasi QHSE, jadi belum dihitung dalam angka KPI mana pun. Yang berstatus Antre bahkan belum pernah meninggalkan perangkat pelapor — pada sistem sebenarnya, di titik itulah panggilan ke API berada.":
+      "A field submission has not passed QHSE verification, so it counts towards no KPI figure yet. Anything still Queued has never even left the reporter's device — in a live system, that is exactly where the API call sits.",
+
+    /* ── Aplikasi lapangan: tingkat & kategori ── */
+    "Lingkungan": "Environment",
+    "Rendah": "Low",
+    "Sedang": "Medium",
+    "Tinggi": "High",
+    "Ringan": "Minor",
+    "Serius": "Serious",
+
+    /* ── Aplikasi lapangan (/m/) ── */
+    "Beranda":
+      "Home",
+    "Lapor":
+      "Report",
+    "Tugas":
+      "Tasks",
+    "Saya":
+      "Me",
+    "Navigasi utama":
+      "Main navigation",
+    "Status sinkronisasi":
+      "Sync status",
+    "LAPANGAN · QHSE KHONG GUAN":
+      "FIELD · QHSE KHONG GUAN",
+    "AKUN DEMO LAPANGAN":
+      "FIELD DEMO ACCOUNTS",
+    "Akun dan perannya sama persis dengan aplikasi meja, dengan kata sandi demo1234.":
+      "The accounts and their roles are exactly those of the desktop app; the password is demo1234.",
+    "Email atau kata sandi tidak cocok.":
+      "Email or password does not match.",
+    "Akun ini tidak aktif. Hubungi administrator sistem.":
+      "This account is inactive. Contact the system administrator.",
+    "hari tanpa kecelakaan hilang waktu kerja di Pabrik Cibitung":
+      "days without a lost-time injury at Cibitung Plant",
+    "Angka ini kembali ke nol pada kecelakaan berikutnya. Laporan Anda hari ini yang menjaganya tetap berjalan.":
+      "This figure resets to zero at the next injury. Your report today is what keeps it running.",
+    "Observasi":
+      "Observation",
+    "Foto, area, satu kalimat — 30 detik":
+      "Photo, area, one sentence — 30 seconds",
+    "Paling sering dipakai · target 30 detik":
+      "Used most often · 30-second target",
+    "Nyaris celaka atau kecelakaan":
+      "Near miss or accident",
+    "Nearmiss sampai accident":
+      "Near miss through accident",
+    "Perilaku aman & berisiko":
+      "Safe and at-risk behaviour",
+    "Tugas hari ini":
+      "Today's tasks",
+    "Laporan saya":
+      "My reports",
+    "Perlu perhatian":
+      "Needs attention",
+    "Tidak ada tugas tertunda":
+      "No outstanding tasks",
+    "Checklist shift Anda sudah selesai seluruhnya.":
+      "Your shift checklist is fully complete.",
+    "Belum ada laporan":
+      "No reports yet",
+    "Laporan yang Anda kirim dari sini langsung muncul di modul QHSE pada aplikasi meja.":
+      "Reports you send from here appear straight away in the QHSE modules of the desktop app.",
+    "Buat laporan":
+      "Create a report",
+    "Antrean kirim":
+      "Send queue",
+    "Antrean kosong":
+      "Queue is empty",
+    "Semua laporan Anda sudah terkirim.":
+      "All your reports have been sent.",
+    "Laporan disimpan di perangkat lebih dulu, baru dikirim. Di lantai produksi dan gudang sinyal sering hilang, dan laporan bahaya yang gagal terkirim adalah laporan yang tidak pernah ditulis ulang.":
+      "Reports are stored on the device first, then sent. Signal drops often on the production floor and in the warehouse, and a hazard report that fails to send is a report nobody writes twice.",
+    "Target 30 detik · foto, area, satu kalimat":
+      "30-second target · photo, area, one sentence",
+    "Kejadian, nyaris celaka, atau kecelakaan":
+      "Incident, near miss or accident",
+    "Perilaku aman dicatat lebih dulu":
+      "Safe behaviour is recorded first",
+    "Area kerja":
+      "Work area",
+    "Apa yang terjadi?":
+      "What happened?",
+    "Tingkat risiko menurut Anda":
+      "Risk level in your judgement",
+    "Ada yang cedera?":
+      "Was anyone injured?",
+    "Foto":
+      "Photo",
+    "Titik lokasi":
+      "Location fix",
+    "Ketuk untuk memotret":
+      "Tap to take a photo",
+    "Memproses foto…":
+      "Processing photo…",
+    "Foto gagal dibaca — ketuk untuk mengulang":
+      "Photo could not be read — tap to try again",
+    "Pratinjau foto":
+      "Photo preview",
+    "Hapus foto":
+      "Remove photo",
+    "Belum diambil":
+      "Not taken yet",
+    "Mengambil…":
+      "Getting fix…",
+    "Ambil":
+      "Get",
+    "Izin lokasi ditolak":
+      "Location permission denied",
+    "Lokasi tidak terbaca":
+      "Location could not be read",
+    "Perangkat tidak mendukung lokasi":
+      "This device does not support location",
+    "Foto diperkecil di perangkat sebelum disimpan, jadi tetap muat walau sinyal mati berhari-hari.":
+      "Photos are shrunk on the device before storage, so they still fit even after days without signal.",
+    "Satu kalimat sudah cukup. Contoh: Selang APAR A-14 bocor di sambungan.":
+      "One sentence is enough. For example: Extinguisher hose A-14 is leaking at the joint.",
+    "Urutkan kejadiannya: apa yang dikerjakan, lalu apa yang terjadi.":
+      "Put the event in order: what was being done, then what happened.",
+    "Apa yang dibicarakan dengan pekerja saat itu juga.":
+      "What was discussed with the worker on the spot.",
+    "Perilaku aman yang teramati":
+      "Safe behaviours observed",
+    "Perilaku berisiko yang teramati":
+      "At-risk behaviours observed",
+    "Catatan percakapan di tempat":
+      "Note of the on-the-spot conversation",
+    "Hapus laporan":
+      "Delete report",
+    "Isian keterangan belum diisi.":
+      "The description field is still empty.",
+    "Laporan dihapus.":
+      "Report deleted.",
+    "Laporan bahaya tidak pernah menilai orang. Yang dicatat adalah kondisi dan tindakannya, bukan siapa yang melakukannya.":
+      "A hazard report never judges a person. What is recorded is the condition and the act, not who did it.",
+    "Kejadian berkeparahan Serius memicu pemberitahuan seketika ke QHSE dan Plant Manager begitu laporan terkirim.":
+      "An event of Serious severity triggers an immediate notification to QHSE and the Plant Manager as soon as the report is sent.",
+    "Kolom ini diisi lebih dulu dan biasanya lebih besar. Program yang hanya mencatat pelanggaran akan berhenti dilaporkan orang.":
+      "This column is filled in first and is usually the larger one. A programme that logs only violations stops being reported at all.",
+    "Pekerja yang diamati tidak pernah dicatat namanya. Observasi yang menamai orang berubah menjadi penilaian kinerja, dan orang berhenti jujur.":
+      "The worker being observed is never recorded by name. An observation that names people turns into a performance review, and people stop being honest.",
+    "Kondisi Tidak Aman":
+      "Unsafe Condition",
+    "Tindakan Tidak Aman":
+      "Unsafe Act",
+    "Housekeeping":
+      "Housekeeping",
+    "Peralatan":
+      "Equipment",
+    "Tidak ada cedera":
+      "No injury",
+    "Perlu P3K":
+      "First aid needed",
+    "Perlu perawatan medis":
+      "Medical treatment needed",
+    "Hilang waktu kerja":
+      "Lost time",
+    "Checklist shift":
+      "Shift checklist",
+    "Izin kerja berjalan":
+      "Work permits in progress",
+    "CAPA saya":
+      "My CAPAs",
+    "Lewat":
+      "Overdue",
+    "Satu butir dijawab Tidak Sesuai mengunci unit dari operasi sampai temuannya ditutup. Ini gerbang operasi, bukan peringatan yang bisa dilewati.":
+      "A single Not Conforming answer locks the unit out of operation until its finding is closed. This is an operating gate, not a warning that can be waved through.",
+    "Pada purwarupa ini butir checklist belum dapat dijawab dari aplikasi lapangan. Yang sudah berjalan adalah laporan bahaya, insiden, dan observasi.":
+      "In this prototype, checklist items cannot yet be answered from the field app. What does work is hazard, incident and observation reporting.",
+    "Cari apa saja di sistem":
+      "Search anything in the system",
+    "Prosedur, izin, insiden, CAPA, temuan audit, sertifikat — semuanya terindeks dan dapat dibuka di sini tanpa sinyal.":
+      "Procedures, permits, incidents, CAPAs, audit findings, certificates — all indexed and openable here without signal.",
+    "Cari catatan, dokumen, nomor — misalnya: boiler":
+      "Search records, documents, numbers — for example: boiler",
+    "Tidak ada yang cocok":
+      "Nothing matches",
+    "Seluruh kata yang diketik harus muncul pada catatan yang sama. Coba kurangi kata.":
+      "Every word typed must appear in the same record. Try fewer words.",
+    "Sinkronisasi":
+      "Sync",
+    "ANTRE":
+      "QUEUED",
+    "TERKIRIM":
+      "SENT",
+    "TOTAL":
+      "TOTAL",
+    "Antre":
+      "Queued",
+    "Terkirim":
+      "Sent",
+    "Kirim sekarang":
+      "Send now",
+    "TEMA":
+      "THEME",
+    "BAHASA":
+      "LANGUAGE",
+    "Indonesia":
+      "Indonesian",
+    "English":
+      "English",
+    "Aplikasi meja":
+      "Desktop app",
+    "Buka KG SafeGuard lengkap":
+      "Open the full KG SafeGuard",
+    "21 modul · laporan Anda sudah ada di sana":
+      "21 modules · your reports are already there",
+    "Pilihan ini sama dengan aplikasi meja. Mengubahnya di sini ikut berubah di sana.":
+      "These settings are shared with the desktop app. Changing them here changes them there too.",
+    "Aplikasi ini adalah purwarupa. Seluruh isinya data rekaan, dan laporan yang Anda kirim tersimpan di perangkat ini saja — tidak ada server di belakangnya. Jangan memakai kata sandi sungguhan di layar masuk.":
+      "This is a prototype. All content is invented data, and the reports you send are stored on this device only — there is no server behind it. Do not use a real password on the sign-in screen.",
+    "Tanpa sinyal — laporan tetap tersimpan":
+      "No signal — reports are still saved",
+    "Sinyal kembali.":
+      "Signal is back.",
+    "Kirim":
+      "Send",
+    "Belum ada sinyal. Laporan tetap aman di perangkat.":
+      "No signal yet. Your reports are safe on the device.",
+    "Tidak ada laporan yang menunggu.":
+      "There are no reports waiting.",
+    "Keterangan":
+      "Description",
+    "Risiko menurut pelapor":
+      "Risk per the reporter",
+    "Cedera":
+      "Injury",
+    "Perilaku aman / berisiko":
+      "Safe / at-risk behaviours",
+    "Laporan Bahaya":
+      "Hazard Report",
+    "Laporan Insiden":
+      "Incident Report",
+    "Dilepas karena penyimpanan perangkat penuh. Laporannya tetap utuh.":
+      "Dropped because device storage is full. The report itself is intact.",
+    "Izin kerja tidak berstatus Aktif sebelum seluruh langkah persetujuan selesai dan JSEA-nya lengkap.":
+      "A work permit is not Active until every approval step is complete and its JSEA is filled in.",
+    "Laporan Bahaya dari Lapangan":
+      "Hazard Reports from the Field",
+    "Laporan Insiden dari Lapangan":
+      "Incident Reports from the Field",
+    "Observasi dari Lapangan":
+      "Observations from the Field",
+    "DARI LAPANGAN":
+      "FROM THE FIELD",
+    "BERFOTO":
+      "HAS PHOTO",
+    "FOTO":
+      "PHOTO",
+
     /* ── Asisten QHSE: sisa label ── */
     "Ringkasan Eksekutif": "Executive Summary",
     "Ringkasan eksekutif": "Executive summary",

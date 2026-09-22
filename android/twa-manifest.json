@@ -1,0 +1,44 @@
+{
+  "packageId": "com.khongguan.safeguard.lapangan",
+  "host": "khongguan.semestateknologiutama.com",
+  "name": "KG SafeGuard Lapangan",
+  "launcherName": "KG Lapangan",
+  "display": "standalone",
+  "orientation": "portrait",
+  "themeColor": "#062b63",
+  "themeColorDark": "#0a1626",
+  "navigationColor": "#062b63",
+  "navigationColorDark": "#0a1626",
+  "navigationDividerColor": "#062b63",
+  "navigationDividerColorDark": "#0a1626",
+  "backgroundColor": "#062b63",
+  "enableNotifications": false,
+  "startUrl": "/m/",
+  "iconUrl": "https://khongguan.semestateknologiutama.com/m/icon-512.png",
+  "maskableIconUrl": "https://khongguan.semestateknologiutama.com/m/icon-maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [
+    {
+      "name": "Lapor Bahaya",
+      "shortName": "Lapor Bahaya",
+      "url": "/m/?aksi=bahaya",
+      "chosenIconUrl": "https://khongguan.semestateknologiutama.com/m/icon-192.png"
+    },
+    {
+      "name": "Lapor Insiden",
+      "shortName": "Insiden",
+      "url": "/m/?aksi=insiden",
+      "chosenIconUrl": "https://khongguan.semestateknologiutama.com/m/icon-192.png"
+    }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://khongguan.semestateknologiutama.com/m/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "minSdkVersion": 21,
+  "features": {}
+}

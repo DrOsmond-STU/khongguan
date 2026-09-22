@@ -1,0 +1,37 @@
+{
+  "name": "KG SafeGuard Lapangan",
+  "short_name": "KG Lapangan",
+  "description": "Aplikasi lapangan QHSE Khong Guan: lapor bahaya, insiden, checklist, dan observasi langsung dari lokasi kerja — tetap jalan tanpa sinyal.",
+  "id": "/m/",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#062b63",
+  "theme_color": "#062b63",
+  "lang": "id",
+  "dir": "ltr",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Lapor Bahaya",
+      "short_name": "Lapor Bahaya",
+      "description": "Foto, area, satu kalimat — target 30 detik",
+      "url": "./?aksi=bahaya",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Lapor Insiden",
+      "short_name": "Insiden",
+      "description": "Nearmiss, incident, atau accident",
+      "url": "./?aksi=insiden",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

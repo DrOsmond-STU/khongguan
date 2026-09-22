@@ -159,6 +159,47 @@
       <span class="info-bar"><span style="width:${total ? Math.round(v / total * 100) : 0}%;background:var(--signal-${sig || 'info'})"></span></span>
     </div>`).join('')}</div>`;
 
+  /* ───────── Kiriman dari aplikasi lapangan ─────────
+     Laporan yang dikirim petugas lewat /m/ masuk ke antrean bersama di
+     lapangan.js. Modul yang bersangkutan menampilkannya di paling atas, ditandai
+     apa adanya: yang masih Antre belum pernah sampai ke server mana pun. */
+
+  const LAPANGAN_MODUL = {
+    bahaya: { judul: 'Laporan Bahaya dari Lapangan', ikon: 'hazard' },
+    insiden: { judul: 'Laporan Insiden dari Lapangan', ikon: 'incident' },
+    observasi: { judul: 'Observasi dari Lapangan', ikon: 'bbs' }
+  };
+
+  function lapanganSeksi(jenis) {
+    if (!window.KGLAP) return '';
+    const list = KGLAP.daftar(jenis);
+    if (!list.length) return '';
+    const m = LAPANGAN_MODUL[jenis];
+    const antre = list.filter(function (r) { return r.status === 'Antre'; }).length;
+
+    return `
+      <section class="section">
+        <div class="section-head">
+          <h2>${m.judul}</h2>
+          <span class="sub">${list.length} kiriman${antre ? ' · ' + antre + ' masih di antrean perangkat' : ''}</span>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Nomor</th><th>Keterangan</th><th>Area</th><th>Pelapor</th><th>Waktu</th><th>Status</th></tr></thead>
+          <tbody>${list.map(function (r) {
+            return `<tr data-detail="lapangan:${r.id}" tabindex="0" role="button">
+              <td class="mono mono--id">${r.id}</td>
+              <td>${KGAI.esc(r.isi)}${r.foto ? ' ' + chip('FOTO', 'info') : ''}</td>
+              <td>${KGAI.esc(r.lokasi)}</td>
+              <td>${KGAI.esc(r.pelapor)}</td>
+              <td class="mono">${KGAI.esc(r.waktuTampil || '')}</td>
+              <td>${chip(r.status.toUpperCase(), r.status === 'Antre' ? 'medium' : 'low', true)}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>
+        <div class="tile-note" style="margin-top:var(--space-4)">Kiriman ini datang dari aplikasi lapangan pada perangkat yang sama. Nomornya berawalan berbeda (${KGLAP.nomorBerikut(jenis).split('-').slice(0, 2).join('-')}) supaya tidak pernah tertukar dengan catatan yang sudah diverifikasi petugas QHSE.</div>
+      </section>`;
+  }
+
   /* ───────── Potongan yang dipakai ulang ───────── */
   const tile = (t) => `
     <article class="card tile is-clickable" ${infoAttr({
@@ -335,6 +376,8 @@
         ${tile({ label: 'HARI KERJA HILANG', value: '9', unit: 'hari', icon: 'people', arah: 'bad', delta: '4 vs Agustus', note: 'Akumulasi 2026: 27 hari' })}
         ${tile({ label: 'RASIO NEARMISS', value: '3,2', unit: ':1', icon: 'kpi', arah: 'good', delta: '0,8 vs Agustus', note: 'Nearmiss per accident · makin tinggi makin baik' })}
       </div>
+      ${lapanganSeksi('insiden')}
+
       <section class="section panel">
         <div class="panel-bar">
           <h2>Daftar Laporan Insiden</h2>
@@ -625,6 +668,8 @@
             aria: 'Grafik garis jumlah laporan bahaya per bulan, naik dari 52 pada Oktober ke puncak 101 pada Agustus, turun ke 87 pada September.' })}
         </div>
       </section>
+
+      ${lapanganSeksi('bahaya')}
 
       <section class="section">
         <div class="section-head"><h2>Papan Tindak Lanjut</h2><span class="sub">Tiga kolom, kiri ke kanan</span></div>
@@ -1022,6 +1067,33 @@
 
   /* ───────── Rincian (modal) ───────── */
   function detail(kind, id) {
+    if (kind === 'lapangan') {
+      const r = (window.KGLAP ? KGLAP.daftar() : []).filter(function (x) { return x.id === id; })[0];
+      if (!r) return null;
+      const modul = { bahaya: 'Laporan Bahaya K3L', insiden: 'Incident & Nearmiss', observasi: 'Observasi Perilaku' }[r.jenis];
+      return { title: r.id, sub: `Kiriman lapangan · ${modul} · ${r.waktuTampil || ''}`, body:
+        chipRow([
+          chip('DARI LAPANGAN', 'info'),
+          chip(r.status.toUpperCase(), r.status === 'Antre' ? 'medium' : 'low', true),
+          r.kategori ? chip(String(r.kategori).toUpperCase(), 'neutral') : '',
+          r.foto ? chip('BERFOTO', 'low') : ''
+        ]) +
+        (r.foto ? `<img src="${r.foto}" alt="Foto kiriman lapangan ${r.id}" style="width:100%;max-height:340px;object-fit:cover;border-radius:var(--radius-md);margin-bottom:var(--space-5)">` : '') +
+        lead(KGAI.esc(r.isi)) +
+        kv([
+          ['Area', KGAI.esc(r.lokasi)],
+          r.kategori && ['Kategori', KGAI.esc(String(r.kategori))],
+          r.risiko && ['Risiko menurut pelapor', r.risiko],
+          r.keparahan && ['Keparahan', r.keparahan],
+          r.cedera && ['Cedera', r.cedera],
+          (r.aman != null) && ['Perilaku aman / berisiko', r.aman + ' / ' + r.berisiko],
+          r.koordinat && ['Titik lokasi', `<span class="mono">${r.koordinat.lat.toFixed(5)}, ${r.koordinat.lon.toFixed(5)}</span> · ±${r.koordinat.akurasi} m`],
+          r.fotoDilepas && ['Foto', 'Dilepas karena penyimpanan perangkat penuh; laporannya tetap utuh'],
+          ['Pelapor', KGAI.esc(r.pelapor) + ' · ' + KGAI.esc(r.peran)],
+          ['Status', r.status]
+        ]) +
+        foot('Kiriman lapangan belum melewati verifikasi QHSE, jadi belum dihitung dalam angka KPI mana pun. Yang berstatus Antre bahkan belum pernah meninggalkan perangkat pelapor — pada sistem sebenarnya, di titik itulah panggilan ke API berada.') };
+    }
     if (kind === 'insiden') {
       const r = D.insiden.find(x => x.id === id); if (!r) return null;
       return { title: r.id, sub: `${r.jenis} · ${r.lokasi} · ${r.tanggal} pukul ${r.waktu} WIB`, body: `
@@ -2036,6 +2108,8 @@
         ${tile({ label: 'PENGAMAT AKTIF', value: '14', icon: 'people', arah: 'good', delta: '3 pengamat baru dilatih', note: 'Supervisor dan operator terlatih' })}
       </div>
 
+      ${lapanganSeksi('observasi')}
+
       <section class="section grid grid--2">
         <div class="card">
           <h3>Perilaku per Kategori</h3>
@@ -2222,12 +2296,38 @@
     const sw = (group, opts) => `<div class="switch" role="group" aria-label="${group}">${
       opts.map(o => `<button type="button" ${o.attr}>${o.label}</button>`).join('')}</div>`;
     const toggle = (id, on) => `<button type="button" class="toggle" data-toggle="${id}" aria-pressed="${on}" aria-label="Aktifkan"></button>`;
+    const lap = window.KGLAP ? KGLAP.ringkas() : { total: 0, antre: 0 };
     return hero({
       eyebrow: 'PENGATURAN',
       title: 'Preferensi Aplikasi',
       desc: 'Tema, bahasa, lokasi kerja, dan kanal pemberitahuan. Preferensi tampilan tersimpan di peramban ini saja, bukan di server — jadi setiap perangkat punya pilihannya sendiri.'
     }) + `
     <div class="page">
+      <section class="section">
+        <div class="card">
+          <h3>Aplikasi Lapangan Android</h3>
+          <div class="card-sub">Untuk petugas yang bekerja di lantai produksi, gudang, dan area utilitas</div>
+          <p style="font-size:14px;line-height:22px;color:var(--ink-700);margin:var(--space-4) 0">
+            Versi lapangan berjalan di ponsel Android: laporan bahaya dalam tiga puluh detik dengan kamera dan
+            titik GPS, checklist shift, dan pencarian seluruh catatan — seluruhnya tetap jalan tanpa sinyal.
+            Buka alamatnya di Chrome pada ponsel, lalu pilih <b>Pasang aplikasi</b>; hasilnya ikon di layar utama
+            yang berjalan layar penuh tanpa bilah peramban.
+          </p>
+          ${kv([
+            ['Alamat', '<span class="mono">' + location.host + '/m/</span>'],
+            ['Akun', 'Sama dengan aplikasi ini — masuk sekali, berlaku di keduanya'],
+            ['Kiriman dari lapangan', lap.total
+              ? KGAI.L(`${lap.total} laporan` + (lap.antre ? `, ${lap.antre} masih di antrean perangkat` : ', seluruhnya terkirim'),
+                       `${lap.total} reports` + (lap.antre ? `, ${lap.antre} still queued on the device` : ', all sent'))
+              : 'Belum ada']
+          ])}
+          <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-top:var(--space-5)">
+            <a class="btn btn--primary" href="m/" target="_blank" rel="noopener">${I(icon.people, 17)}Buka Aplikasi Lapangan</a>
+          </div>
+          ${foot('Laporan yang dikirim dari aplikasi lapangan muncul di modul Laporan Bahaya, Incident, dan Observasi Perilaku, ditandai sebagai kiriman lapangan. Yang berstatus Antre belum melewati verifikasi QHSE, jadi belum dihitung dalam angka KPI mana pun.')}
+        </div>
+      </section>
+
       <section class="section grid grid--2">
         <div class="card">
           <h3>Tampilan</h3>
@@ -3170,6 +3270,14 @@
   });
 
   window.addEventListener('hashchange', route);
+
+  /* Laporan yang masuk dari aplikasi lapangan pada tab lain langsung terlihat
+     di modul yang sedang dibuka, tanpa perlu memuat ulang halaman. */
+  if (window.KGLAP) {
+    KGLAP.dengar(function () {
+      if (session && ['hazard', 'incident', 'bbs'].indexOf(current) !== -1) render();
+    });
+  }
 
   /* ───────── Boot ───────── */
 
