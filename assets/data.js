@@ -678,11 +678,11 @@ window.KG = (function () {
 
   /* ─── Pengguna & peran (purwarupa) ─── */
   const peran = {
-    operator:  { nama: 'Operator Produksi',      modul: ['dashboard','incident','hazard','checklist','bbs','activity'] },
-    qhse:      { nama: 'QHSE Supervisor',        modul: ['dashboard','incident','hazard','bbs','inspection','checklist','permit','risk','capa','audit','environment','docint','docext','training','activity','kpi','notif','settings'] },
-    lingkungan:{ nama: 'Petugas Lingkungan',     modul: ['dashboard','environment','docext','capa','notif','settings'] },
-    manajemen: { nama: 'Plant Manager',          modul: ['exec','dashboard','kpi','audit','environment','risk','capa','permit','notif','settings'] },
-    admin:     { nama: 'Administrator Sistem',   modul: ['exec','dashboard','incident','hazard','bbs','inspection','checklist','permit','risk','capa','audit','environment','docint','docext','training','activity','kpi','notif','settings','users'] }
+    operator:  { nama: 'Operator Produksi',      modul: ['dashboard','ai','incident','hazard','checklist','bbs','activity'] },
+    qhse:      { nama: 'QHSE Supervisor',        modul: ['dashboard','ai','incident','hazard','bbs','inspection','checklist','permit','risk','capa','audit','environment','docint','docext','training','activity','kpi','notif','settings'] },
+    lingkungan:{ nama: 'Petugas Lingkungan',     modul: ['dashboard','ai','environment','docext','capa','notif','settings'] },
+    manajemen: { nama: 'Plant Manager',          modul: ['exec','dashboard','ai','kpi','audit','environment','risk','capa','permit','notif','settings'] },
+    admin:     { nama: 'Administrator Sistem',   modul: ['exec','dashboard','ai','incident','hazard','bbs','inspection','checklist','permit','risk','capa','audit','environment','docint','docext','training','activity','kpi','notif','settings','users'] }
   };
 
   const pengguna = [
@@ -708,7 +708,8 @@ window.KG = (function () {
     { modul: 'Audit',                operator: '—',     qhse: 'Isi',        manajemen: 'Baca', admin: 'Kelola' },
     { modul: 'Environment',          operator: '—',     qhse: 'Isi',        manajemen: 'Baca', admin: 'Kelola' },
     { modul: 'SHE KPI & Analytics',  operator: '—',     qhse: 'Baca',       manajemen: 'Baca', admin: 'Kelola' },
-    { modul: 'User Management',      operator: '—',     qhse: '—',          manajemen: '—',    admin: 'Kelola' }
+    { modul: 'User Management',      operator: '—',     qhse: '—',          manajemen: '—',    admin: 'Kelola' },
+    { modul: 'Asisten QHSE',         operator: 'Baca',  qhse: 'Baca',       manajemen: 'Baca', admin: 'Kelola' }
   ];
 
   return {

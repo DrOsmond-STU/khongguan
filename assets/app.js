@@ -37,6 +37,8 @@
     bbs: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.8"/>',
     exec: '<path d="M8 6.5V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1.5"/><rect x="2.5" y="6.5" width="19" height="13" rx="2"/><path d="M2.5 12h19"/>',
     notif: '<path d="M18 9a6 6 0 1 0-12 0c0 5-2 6.5-2 6.5h16S18 14 18 9Z"/><path d="M13.7 19.5a2 2 0 0 1-3.4 0"/>',
+    ai: '<path d="M12 3.2 13.5 8 18 9.5 13.5 11 12 15.8 10.5 11 6 9.5 10.5 8 12 3.2Z"/><path d="M18.5 15.2l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2Z"/><path d="M5.5 14.5l.5 1.5 1.5.5-1.5.5-.5 1.5-.5-1.5L3.5 16.5l1.5-.5.5-1.5Z"/>',
+    search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.7-4.7"/>',
     settings: '<circle cx="12" cy="12" r="3.2"/><path d="M19.4 14.5a1.6 1.6 0 0 0 .32 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.6 1.6 0 0 0-1.77-.32 1.6 1.6 0 0 0-1 1.47V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1.05-1.47 1.6 1.6 0 0 0-1.77.32l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.6 1.6 0 0 0 .32-1.77 1.6 1.6 0 0 0-1.47-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.47-1.05 1.6 1.6 0 0 0-.32-1.77l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.6 1.6 0 0 0 1.77.32H9a1.6 1.6 0 0 0 1-1.47V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.47 1.6 1.6 0 0 0 1.77-.32l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.6 1.6 0 0 0-.32 1.77V9a1.6 1.6 0 0 0 1.47 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/>'
   };
 
@@ -59,7 +61,8 @@
   const NAV = [
     { group: null, items: [
       { id: 'exec', label: 'Dashboard Eksekutif', icon: 'exec', modul: 17 },
-      { id: 'dashboard', label: 'Dashboard & Laporan', icon: 'dashboard', modul: 7 }
+      { id: 'dashboard', label: 'Dashboard & Laporan', icon: 'dashboard', modul: 7 },
+      { id: 'ai', label: 'Asisten QHSE', icon: 'ai', modul: 21 }
     ] },
     { group: 'KEJADIAN & BAHAYA', items: [
       { id: 'incident', label: 'Incident & Nearmiss', icon: 'incident', modul: 1, count: 4 },
@@ -1264,6 +1267,20 @@
         </div>
         <div class="tile-note">Tahap berikutnya adalah evaluasi dan penanganan. Opsi penanganan ditawarkan dalam urutan Hindari → Kurangi → Transfer → Terima.</div>`,
       ok: 'Simpan & Lanjut Evaluasi', toast: 'Risiko RSK-2026-009 tersimpan. Lanjutkan ke evaluasi.' },
+    'ai-cara': { title: 'Cara Kerja Asisten QHSE', sub: 'Apa yang dikerjakannya, dan apa yang tidak',
+      body: `
+        <p style="font-size:14px;line-height:22px;color:var(--ink-700);margin:0 0 var(--space-5)">Asisten berjalan sepenuhnya di dalam peramban. Tidak ada server, tidak ada kunci API, dan tidak ada model bahasa di belakangnya. Empat kemampuannya nyata dan dapat diperiksa satu per satu.</p>
+        <dl class="kv">
+          <dt>Referensi dokumen baru</dt>
+          <dd>Membaca daftar dokumen terkendali, mengambil nomor bebas berikutnya pada serinya, memetakan klausul ISO 45001, ISO 14001, ISO 9001, dan SMK3 PP 50/2012 dari tabel pemetaan kata kunci, lalu menyusun kerangka isi sesuai tingkat dokumennya. Catatan yang membenarkan penerbitannya diambil dari insiden, temuan audit, CAPA, dan register risiko yang benar-benar ada.</dd>
+          <dt>Pencarian dokumen ISO</dt>
+          <dd>Menelusuri dokumen internal empat tingkat, sertifikat dan izin eksternal, serta dua belas elemen SMK3.</dd>
+          <dt>Pencarian seluruh data</dt>
+          <dd>Satu indeks atas insiden, laporan bahaya, observasi perilaku, inspeksi, checklist, izin kerja dan JSEA, register risiko, CAPA, audit dan temuannya, parameter lingkungan, dokumen, pelatihan dan sertifikasi personel, kegiatan, KPI, notifikasi, kinerja antarpabrik, serta pengguna dan hak aksesnya. Seluruh kata yang diketik harus muncul pada catatan yang sama.</dd>
+          <dt>Ringkasan eksekutif</dt>
+          <dd>Mengenali topik dari kalimat permintaan, lalu menghitung ulang setiap angkanya dari data modul dan menyusun bagian mana yang perlu keputusan manajemen.</dd>
+        </dl>
+        <div class="tile-note" style="margin-top:var(--space-5)">Yang tidak dikerjakannya: mengarang jawaban. Bila sesuatu tidak ada di dalam data, asisten mengatakan tidak ada — bukan menebak. Untuk sistem QHSE sifat ini lebih berharga daripada kemampuan menjawab bebas, karena ringkasan yang dibawa ke rapat manajemen harus dapat dipertanggungjawabkan sampai ke baris datanya.</div>` },
     'dokumen-baru': { title: 'Terbitkan Dokumen Internal', sub: 'Nomor, revisi, pemilik, dan tanggal tinjau wajib',
       body: `<div class="field"><label for="d-level">Tingkat dokumen <span class="req">*</span></label>
         <select id="d-level"><option>L1 — Manual &amp; Kebijakan</option><option>L2 — Prosedur</option><option selected>L3 — Instruksi Kerja</option><option>L4 — Formulir &amp; Rekaman</option></select></div>
@@ -2420,13 +2437,365 @@
     </div>`;
   }
 
+  /* ───────── Modul 21 · Asisten QHSE ─────────
+     Mesinnya ada di ai.js; di sini hanya tampilannya. Empat mode dipisah tegas
+     supaya jelas apa yang sedang dikerjakan asisten, bukan satu kotak serba bisa
+     yang menyembunyikan asal jawabannya. */
+
+  const AI_MODE = [
+    { id: 'referensi', label: 'Referensi Dokumen Baru', icon: 'docint' },
+    { id: 'dokumen', label: 'Cari di Dokumen ISO', icon: 'search' },
+    { id: 'semua', label: 'Cari Seluruh Data', icon: 'search' },
+    { id: 'ringkas', label: 'Ringkasan Eksekutif', icon: 'exec' }
+  ];
+
+  let aiMode = 'semua';
+  let aiQ = '';
+  let aiJenis = 'Prosedur';
+
+  const aiEsc = (s) => KGAI.esc(s);
+  /* Kalimat yang dirakit dari angka tidak dapat lewat kamus i18n; ditulis dwibahasa di tempatnya. */
+  const aiL = (id, en) => KGAI.L(id, en);
+
+  /* Asisten tidak boleh menjadi pintu belakang: catatan dari modul yang tidak
+     diizinkan bagi peran yang sedang masuk disaring keluar sebelum ditampilkan,
+     persis seperti modulnya sendiri disembunyikan dari sidebar. */
+  const aiBoleh = (rute) => allowed(rute);
+
+  function aiChips(list) {
+    return `<div class="ai-chips">${list.map(c =>
+      `<button type="button" class="ai-chip" data-aiq="${aiEsc(c)}">${aiEsc(c)}</button>`).join('')}</div>`;
+  }
+
+  /* ── Hasil: pencarian ── */
+  function aiHasilCari(lingkup) {
+    const r = KGAI.cari(aiQ, lingkup);
+    const apa = lingkup === 'iso'
+      ? aiL('dokumen sistem & kepatuhan', 'system & compliance documents')
+      : aiL('seluruh catatan sistem', 'every record in the system');
+
+    if (!r.terms.length) return `<div class="ai-empty">${I(icon.search, 22)}
+      <b>Ketik kata yang dicari</b>
+      <p>${aiL(`Pencarian menelusuri ${apa}. Kata sambung diabaikan, dan potongan kata pun ikut ditemukan — “kondens” sudah cukup untuk menemukan “kondensat”.`,
+               `The search covers ${apa}. Connecting words are ignored, and partial words are found too — “kondens” is already enough to find “kondensat”.`)}</p></div>`;
+
+    const grup = r.grup.filter(g => aiBoleh(g.rute));
+    const total = grup.reduce((a, g) => a + g.hits.length, 0);
+    const disaring = r.total - total;
+
+    if (!total) return `<div class="ai-empty">${I(icon.search, 22)}
+      <b>${aiL(`Tidak ada yang cocok dengan “${aiEsc(aiQ)}”`, `Nothing matches “${aiEsc(aiQ)}”`)}</b>
+      <p>${disaring
+        ? aiL(`${disaring} catatan cocok tetapi berada di modul yang tidak terbuka untuk peran Anda.`,
+              `${disaring} records match but sit in modules your role cannot open.`)
+        : aiL('Seluruh kata yang Anda ketik harus muncul pada catatan yang sama. Coba kurangi kata, atau cari nomor catatannya langsung.',
+              'Every word you type must appear in the same record. Try fewer words, or search the record number directly.')}</p></div>`;
+
+    return `
+      <div class="ai-count">${aiL(`${total} catatan cocok di ${grup.length} modul`, `${total} records match across ${grup.length} modules`)}
+        <span class="ai-terms">${r.terms.map(t => `<span class="ai-term">${aiEsc(t)}</span>`).join('')}</span></div>
+      ${disaring ? `<div class="tile-note" style="margin-bottom:var(--space-5)">${aiL(
+        `${disaring} catatan lain juga cocok, tetapi berada di modul yang tidak terbuka untuk peran Anda dan sengaja tidak ditampilkan.`,
+        `${disaring} further records also match, but sit in modules your role cannot open and are deliberately not shown.`)}</div>` : ''}
+      ${grup.map(g => `
+        <section class="ai-group">
+          <div class="ai-group-head">
+            <h3>${g.modul}</h3>
+            <span class="sub">${aiL(`${g.hits.length} catatan`, `${g.hits.length} records`)}</span>
+            <button class="btn btn--ghost btn--sm" data-goto="${g.rute}">Buka modul</button>
+          </div>
+          ${g.hits.map(h => aiKartuHit(h)).join('')}
+        </section>`).join('')}`;
+  }
+
+  function aiKartuHit(h) {
+    const r = h.rec;
+    /* Catatan yang sudah punya halaman rincian dibuka lewat jalur yang sama dengan
+       modulnya, supaya isinya persis sama dari mana pun dibuka. */
+    const buka = r.detail
+      ? `data-detail="${r.detail}" tabindex="0" role="button"`
+      : infoAttr({
+          title: r.judul,
+          sub: `${r.modul}${r.id ? ' · ' + r.id : ''}`,
+          body: kv(r.meta.map(m => [m[0], String(m[1])])) +
+                foot(aiL(`Catatan ini ditemukan lewat Asisten QHSE. Seluruh isinya berasal dari modul ${r.modul} tanpa perubahan.`,
+                         `This record was found through the QHSE Assistant. Its contents come from the ${r.modul} module unchanged.`)),
+          goto: r.rute, gotoLabel: aiL('Buka ' + r.modul, 'Open ' + r.modul)
+        });
+    return `
+      <article class="ai-hit is-clickable" ${buka}>
+        <div class="ai-hit-top">
+          ${r.id ? `<span class="mono mono--id">${aiEsc(r.id)}</span>` : ''}
+          ${r.badge ? chip(aiEsc(r.badge), r.nada) : ''}
+        </div>
+        <div class="ai-hit-title">${aiEsc(r.judul)}</div>
+        <div class="ai-hit-snip">${h.cuplik}</div>
+      </article>`;
+  }
+
+  /* ── Hasil: referensi dokumen baru ── */
+  function aiHasilReferensi() {
+    if (!aiQ.trim()) return `<div class="ai-empty">${I(icon.docint, 22)}
+      <b>Sebutkan topik dokumennya</b>
+      <p>Contoh: “Tanggap Darurat Kebakaran Gudang”, “Pengelolaan Limbah B3”, atau “Pembuangan Kondensat Oven”. Asisten menyusun nomor, klausul acuan, dan kerangka isinya dari daftar dokumen yang sudah ada.</p></div>`;
+
+    const r = KGAI.referensi(aiJenis, aiQ);
+    const pemicu = r.pemicu.filter(p => aiBoleh(p.rute));
+    const std = {};
+    r.klausul.forEach(k => { (std[k.standar] = std[k.standar] || []).push(k); });
+
+    return `
+      <div class="ai-doc-head">
+        <div>
+          <div class="label-caps">USULAN DOKUMEN BARU</div>
+          <h3>${aiEsc(r.judulUsulan)}</h3>
+        </div>
+        <div class="ai-doc-no"><span class="mono">${r.nomor}</span><span class="lbl">Revisi ${r.rev}</span></div>
+      </div>
+
+      ${kv([
+        ['Tingkat dokumen', `L${r.level} — ${r.jenis}`],
+        ['Nomor terusulkan', `<span class="mono mono--id">${r.nomor}</span> ${aiL(
+          `— nomor bebas berikutnya pada seri ${r.nomor.split('-')[0]}`,
+          `— the next free number in the ${r.nomor.split('-')[0]} series`)}`],
+        ['Pemilik dokumen', r.pemilik],
+        ['Pengesah', r.pengesah],
+        ['Tanggal berlaku', `<span class="mono">${r.terbit}</span>`],
+        ['Tinjau ulang', `<span class="mono">${r.tinjau}</span> ${aiL('— satu tahun, tidak boleh dikosongkan', '— one year, must never be left empty')}`],
+        ['Distribusi', r.distribusi],
+        ['Retensi rekaman', r.retensi]
+      ])}
+
+      <section class="section">
+        <div class="section-head"><h2>Klausul yang dijawab</h2><span class="sub">${aiL(`${r.klausul.length} klausul dari ${Object.keys(std).length} standar`,
+          `${r.klausul.length} clauses from ${Object.keys(std).length} standards`)}</span></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Standar</th><th>Klausul</th><th>Judul klausul</th></tr></thead>
+          <tbody>${r.klausul.map(k => `<tr ${infoAttr({
+            title: `${k.standar} — ${k.klausul}`,
+            sub: k.judul,
+            body: kv([
+              ['Standar', k.standar], ['Klausul', k.klausul], ['Judul', k.judul],
+              ['Dokumen yang menjawab', `<span class="mono mono--id">${r.nomor}</span> ${aiEsc(r.judulUsulan)}`]
+            ]) + foot('Klausul diambil dari tabel pemetaan kata kunci di dalam asisten, bukan disimpulkan sendiri. Bila topik dokumen menyentuh bidang lain, tambahkan klausulnya secara manual saat penyusunan.')
+          })}>
+            <td>${k.standar}</td><td class="mono">${k.klausul}</td><td>${k.judul}</td></tr>`).join('')}</tbody>
+        </table></div>
+      </section>
+
+      <section class="section">
+        <div class="section-head"><h2>Kerangka isi</h2><span class="sub">${aiL(`${r.kerangka.length} bagian wajib`, `${r.kerangka.length} required sections`)}</span></div>
+        <ol class="ai-outline">${r.kerangka.map(s => `<li>
+          <b>${aiEsc(s[0])}</b>
+          <span>${aiEsc(s[1])}</span>
+        </li>`).join('')}</ol>
+      </section>
+
+      ${pemicu.length ? `
+      <section class="section">
+        <div class="section-head"><h2>Catatan yang membenarkan penerbitannya</h2>
+          <span class="sub">${aiL(`${pemicu.length} catatan dari sistem`, `${pemicu.length} records from the system`)}</span></div>
+        <div class="ai-refs">${pemicu.map(p => {
+          const buka = p.detail ? `data-detail="${p.detail}" tabindex="0" role="button"` : `data-goto="${p.rute}"`;
+          return `<div class="ai-ref is-clickable" ${buka}>
+            <span class="mono mono--id">${aiEsc(p.id)}</span>
+            <span class="ai-ref-t">${aiEsc(p.judul)}</span>
+            <span class="ai-ref-m">${p.modul}</span>
+          </div>`;
+        }).join('')}</div>
+        <div class="tile-note" style="margin-top:var(--space-4)">Dokumen sistem yang tidak dapat menunjuk satu pun catatan sebagai alasan terbitnya biasanya tidak akan dipakai di lapangan.</div>
+      </section>` : ''}
+
+      <div class="grid grid--2">
+        <div class="card">
+          <div class="label-caps">ACUAN INTERNAL TERKAIT</div>
+          ${r.acuanInternal.length
+            ? `<div class="ai-refs">${r.acuanInternal.map(d => `<div class="ai-ref is-clickable" data-goto="docint">
+                <span class="mono mono--id">${d.id}</span><span class="ai-ref-t">${aiEsc(d.judul)}</span>
+                <span class="ai-ref-m">L${d.level} · <span>${d.status}</span></span></div>`).join('')}</div>`
+            : '<p class="ai-none">Tidak ada dokumen internal yang beririsan. Periksa sekali lagi sebelum menerbitkan — dokumen yang benar-benar berdiri sendiri jarang ada.</p>'}
+        </div>
+        <div class="card">
+          <div class="label-caps">ACUAN EKSTERNAL TERKAIT</div>
+          ${r.acuanEksternal.length
+            ? `<div class="ai-refs">${r.acuanEksternal.map(d => `<div class="ai-ref is-clickable" data-goto="docext">
+                <span class="mono mono--id">${d.id}</span><span class="ai-ref-t">${aiEsc(d.judul)}</span>
+                <span class="ai-ref-m">${d.penerbit}</span></div>`).join('')}</div>`
+            : '<p class="ai-none">Tidak ada sertifikat atau izin yang langsung terkait topik ini.</p>'}
+        </div>
+      </div>
+
+      <div class="tile-note" style="margin-top:var(--space-5)">Yang disusun asisten adalah kerangka dan acuannya, bukan isinya. Kalimat prosedur tetap ditulis oleh pemilik proses, karena hanya dia yang tahu bagaimana pekerjaan itu benar-benar dijalankan.</div>`;
+  }
+
+  /* ── Hasil: ringkasan eksekutif ── */
+  function aiHasilRingkas() {
+    if (!aiQ.trim()) return `<div class="ai-empty">${I(icon.exec, 22)}
+      <b>Sebutkan ringkasan yang Anda butuhkan</b>
+      <p>Tulis dengan kalimat biasa. Asisten mengenali topiknya, lalu menghitung ulang angkanya dari data modul — bukan menyalin ringkasan yang sudah jadi.</p></div>`;
+
+    const s0 = KGAI.ringkas(aiQ);
+    const bagian = s0.bagian.filter(b => aiBoleh(b.rute));
+
+    if (!bagian.length) return `<div class="ai-empty">${I(icon.exec, 22)}
+      <b>Tidak ada bidang yang terbuka untuk peran Anda</b>
+      <p>Permintaan ini menyentuh modul yang tidak diizinkan bagi peran yang sedang masuk. Mintakan ringkasannya kepada QHSE atau Plant Manager.</p></div>`;
+
+    /* Angka utama dan judul disusun ulang dari bagian yang lolos saringan peran,
+       supaya tidak ada ubin yang menampilkan angka dari modul yang tidak terbuka. */
+    const angka = [];
+    bagian.forEach(b => b.angka.forEach(a => { if (angka.length < 6) angka.push(a); }));
+    const s = {
+      permintaan: s0.permintaan, lingkup: s0.lingkup, angka: angka, bagian: bagian,
+      judul: bagian.length === s0.bagian.length && s0.bagian.length > 3
+        ? 'Kinerja QHSE Menyeluruh' : bagian.map(b => b.judul).join(', '),
+      keputusan: s0.keputusan.filter(k => aiBoleh(k.rute)),
+      rekomendasi: s0.rekomendasi.filter(a => aiBoleh(a.rute))
+    };
+
+    return `
+      <div class="ai-sum-head">
+        <div class="label-caps">RINGKASAN EKSEKUTIF</div>
+        <h3>${aiEsc(s.judul)}</h3>
+        <p>${s.lingkup} · ${aiL(`disusun dari ${s.bagian.length} bidang atas permintaan “${aiEsc(s.permintaan)}”`,
+          `built from ${s.bagian.length} areas in answer to “${aiEsc(s.permintaan)}”`)}</p>
+      </div>
+
+      <div class="grid grid--3">
+        ${s.angka.map(a => `<article class="card tile is-clickable" ${infoAttr({
+          title: a.label, sub: `${D.plant} · ${D.periode}`,
+          body: `<div class="info-num">${a.nilai}${a.satuan ? `<span class="tile-unit">${a.satuan}</span>` : ''}</div>`
+            + kv([['Angka', `${a.nilai}${a.satuan || ''}`], ['Cakupan', a.note],
+                  ['Periode', `${D.periode} · ${D.plant}`]])
+            + foot('Angka dihitung ulang dari data modul setiap kali ringkasan disusun, jadi selalu sama dengan yang terlihat di modulnya.')
+        })}>
+          <div class="tile-head"><span class="label-caps">${a.label}</span></div>
+          <div class="tile-num">${a.nilai}${a.satuan ? `<span class="tile-unit">${a.satuan}</span>` : ''}</div>
+          <div class="tile-note">${a.note}</div>
+        </article>`).join('')}
+      </div>
+
+      ${s.bagian.map(b => `
+        <section class="section">
+          <div class="section-head"><h2>${b.judul}</h2>
+            <button class="btn btn--ghost btn--sm" data-goto="${b.rute}">Buka modul</button></div>
+          <ul class="ai-points">${b.poin.map(p => `<li>${p}</li>`).join('')}</ul>
+          ${b.tabel && b.tabel.rows.length ? `<div class="table-wrap"><table>
+            <thead><tr>${b.tabel.head.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+            <tbody>${b.tabel.rows.map(row => `<tr ${infoAttr({
+              title: String(row[1] || row[0]),
+              sub: b.judul,
+              body: kv(b.tabel.head.map((h, i) => [h, String(row[i] == null ? '—' : row[i])]))
+                + foot(aiL('Baris ini berasal dari bagian ' + b.judul.toLowerCase() + '. Buka modulnya untuk melihat catatan lengkapnya.',
+                           'This row comes from the ' + b.judul.toLowerCase() + ' section. Open the module to see the full record.')),
+              goto: b.rute, gotoLabel: 'Buka modul'
+            })}>${row.map((c, i) => `<td${i === 0 ? ' class="mono mono--id"' : ''}>${aiEsc(c)}</td>`).join('')}</tr>`).join('')}</tbody>
+          </table></div>` : ''}
+        </section>`).join('')}
+
+      ${s.keputusan.length ? `
+      <section class="section">
+        <div class="section-head"><h2>Perlu keputusan manajemen</h2>
+          <span class="sub">${aiL(`${s.keputusan.length} hal yang tidak dapat diselesaikan di tingkat pabrik`,
+            `${s.keputusan.length} items the plant cannot settle on its own`)}</span></div>
+        <div class="grid grid--2">${s.keputusan.map(k => `<div class="card ai-decision is-clickable" ${infoAttr({
+          title: k.judul, sub: 'Perlu keputusan manajemen',
+          body: kv([['Mengapa naik ke manajemen', k.alasan], ['Pilihan yang tersedia', k.opsi]])
+            + foot('Papan eksekutif tanpa bagian ini hanya memindahkan angka, tidak memindahkan keputusan.'),
+          goto: k.rute, gotoLabel: 'Buka modul'
+        })}>
+          <div class="ai-dec-title">${aiEsc(k.judul)}</div>
+          <p>${aiEsc(k.alasan)}</p>
+          <div class="ai-dec-opt"><b>Pilihan</b> ${aiEsc(k.opsi)}</div>
+        </div>`).join('')}</div>
+      </section>` : ''}
+
+      <section class="section">
+        <div class="section-head"><h2>Tindakan yang disarankan</h2>
+          <span class="sub">berurutan menurut akibat bila ditunda</span></div>
+        <ol class="ai-actions">${s.rekomendasi.map(a => `<li>
+          <span>${aiEsc(a.teks)}</span>
+          <button class="btn btn--ghost btn--sm" data-goto="${a.rute}">${a.sumber}</button>
+        </li>`).join('')}</ol>
+      </section>
+
+      <div class="tile-note" style="margin-top:var(--space-5)">Seluruh angka pada ringkasan ini dihitung dari modulnya masing-masing saat ringkasan disusun. Tidak ada angka yang diketik tangan, dan tidak ada kalimat yang dikarang di luar data — itulah sebabnya ringkasan ini dapat dibawa ke rapat dan ditelusuri sampai ke barisnya.</div>`;
+  }
+
+  function aiHasil() {
+    if (aiMode === 'referensi') return aiHasilReferensi();
+    if (aiMode === 'ringkas') return aiHasilRingkas();
+    return aiHasilCari(aiMode === 'dokumen' ? 'iso' : 'semua');
+  }
+
+  function viewAi() {
+    const m = AI_MODE.filter(x => x.id === aiMode)[0] || AI_MODE[0];
+    const placeholder = {
+      referensi: 'Topik dokumen — misalnya: Tanggap Darurat Kebakaran Gudang',
+      dokumen: 'Kata yang dicari di dokumen ISO — misalnya: limbah B3',
+      semua: 'Kata, nama, lokasi, atau nomor catatan — misalnya: boiler',
+      ringkas: 'Ringkasan apa yang Anda butuhkan? — misalnya: status CAPA dan temuan audit'
+    }[aiMode];
+    const contoh = {
+      referensi: ['Tanggap Darurat Kebakaran Gudang', 'Pengelolaan Limbah B3', 'Pembuangan Kondensat Oven', 'Izin Kerja Ruang Terbatas'],
+      dokumen: KGAI.contoh.iso,
+      semua: KGAI.contoh.semua,
+      ringkas: KGAI.contoh.ringkas
+    }[aiMode];
+
+    return hero({
+      eyebrow: 'MODUL 21 · ASISTEN QHSE',
+      title: 'Asisten QHSE',
+      desc: 'Satu tempat untuk menyusun referensi dokumen ISO baru, menelusuri kata di seluruh catatan sistem, dan mengubah data menjadi ringkasan yang siap dibawa ke rapat manajemen.',
+      metric: KGAI.jumlahIndeks(),
+      metricLabel: 'catatan terindeks',
+      action: { act: 'ai-cara', icon: 'ai', label: 'Cara Kerja Asisten' }
+    }) + `
+    <div class="page">
+      <div class="ai-modes" role="group" aria-label="Mode asisten">
+        ${AI_MODE.map(x => `<button type="button" class="ai-mode" data-aimode="${x.id}"
+          aria-pressed="${x.id === aiMode}">${I(icon[x.icon], 16)}<span>${x.label}</span></button>`).join('')}
+      </div>
+
+      <form class="ai-ask" id="ai-form" autocomplete="off">
+        ${aiMode === 'referensi' ? `
+          <div class="field ai-jenis">
+            <label for="ai-jenis">Jenis dokumen</label>
+            <!-- value sengaja ditulis eksplisit: tr() menerjemahkan teks pilihan,
+                 dan tanpa value kunci jenis dokumen ikut berubah saat bahasa Inggris dipilih. -->
+            <select id="ai-jenis">${KGAI.jenisDokumen.map(j =>
+              `<option value="${j}"${j === aiJenis ? ' selected' : ''}>${j}</option>`).join('')}</select>
+          </div>` : ''}
+        <div class="field ai-field">
+          <label for="ai-q">${m.label}</label>
+          <input id="ai-q" type="text" value="${aiEsc(aiQ)}" placeholder="${aiEsc(placeholder)}">
+        </div>
+        <button type="submit" class="btn btn--primary ai-go">
+          ${I(icon[aiMode === 'referensi' ? 'docint' : aiMode === 'ringkas' ? 'exec' : 'search'], 17)}
+          ${aiMode === 'referensi' ? 'Susun Referensi' : aiMode === 'ringkas' ? 'Susun Ringkasan' : 'Cari'}
+        </button>
+      </form>
+
+      ${aiChips(contoh)}
+
+      <div id="ai-result" class="ai-result">${aiHasil()}</div>
+
+      <div class="card ai-honest">
+        <div class="label-caps">BATAS YANG PERLU DIKETAHUI</div>
+        <p>${aiL(
+          `Asisten ini berjalan sepenuhnya di dalam peramban, tanpa server dan tanpa model bahasa. Yang dikerjakannya nyata — indeks pencarian ${KGAI.jumlahIndeks()} catatan, penomoran dokumen, pemetaan klausul, dan perhitungan ringkasan — tetapi semuanya berasal dari aturan tertulis yang dijalankan atas data purwarupa. Akibatnya disengaja: asisten tidak pernah mengarang, dan setiap angka yang ditampilkan dapat ditelusuri kembali ke catatan asalnya. Pada sistem sebenarnya lapisan ini tetap dipakai sebagai penyedia fakta; model bahasa hanya merangkai kalimat dari fakta yang sudah terkunci di sini.`,
+          `This assistant runs entirely inside the browser, with no server and no language model. What it does is real — a search index over ${KGAI.jumlahIndeks()} records, document numbering, clause mapping and summary arithmetic — but all of it comes from rules written into the code and run over the prototype data. The consequence is deliberate: the assistant never invents anything, and every figure it shows can be traced back to the record it came from. In a live system this layer still serves the facts; a language model would only phrase sentences from facts already locked down here.`)}</p>
+      </div>
+    </div>`;
+  }
+
   /* ───────── Render ───────── */
   const VIEWS = { exec: viewExec, dashboard: viewDashboard, incident: viewIncident,
     hazard: viewHazard, bbs: viewBbs, inspection: viewInspection, checklist: viewChecklist,
     permit: viewPermit, risk: viewRisk, capa: viewCapa, audit: viewAudit,
     environment: viewEnvironment, docint: viewDocInt, docext: viewDocExt,
     training: viewTraining, activity: viewActivity, kpi: viewKpi, notif: viewNotif,
-    settings: viewSettings, users: viewUsers };
+    settings: viewSettings, users: viewUsers, ai: viewAi };
 
   let current = 'dashboard';
   let session = null;
@@ -2675,11 +3044,39 @@
 
   /* ───────── Peristiwa ───────── */
 
+  /* Asisten memperbarui panel hasilnya saja, bukan seluruh halaman, supaya
+     kotak isian tidak kehilangan isi dan fokusnya saat hasil berganti. */
+  function aiJalankan() {
+    const q = document.getElementById('ai-q');
+    const j = document.getElementById('ai-jenis');
+    if (q) aiQ = q.value;
+    if (j) aiJenis = j.value;
+    const host = document.getElementById('ai-result');
+    if (host) host.innerHTML = KGI18N.tr(aiHasil());
+  }
+
   document.addEventListener('submit', function (e) {
-    if (e.target && e.target.id === 'login-form') { e.preventDefault(); attemptLogin(); }
+    if (!e.target) return;
+    if (e.target.id === 'login-form') { e.preventDefault(); attemptLogin(); return; }
+    if (e.target.id === 'ai-form') { e.preventDefault(); aiJalankan(); }
   });
 
   document.addEventListener('click', function (e) {
+    const aiM = e.target.closest('[data-aimode]');
+    if (aiM) {
+      if (aiM.dataset.aimode !== aiMode) { aiMode = aiM.dataset.aimode; aiQ = ''; render(); }
+      const box = document.getElementById('ai-q'); if (box) box.focus();
+      return;
+    }
+
+    const aiC = e.target.closest('[data-aiq]');
+    if (aiC) {
+      const box = document.getElementById('ai-q');
+      if (box) { box.value = aiC.dataset.aiq; box.focus(); }
+      aiJalankan();
+      return;
+    }
+
     const langBtn = e.target.closest('[data-lang]');
     if (langBtn) { applyLang(langBtn.dataset.lang); return; }
 

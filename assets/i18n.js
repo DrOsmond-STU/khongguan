@@ -552,6 +552,480 @@ window.KGI18N = (function () {
     'Kirim Undangan': 'Send Invitation',
     'Modul': 'Module', 'Baca': 'View', 'Isi': 'Create', 'Verifikasi': 'Verify', 'Kelola': 'Administer',
 
+    /* ── Asisten QHSE: sisa label ── */
+    "Ringkasan Eksekutif": "Executive Summary",
+    "Ringkasan eksekutif": "Executive summary",
+    "Dalam Revisi": "Under Revision",
+    "Pilihan": "Options",
+
+    /* ── Asisten QHSE: label tabel & isian ── */
+    "Cari": "Search",
+    "Tinjau ulang": "Review date",
+    "Distribusi": "Distribution",
+    "Standar": "Standard",
+    "Klausul": "Clause",
+    "Keparahan": "Severity",
+    "Tindakan": "Action",
+    "Dokumen": "Document",
+    "Sisa": "Remaining",
+    "Awal": "Initial",
+    "Nilai": "Value",
+    "Pelatihan": "Training",
+    "Indikator": "Indicator",
+    "Insiden": "Incident",
+
+    /* ── Asisten QHSE ── */
+    "MODUL 21 · ASISTEN QHSE":
+      "MODULE 21 · QHSE ASSISTANT",
+    "Asisten QHSE":
+      "QHSE Assistant",
+    "Satu tempat untuk menyusun referensi dokumen ISO baru, menelusuri kata di seluruh catatan sistem, dan mengubah data menjadi ringkasan yang siap dibawa ke rapat manajemen.":
+      "One place to build a reference for a new ISO document, search every record in the system, and turn data into a summary ready for the management meeting.",
+    "catatan terindeks":
+      "records indexed",
+    "Cara Kerja Asisten":
+      "How the Assistant Works",
+    "Mode asisten":
+      "Assistant mode",
+    "Referensi Dokumen Baru":
+      "New Document Reference",
+    "Cari di Dokumen ISO":
+      "Search ISO Documents",
+    "Cari Seluruh Data":
+      "Search All Data",
+    "Susun Referensi":
+      "Build Reference",
+    "Susun Ringkasan":
+      "Build Summary",
+    "Jenis dokumen":
+      "Document type",
+    "Ketik kata yang dicari":
+      "Type what you are looking for",
+    "Sebutkan topik dokumennya":
+      "Name the document topic",
+    "Contoh: “Tanggap Darurat Kebakaran Gudang”, “Pengelolaan Limbah B3”, atau “Pembuangan Kondensat Oven”. Asisten menyusun nomor, klausul acuan, dan kerangka isinya dari daftar dokumen yang sudah ada.":
+      "For example: “Warehouse Fire Emergency Response”, “Hazardous Waste Management”, or “Oven Condensate Draining”. The assistant builds the number, the clauses it answers, and the content outline from the register that already exists.",
+    "Sebutkan ringkasan yang Anda butuhkan":
+      "Say which summary you need",
+    "Tulis dengan kalimat biasa. Asisten mengenali topiknya, lalu menghitung ulang angkanya dari data modul — bukan menyalin ringkasan yang sudah jadi.":
+      "Write it in plain sentences. The assistant recognises the topic, then recomputes the figures from the module data — it does not copy a summary written earlier.",
+    "Tidak ada bidang yang terbuka untuk peran Anda":
+      "No area is open to your role",
+    "Permintaan ini menyentuh modul yang tidak diizinkan bagi peran yang sedang masuk. Mintakan ringkasannya kepada QHSE atau Plant Manager.":
+      "This request touches modules the signed-in role may not open. Ask QHSE or the Plant Manager for the summary.",
+    "Topik dokumen — misalnya: Tanggap Darurat Kebakaran Gudang":
+      "Document topic — for example: Warehouse Fire Emergency Response",
+    "Kata yang dicari di dokumen ISO — misalnya: limbah B3":
+      "Word to find in ISO documents — for example: limbah B3",
+    "Kata, nama, lokasi, atau nomor catatan — misalnya: boiler":
+      "Word, name, location or record number — for example: boiler",
+    "Ringkasan apa yang Anda butuhkan? — misalnya: status CAPA dan temuan audit":
+      "Which summary do you need? — for example: CAPA status and audit findings",
+    "USULAN DOKUMEN BARU":
+      "PROPOSED NEW DOCUMENT",
+    "Nomor terusulkan":
+      "Proposed number",
+    "Pengesah":
+      "Approver",
+    "Tanggal berlaku":
+      "Effective date",
+    "Retensi rekaman":
+      "Record retention",
+    "Klausul yang dijawab":
+      "Clauses answered",
+    "Judul klausul":
+      "Clause title",
+    "Kerangka isi":
+      "Content outline",
+    "Catatan yang membenarkan penerbitannya":
+      "Records that justify issuing it",
+    "ACUAN INTERNAL TERKAIT":
+      "RELATED INTERNAL REFERENCES",
+    "ACUAN EKSTERNAL TERKAIT":
+      "RELATED EXTERNAL REFERENCES",
+    "Dokumen sistem yang tidak dapat menunjuk satu pun catatan sebagai alasan terbitnya biasanya tidak akan dipakai di lapangan.":
+      "A system document that cannot point to a single record as the reason it exists is usually not used in the field.",
+    "Tidak ada dokumen internal yang beririsan. Periksa sekali lagi sebelum menerbitkan — dokumen yang benar-benar berdiri sendiri jarang ada.":
+      "No internal document overlaps this topic. Check once more before issuing — a document that genuinely stands alone is rare.",
+    "Tidak ada sertifikat atau izin yang langsung terkait topik ini.":
+      "No certificate or permit relates directly to this topic.",
+    "Yang disusun asisten adalah kerangka dan acuannya, bukan isinya. Kalimat prosedur tetap ditulis oleh pemilik proses, karena hanya dia yang tahu bagaimana pekerjaan itu benar-benar dijalankan.":
+      "What the assistant builds is the outline and its references, not the content. The procedure text is still written by the process owner, because only they know how the work is actually done.",
+    "Seluruh kepala bagian, papan dokumen area, dan salinan terkendali di ruang QHSE":
+      "All department heads, area document boards, and the controlled copy in the QHSE room",
+    "Area pelaksana terkait dan papan dokumen mesin/area":
+      "The performing area and its machine/area document board",
+    "Supervisor Area terkait":
+      "Supervisor of the relevant area",
+    "Permanen":
+      "Permanent",
+    "3 tahun setelah digantikan":
+      "3 years after superseded",
+    "5 tahun sejak pengisian":
+      "5 years from completion",
+    "Insiden, ketidaksesuaian dan tindakan korektif":
+      "Incident, nonconformity and corrective action",
+    "Pemantauan, pengukuran, analisis dan evaluasi kinerja":
+      "Monitoring, measurement, analysis and performance evaluation",
+    "Pelaporan dan Perbaikan Kekurangan":
+      "Reporting and Correcting Deficiencies",
+    "Identifikasi bahaya dan penilaian risiko serta peluang":
+      "Hazard identification and assessment of risks and opportunities",
+    "Menghilangkan bahaya dan mengurangi risiko K3":
+      "Eliminating hazards and reducing OHS risks",
+    "Aspek lingkungan":
+      "Environmental aspects",
+    "Keamanan Bekerja Berdasarkan SMK3":
+      "Safe Working Based on SMK3",
+    "Kesiapsiagaan dan tanggap darurat":
+      "Emergency preparedness and response",
+    "Kesiagaan dan tanggap darurat":
+      "Emergency preparedness and response",
+    "Perencanaan dan pengendalian operasi":
+      "Operational planning and control",
+    "Evaluasi penaatan":
+      "Evaluation of compliance",
+    "Pengelolaan Material dan Perpindahannya":
+      "Material Handling and Movement",
+    "Pengadaan, kontraktor dan alih daya":
+      "Procurement, contractors and outsourcing",
+    "Kompetensi":
+      "Competence",
+    "Kepedulian":
+      "Awareness",
+    "Pengembangan Keterampilan dan Kemampuan":
+      "Developing Skills and Capability",
+    "Pembelian dan Pengendalian Produk":
+      "Purchasing and Product Control",
+    "Audit internal":
+      "Internal audit",
+    "Pemeriksaan SMK3":
+      "SMK3 Inspection",
+    "Tinjauan manajemen":
+      "Management review",
+    "Pembangunan dan Pemeliharaan Komitmen":
+      "Building and Maintaining Commitment",
+    "Informasi terdokumentasi":
+      "Documented information",
+    "Pengendalian Dokumen":
+      "Document Control",
+    "Konsultasi dan partisipasi pekerja":
+      "Consultation and participation of workers",
+    "Komunikasi":
+      "Communication",
+    "Standar Pemantauan":
+      "Monitoring Standards",
+    "Pengumpulan dan Penggunaan Data":
+      "Data Collection and Use",
+    "Pengendalian produksi dan penyediaan jasa":
+      "Control of production and service provision",
+    "Pengendalian ketidaksesuaian keluaran":
+      "Control of nonconforming outputs",
+    "Peninjauan Perancangan dan Kontrak":
+      "Design and Contract Review",
+    "Manajemen perubahan":
+      "Management of change",
+    "Penentuan peraturan perundangan dan persyaratan lain":
+      "Determination of legal and other requirements",
+    "Kewajiban penaatan":
+      "Compliance obligations",
+    "Strategi Pendokumentasian":
+      "Documentation Strategy",
+    "Kebijakan K3":
+      "OHS policy",
+    "Kebijakan lingkungan":
+      "Environmental policy",
+    "Sasaran K3 dan perencanaan pencapaiannya":
+      "OHS objectives and planning to achieve them",
+    "Pernyataan kebijakan":
+      "Policy statement",
+    "Satu halaman, kalimat aktif, ditandatangani pimpinan tertinggi lokasi.":
+      "One page, active voice, signed by the most senior person on site.",
+    "Ruang lingkup penerapan":
+      "Scope of application",
+    "Lokasi, proses, dan pihak yang terikat — termasuk kontraktor dan tamu.":
+      "Sites, processes and parties bound by it — contractors and visitors included.",
+    "Komitmen manajemen":
+      "Management commitment",
+    "Penyediaan sumber daya, pemenuhan peraturan, perbaikan berkelanjutan.":
+      "Provision of resources, legal compliance, continual improvement.",
+    "Kewajiban dan hak pekerja":
+      "Worker duties and rights",
+    "Termasuk hak menghentikan pekerjaan yang tidak aman.":
+      "Including the right to stop unsafe work.",
+    "Kerangka sasaran":
+      "Objectives framework",
+    "Bagaimana kebijakan diterjemahkan menjadi sasaran terukur.":
+      "How the policy is translated into measurable objectives.",
+    "Komunikasi dan ketersediaan":
+      "Communication and availability",
+    "Cara kebijakan disampaikan ke pekerja dan pihak berkepentingan.":
+      "How the policy reaches workers and interested parties.",
+    "Peninjauan":
+      "Review",
+    "Ditinjau minimal setahun sekali atau saat ada perubahan besar.":
+      "Reviewed at least yearly, or whenever a major change occurs.",
+    "Pengesahan":
+      "Approval",
+    "Nama, jabatan, tanda tangan, tanggal berlaku.":
+      "Name, position, signature, effective date.",
+    "Profil organisasi dan konteks":
+      "Organisation profile and context",
+    "Isu internal dan eksternal, pihak berkepentingan dan kebutuhannya.":
+      "Internal and external issues, interested parties and their needs.",
+    "Ruang lingkup sistem manajemen":
+      "Scope of the management system",
+    "Batas penerapan dan pengecualian beserta pembenarannya.":
+      "Boundaries of application and exclusions with their justification.",
+    "Acuan normatif":
+      "Normative references",
+    "Standar dan peraturan yang diacu.":
+      "Standards and regulations referred to.",
+    "Istilah dan definisi":
+      "Terms and definitions",
+    "Hanya istilah yang dipakai berbeda dari arti umumnya.":
+      "Only terms used differently from their ordinary meaning.",
+    "Kepemimpinan dan kebijakan":
+      "Leadership and policy",
+    "Peran, tanggung jawab, wewenang, dan kebijakan yang berlaku.":
+      "Roles, responsibilities, authorities and the policy in force.",
+    "Perencanaan":
+      "Planning",
+    "Risiko dan peluang, sasaran, dan rencana pencapaian.":
+      "Risks and opportunities, objectives, and plans to achieve them.",
+    "Dukungan":
+      "Support",
+    "Sumber daya, kompetensi, kepedulian, komunikasi, informasi terdokumentasi.":
+      "Resources, competence, awareness, communication, documented information.",
+    "Operasi":
+      "Operation",
+    "Pengendalian operasional dan kesiapsiagaan tanggap darurat.":
+      "Operational control and emergency preparedness.",
+    "Evaluasi kinerja":
+      "Performance evaluation",
+    "Pemantauan, audit internal, tinjauan manajemen.":
+      "Monitoring, internal audit, management review.",
+    "Peningkatan":
+      "Improvement",
+    "Ketidaksesuaian, tindakan korektif, peningkatan berkelanjutan.":
+      "Nonconformity, corrective action, continual improvement.",
+    "Matriks korelasi klausul":
+      "Clause correlation matrix",
+    "Peta klausul standar terhadap prosedur yang menjawabnya.":
+      "A map of standard clauses against the procedures that answer them.",
+    "1. Tujuan":
+      "1. Purpose",
+    "Satu kalimat: hasil apa yang dijamin oleh prosedur ini.":
+      "One sentence: what outcome this procedure guarantees.",
+    "2. Ruang lingkup":
+      "2. Scope",
+    "Proses, area, dan pengecualian yang jelas batasnya.":
+      "Processes, areas and exclusions with clear boundaries.",
+    "3. Acuan normatif":
+      "3. Normative references",
+    "Klausul standar dan peraturan yang mendasari.":
+      "The standard clauses and regulations it rests on.",
+    "4. Definisi":
+      "4. Definitions",
+    "Istilah teknis dan singkatan yang dipakai di dalam prosedur.":
+      "Technical terms and abbreviations used inside the procedure.",
+    "5. Tanggung jawab dan wewenang":
+      "5. Responsibilities and authorities",
+    "Tabel peran — siapa mengerjakan, siapa memverifikasi, siapa mengesahkan.":
+      "A role table — who does it, who verifies, who approves.",
+    "6. Rincian prosedur":
+      "6. Procedure detail",
+    "Urutan langkah dengan pelaku, masukan, keluaran, dan tenggat setiap langkah.":
+      "The sequence of steps with actor, input, output and deadline for each.",
+    "7. Bagan alir":
+      "7. Flowchart",
+    "Diagram satu halaman yang sejalan dengan bagian 6.":
+      "A one-page diagram consistent with section 6.",
+    "8. Rekaman":
+      "8. Records",
+    "Formulir yang dihasilkan, siapa menyimpan, dan berapa lama.":
+      "The forms produced, who keeps them, and for how long.",
+    "9. Lampiran":
+      "9. Attachments",
+    "Formulir, tabel bantu, dan contoh pengisian.":
+      "Forms, helper tables and worked examples.",
+    "10. Riwayat revisi":
+      "10. Revision history",
+    "Nomor revisi, tanggal, ringkasan perubahan, pengesah.":
+      "Revision number, date, summary of changes, approver.",
+    "1. Tujuan dan lingkup":
+      "1. Purpose and scope",
+    "Pekerjaan spesifik yang diatur, di mesin atau area mana.":
+      "The specific job it governs, on which machine or area.",
+    "2. Kualifikasi pelaksana":
+      "2. Operator qualification",
+    "Pelatihan atau sertifikat yang wajib dimiliki sebelum mengerjakan.":
+      "Training or certificates required before doing the work.",
+    "3. Alat dan bahan":
+      "3. Tools and materials",
+    "Daftar alat kerja, alat ukur, dan bahan yang dipakai.":
+      "The work tools, measuring instruments and materials used.",
+    "4. APD wajib":
+      "4. Mandatory PPE",
+    "Ditulis eksplisit per langkah, bukan sebagai daftar umum.":
+      "Written explicitly per step, not as a general list.",
+    "5. Bahaya dan pengendalian":
+      "5. Hazards and controls",
+    "Diambil dari JSEA atau register risiko yang relevan.":
+      "Taken from the relevant JSEA or risk register entry.",
+    "6. Langkah kerja":
+      "6. Work steps",
+    "Urutan bernomor, kalimat perintah, satu tindakan per baris.":
+      "Numbered sequence, imperative sentences, one action per line.",
+    "7. Kriteria hasil":
+      "7. Acceptance criteria",
+    "Bagaimana pelaksana tahu langkahnya sudah benar.":
+      "How the operator knows the step was done correctly.",
+    "8. Keadaan tidak normal":
+      "8. Abnormal conditions",
+    "Apa yang dihentikan, siapa dihubungi, dan batas kewenangannya.":
+      "What is stopped, who is called, and the limits of authority.",
+    "9. Rekaman":
+      "9. Records",
+    "Checklist atau logsheet yang harus diisi setelah pekerjaan.":
+      "The checklist or logsheet to be completed after the work.",
+    "Kepala formulir":
+      "Form header",
+    "Nomor dokumen, revisi, tanggal berlaku, dan logo — pada setiap halaman.":
+      "Document number, revision, effective date and logo — on every page.",
+    "Identitas pengisian":
+      "Entry identity",
+    "Tanggal, lokasi, shift, nama pengisi, dan nomor rekaman.":
+      "Date, location, shift, name of the person filling it in, record number.",
+    "Isian utama":
+      "Main fields",
+    "Kolom data yang benar-benar dipakai; hindari kolom yang tidak pernah dibaca.":
+      "The data columns actually used; avoid columns nobody ever reads.",
+    "Kolom verifikasi":
+      "Verification column",
+    "Diisi oleh pihak yang berbeda dari pengisi — tidak boleh verifikasi sendiri.":
+      "Completed by someone other than the filler — self-verification is not allowed.",
+    "Ruang untuk nomor CAPA bila ditemukan ketidaksesuaian.":
+      "Space for a CAPA number when a nonconformity is found.",
+    "Tanda tangan":
+      "Signatures",
+    "Pengisi, pemeriksa, dan pengesah beserta tanggalnya.":
+      "Filler, checker and approver, each with a date.",
+    "Catatan retensi":
+      "Retention note",
+    "Lama simpan dan tempat penyimpanan rekaman.":
+      "How long the record is kept and where.",
+    "RINGKASAN EKSEKUTIF":
+      "EXECUTIVE SUMMARY",
+    "Kinerja QHSE Menyeluruh":
+      "QHSE Performance Overall",
+    "Insiden dan kejadian nyaris celaka":
+      "Incidents and near misses",
+    "Tindakan korektif dan pencegahan (CAPA)":
+      "Corrective and preventive actions (CAPA)",
+    "Kepatuhan dokumen dan sertifikasi":
+      "Document and certification compliance",
+    "Register risiko":
+      "Risk register",
+    "Kinerja lingkungan":
+      "Environmental performance",
+    "Pelatihan dan kompetensi":
+      "Training and competence",
+    "Audit dan ketidaksesuaian":
+      "Audit and nonconformities",
+    "Indikator kinerja K3":
+      "OHS performance indicators",
+    "Perbandingan antarpabrik":
+      "Comparison between plants",
+    "Tindakan yang disarankan":
+      "Recommended actions",
+    "berurutan menurut akibat bila ditunda":
+      "ordered by what happens if they are delayed",
+    "Seluruh angka pada ringkasan ini dihitung dari modulnya masing-masing saat ringkasan disusun. Tidak ada angka yang diketik tangan, dan tidak ada kalimat yang dikarang di luar data — itulah sebabnya ringkasan ini dapat dibawa ke rapat dan ditelusuri sampai ke barisnya.":
+      "Every figure in this summary is computed from its own module at the moment the summary is built. No figure is typed by hand and no sentence is invented beyond the data — which is why this summary can be taken into a meeting and traced back to its rows.",
+    "Angka dihitung ulang dari data modul setiap kali ringkasan disusun, jadi selalu sama dengan yang terlihat di modulnya.":
+      "The figure is recomputed from module data each time the summary is built, so it always matches what the module shows.",
+    "Belum selesai":
+      "Not yet completed",
+    "Keparahan serius ke atas":
+      "Serious severity or above",
+    "CAPA aktif":
+      "Active CAPAs",
+    "Ditutup & diverifikasi":
+      "Closed & verified",
+    "Dokumen kedaluwarsa":
+      "Expired documents",
+    "Jatuh tempo ≤ 60 hari":
+      "Falling due in ≤ 60 days",
+    "Risiko terdaftar":
+      "Risks registered",
+    "Zona Ekstrem awal":
+      "Extreme zone, initial",
+    "Zona Ekstrem sisa":
+      "Extreme zone, residual",
+    "Parameter dipantau":
+      "Parameters monitored",
+    "Melewati baku mutu":
+      "Over the quality standard",
+    "Belum terlaksana":
+      "Not yet delivered",
+    "Sertifikat ≤ 60 hari":
+      "Certificates ≤ 60 days",
+    "Audit tercatat":
+      "Audits recorded",
+    "Temuan terbuka":
+      "Open findings",
+    "Pabrik dipantau":
+      "Plants monitored",
+    "Berstatus Kritis":
+      "In Critical status",
+    "Insiden grup":
+      "Group incidents",
+    "Kejadian":
+      "Event",
+    "Judul klausul ":
+      "Clause title ",
+    "Modul CAPA":
+      "CAPA module",
+    "Modul Dokumen Eksternal":
+      "External Documents module",
+    "Modul Incident & Nearmiss":
+      "Incident & Nearmiss module",
+    "Modul Environment":
+      "Environment module",
+    "Modul Manajemen Pelatihan":
+      "Training Management module",
+    "Modul Audit":
+      "Audit module",
+    "Modul Manajemen Risiko":
+      "Risk Management module",
+    "Modul SHE KPI & Analytics":
+      "SHE KPI & Analytics module",
+    "Cara Kerja Asisten QHSE":
+      "How the QHSE Assistant Works",
+    "Apa yang dikerjakannya, dan apa yang tidak":
+      "What it does, and what it does not",
+    "Asisten berjalan sepenuhnya di dalam peramban. Tidak ada server, tidak ada kunci API, dan tidak ada model bahasa di belakangnya. Empat kemampuannya nyata dan dapat diperiksa satu per satu.":
+      "The assistant runs entirely inside the browser. There is no server, no API key and no language model behind it. Its four capabilities are real and can be checked one by one.",
+    "Referensi dokumen baru":
+      "New document reference",
+    "Membaca daftar dokumen terkendali, mengambil nomor bebas berikutnya pada serinya, memetakan klausul ISO 45001, ISO 14001, ISO 9001, dan SMK3 PP 50/2012 dari tabel pemetaan kata kunci, lalu menyusun kerangka isi sesuai tingkat dokumennya. Catatan yang membenarkan penerbitannya diambil dari insiden, temuan audit, CAPA, dan register risiko yang benar-benar ada.":
+      "Reads the controlled document register, takes the next free number in its series, maps ISO 45001, ISO 14001, ISO 9001 and SMK3 PP 50/2012 clauses from a keyword table, then builds a content outline matching the document level. The records that justify issuing it are taken from incidents, audit findings, CAPAs and risk register entries that genuinely exist.",
+    "Pencarian dokumen ISO":
+      "ISO document search",
+    "Menelusuri dokumen internal empat tingkat, sertifikat dan izin eksternal, serta dua belas elemen SMK3.":
+      "Covers the four levels of internal documents, external certificates and permits, and the twelve SMK3 elements.",
+    "Pencarian seluruh data":
+      "Search across all data",
+    "Satu indeks atas insiden, laporan bahaya, observasi perilaku, inspeksi, checklist, izin kerja dan JSEA, register risiko, CAPA, audit dan temuannya, parameter lingkungan, dokumen, pelatihan dan sertifikasi personel, kegiatan, KPI, notifikasi, kinerja antarpabrik, serta pengguna dan hak aksesnya. Seluruh kata yang diketik harus muncul pada catatan yang sama.":
+      "One index over incidents, hazard reports, behaviour observations, inspections, checklists, work permits and JSEAs, the risk register, CAPAs, audits and their findings, environmental parameters, documents, training and personnel certification, activities, KPIs, notifications, plant performance, and users with their access rights. Every word typed must appear in the same record.",
+    "Mengenali topik dari kalimat permintaan, lalu menghitung ulang setiap angkanya dari data modul dan menyusun bagian mana yang perlu keputusan manajemen.":
+      "Recognises the topic from the request sentence, then recomputes every figure from module data and works out which items need a management decision.",
+    "Yang tidak dikerjakannya: mengarang jawaban. Bila sesuatu tidak ada di dalam data, asisten mengatakan tidak ada — bukan menebak. Untuk sistem QHSE sifat ini lebih berharga daripada kemampuan menjawab bebas, karena ringkasan yang dibawa ke rapat manajemen harus dapat dipertanggungjawabkan sampai ke baris datanya.":
+      "What it does not do: invent answers. If something is not in the data, the assistant says so rather than guessing. For a QHSE system that trait is worth more than open-ended answering, because a summary taken into a management meeting has to be defensible down to its data rows.",
+    "BATAS YANG PERLU DIKETAHUI":
+      "LIMITS WORTH KNOWING",
+
     /* ── Catatan penjelas tambahan pada modal rincian ── */
     "Modul Incident, Nearmiss & Accident — hanya yang berstatus Terverifikasi":
       "Incident, Nearmiss & Accident module — Verified records only",
@@ -659,6 +1133,8 @@ window.KGI18N = (function () {
 
   /* Pola yang memuat angka: ditangani dengan aturan, bukan entri kamus. */
   const RULES = [
+    /* ── Asisten QHSE ── */
+    [/^Revisi (\d+)$/, (m) => `Revision ${m[1]}`],
     /* ── Rincian sekali klik ── */
     [/^(\d+) hari sejak terbit$/, (m) => `${m[1]} days since issue`],
     [/^(\d+) dari (\d+) butir \((\d+)%\)$/, (m) => `${m[1]} of ${m[2]} items (${m[3]}%)`],
