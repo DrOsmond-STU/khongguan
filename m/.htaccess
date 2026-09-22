@@ -1,0 +1,22 @@
+# KG SafeGuard Lapangan — pengaturan server untuk aplikasi lapangan.
+#
+# Dua hal yang tidak terlihat tetapi menentukan apakah aplikasi ini dapat
+# dipasang di Android:
+#
+# 1. Manifes harus dikirim sebagai application/manifest+json. Tanpa ini Apache
+#    mengirimkannya sebagai berkas biasa, dan Chrome dapat menolak menawarkan
+#    "Pasang aplikasi" tanpa memberi tahu alasannya.
+# 2. Pekerja layanan tidak boleh disimpan lama di peramban. Bila sw.js tersimpan,
+#    perbaikan yang sudah dipasang di server tidak pernah sampai ke perangkat
+#    lapangan — dan itu justru kebalikan dari gunanya.
+
+AddType application/manifest+json .webmanifest
+
+<IfModule mod_headers.c>
+  <Files "sw.js">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </Files>
+  <Files "manifest.webmanifest">
+    Header set Cache-Control "no-cache"
+  </Files>
+</IfModule>
