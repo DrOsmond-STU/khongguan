@@ -567,3 +567,26 @@ td.mono { white-space: nowrap; }
   .login-prefs { margin-bottom: var(--space-4); justify-content: space-between; }
   .login-card { padding: var(--space-5); }
 }
+
+/* ───────── Rincian sekali klik ─────────
+   Baris tabel, kartu daftar, dan ubin ringkasan membuka rinciannya sendiri.
+   Bayangan tidak dipakai di sini: pada tabel bayangan akan dikira tombol filter,
+   jadi keterjangkauan disampaikan lewat kursor, latar hover, dan cincin fokus. */
+.is-clickable { cursor: pointer; }
+.is-clickable:hover { border-color: var(--border-200); }
+article.tile.is-clickable:hover { box-shadow: var(--shadow-float-md); }
+[data-info]:focus-visible,
+[data-detail]:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+tbody tr[data-info]:focus-visible td:first-child,
+tbody tr[data-detail]:focus-visible td:first-child { box-shadow: inset 3px 0 0 var(--brand-500); }
+.info-num { font-family: var(--font-mono); font-size: 40px; line-height: 44px; font-weight: 600;
+            color: var(--ink-900); font-variant-numeric: tabular-nums; margin-bottom: var(--space-1); }
+.info-num .tile-unit { font-size: 16px; }
+.info-bars { display: flex; flex-direction: column; gap: var(--space-3); }
+.info-bar-row { display: grid; grid-template-columns: 1fr auto; gap: 4px var(--space-3); align-items: center; }
+.info-bar-row .t { font-size: 13px; line-height: 18px; color: var(--ink-900); }
+.info-bar-row .n { font-family: var(--font-mono); font-size: 13px; font-weight: 600;
+                   color: var(--ink-900); font-variant-numeric: tabular-nums; }
+.info-bar { grid-column: 1 / -1; height: 6px; border-radius: var(--radius-pill);
+            background: var(--surface-200); overflow: hidden; }
+.info-bar span { display: block; height: 100%; border-radius: var(--radius-pill); background: var(--brand-500); }

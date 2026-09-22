@@ -130,9 +130,51 @@
     </svg>`;
   }
 
+  /* ───────── Rincian sekali klik ─────────
+     Setiap baris tabel, kartu daftar, dan ubin ringkasan mendaftarkan isinya di sini
+     saat dirender. Kunci dibangun ulang setiap render, jadi tidak pernah basi. */
+  let INFO = Object.create(null);
+  let infoSeq = 0;
+  function resetInfo() { INFO = Object.create(null); infoSeq = 0; }
+  function regInfo(o) { const k = 'i' + (++infoSeq); INFO[k] = o; return k; }
+  /* Dipakai di dalam template: `<tr ${infoAttr({...})}>` */
+  function infoAttr(o) {
+    const label = String(o.title || 'data').replace(/<[^>]*>/g, '').replace(/"/g, '&quot;');
+    return `data-info="${regInfo(o)}" tabindex="0" role="button" aria-label="Lihat rincian ${label}"`;
+  }
+
+  const kv = (rows) => `<dl class="kv">${rows.filter(Boolean)
+    .map(r => `<dt>${r[0]}</dt><dd>${r[1]}</dd>`).join('')}</dl>`;
+  const chipRow = (arr) => `<div style="display:flex;gap:var(--space-2);flex-wrap:wrap;margin-bottom:var(--space-5)">${
+    arr.filter(Boolean).join('')}</div>`;
+  const lead = (s) => `<h3 style="font-size:17px;color:var(--ink-900);margin:0 0 var(--space-4)">${s}</h3>`;
+  const foot = (s) => `<div class="tile-note" style="margin-top:var(--space-5)">${s}</div>`;
+  /* Rincian angka sebagai batang: [label, nilai, total, warna sinyal] */
+  const bars = (rows) => `<div class="info-bars">${rows.map(([t, v, total, sig]) => `
+    <div class="info-bar-row">
+      <span class="t">${t}</span><span class="n">${v}</span>
+      <span class="info-bar"><span style="width:${total ? Math.round(v / total * 100) : 0}%;background:var(--signal-${sig || 'info'})"></span></span>
+    </div>`).join('')}</div>`;
+
   /* ───────── Potongan yang dipakai ulang ───────── */
   const tile = (t) => `
-    <article class="card tile">
+    <article class="card tile is-clickable" ${infoAttr({
+      title: t.label,
+      sub: t.sub || `${D.plant} · ${D.periode}`,
+      body: `
+        <div class="info-num">${t.value}${t.unit ? `<span class="tile-unit">${t.unit}</span>` : ''}</div>
+        <div class="tile-trend ${t.arah || 'flat'}" style="margin-bottom:var(--space-5)">${t.delta}</div>
+        ${kv([
+          ['Angka', `${t.value}${t.unit ? ' ' + t.unit : ''}`],
+          ['Perubahan', t.delta],
+          ['Cakupan', t.note],
+          t.rumus && ['Rumus', t.rumus],
+          t.sumber && ['Sumber data', t.sumber],
+          ['Periode', t.periode || `${D.periode} · ${D.plant}`]
+        ])}
+        ${t.rincian ? `<div class="label-caps" style="margin:var(--space-5) 0 var(--space-2)">RINCIAN</div>${t.rincian}` : ''}
+        ${t.catatan ? foot(t.catatan) : ''}`
+    })}>
       <div class="tile-head">
         <span class="label-caps">${t.label}</span>
         <span class="tile-icon">${I(icon[t.icon || 'kpi'], 18)}</span>
@@ -165,13 +207,28 @@
   function viewDashboard() {
     const t = [
       { label: 'TOTAL INSIDEN', value: '3', icon: 'incident', arah: 'good', delta: '2 vs Agustus',
-        note: 'September 2026 · 1 accident, 2 nearmiss' },
+        note: 'September 2026 · 1 accident, 2 nearmiss',
+        sumber: 'Modul Incident, Nearmiss & Accident — hanya yang berstatus Terverifikasi',
+        rumus: 'Jumlah kejadian tercatat pada bulan berjalan',
+        rincian: bars([['Accident', 1, 3, 'critical'], ['Incident', 0, 3, 'medium'], ['Nearmiss', 2, 3, 'info']]),
+        catatan: 'Angka turun bukan selalu kabar baik. Bacalah bersama jumlah laporan bahaya: insiden turun sementara laporan bahaya juga turun biasanya berarti pelaporan yang melemah, bukan pabrik yang membaik.' },
       { label: 'SAFE MANHOURS', value: '1.284.560', big: true, icon: 'clock', arah: 'good',
-        delta: '238 hari tanpa LTI', note: 'Jam kerja sejak LTI terakhir · Lagging' },
+        delta: '238 hari tanpa LTI', note: 'Jam kerja sejak LTI terakhir · Lagging',
+        sumber: 'Absensi produksi × jam kerja efektif, dihitung sejak LTI terakhir',
+        rumus: 'Σ (jumlah pekerja × jam kerja) sejak kecelakaan hilang waktu kerja terakhir',
+        catatan: 'Angka ini kembali ke nol pada kecelakaan hilang waktu kerja berikutnya. Karena itu ia tidak pernah dipakai sendirian sebagai ukuran keberhasilan program.' },
       { label: 'TEMUAN TERBUKA', value: '14', icon: 'inspection', arah: 'bad', delta: '3 vs Agustus',
-        note: 'Inspeksi 10 · audit 4 · lintas modul' },
+        note: 'Inspeksi 10 · audit 4 · lintas modul',
+        sumber: 'Modul Inspection dan Audit — temuan yang belum ditutup',
+        rumus: 'Temuan inspeksi belum ditutup + temuan audit belum ditutup',
+        rincian: bars([['Temuan inspeksi', 10, 14, 'medium'], ['Temuan audit', 4, 14, 'high']]),
+        catatan: 'Setiap temuan Major dan Minor wajib punya CAPA dengan tenggat. Temuan tanpa CAPA adalah temuan audit berikutnya yang sedang menunggu.' },
       { label: 'CAPA JATUH TEMPO', value: '6', icon: 'capa', arah: 'bad', delta: '2 lewat tenggat',
-        note: 'Selesai tepat waktu 82% · target ≥ 90%' }
+        note: 'Selesai tepat waktu 82% · target ≥ 90%',
+        sumber: 'Modul CAPA — status Terbuka dan Dalam Proses yang tenggatnya ≤ 7 hari',
+        rumus: 'Jumlah CAPA belum selesai dengan tenggat dalam 7 hari ke depan',
+        rincian: bars([['Lewat tenggat', 2, 6, 'critical'], ['Jatuh tempo ≤ 7 hari', 4, 6, 'high']]),
+        catatan: 'Penuaan dihitung dari tanggal terbit, bukan tanggal tenggat. Modul CAPA adalah tempat sistem QHSE paling sering gagal dalam praktik, jadi item macet sengaja dibuat tidak bisa tidak terlihat.' }
     ];
     return hero({
       eyebrow: `${D.plant.toUpperCase()} · ${D.periode.toUpperCase()}`,
@@ -197,7 +254,16 @@
           <div class="card-sub">Lintas modul, 7 hari terakhir</div>
           <div class="feed">
             ${D.aktivitas.map(a => `
-              <div class="feed-item">
+              <div class="feed-item is-clickable" ${infoAttr({
+                title: a.judul,
+                sub: `Aktivitas lintas modul · ${a.when}`,
+                body: chipRow([chip(({ critical: 'KRITIS', high: 'TINGGI', medium: 'SEDANG', low: 'RINGAN', info: 'INFORMASI' })[a.jenis] || a.jenis.toUpperCase(), a.jenis)])
+                  + lead(a.judul) + kv([
+                    ['Rincian', a.meta],
+                    ['Waktu', a.when],
+                    ['Tingkat', ({ critical: 'Kritis', high: 'Tinggi', medium: 'Sedang', low: 'Ringan', info: 'Informasi' })[a.jenis] || a.jenis]
+                  ]) + foot('Aktivitas Terbaru menampilkan tujuh hari terakhir dari seluruh modul, tanpa perlu membuka laporan satu per satu.')
+              })}>
                 <span class="feed-icon chip--${a.jenis}">${I(icon.incident, 16)}</span>
                 <span>
                   <span class="feed-title">${a.judul}</span>
@@ -212,7 +278,14 @@
           <div class="card-sub">Item kritis dan tinggi dari seluruh modul</div>
           <div class="feed">
             ${D.perhatian.map(p => `
-              <div class="feed-item">
+              <div class="feed-item is-clickable" ${infoAttr({
+                title: p.judul,
+                sub: 'Perhatian Segera · lintas modul',
+                body: chipRow([chip(p.label, p.chip)]) + lead(p.judul) + kv([
+                  ['Rincian', p.meta],
+                  ['Tingkat', p.chip === 'critical' ? 'Kritis — menuntut tindakan hari ini' : p.chip === 'high' ? 'Tinggi' : 'Sedang']
+                ]) + foot('Kolom ini hanya memuat item kritis dan tinggi dari seluruh modul. Perubahan status biasa tidak muncul di sini.')
+              })}>
                 <span>
                   ${chip(p.label, p.chip)}
                   <span class="feed-title" style="margin-top:6px">${p.judul}</span>
@@ -270,7 +343,7 @@
               <th>TANGGAL</th><th>PELAPOR</th><th>STATUS</th><th>CAPA</th></tr></thead>
             <tbody>
               ${rows.length ? rows.map(r => `
-                <tr data-detail="insiden:${r.id}" class="${r.terlambat ? 'is-overdue' : ''}">
+                <tr data-detail="insiden:${r.id}" tabindex="0" role="button" class="${r.terlambat ? 'is-overdue' : ''}">
                   <td class="mono mono--id">${r.id}</td>
                   <td>${chip(r.jenis.toUpperCase(), T.jenis[r.jenis])}</td>
                   <td>${chip(r.keparahan.toUpperCase(), T.parah[r.keparahan])}</td>
@@ -318,7 +391,7 @@
             <tbody>
               ${D.inspeksi.map(r => {
                 const pct = Math.round(r.selesai / r.butir * 100);
-                return `<tr data-detail="inspeksi:${r.id}">
+                return `<tr data-detail="inspeksi:${r.id}" tabindex="0" role="button">
                   <td class="mono mono--id">${r.id}</td>
                   <td style="font-weight:600;color:var(--ink-900)">${r.jenis}</td>
                   <td>${r.area}</td>
@@ -341,7 +414,22 @@
           <span class="sub">8 butir contoh dari 42 · ${ts.length} temuan menjadi CAPA</span></div>
         <div class="card">
           ${c.map((b, i) => `
-            <div class="param" style="grid-template-columns:1fr auto">
+            <div class="param is-clickable" style="grid-template-columns:1fr auto" ${infoAttr({
+              title: `Butir ${i + 1}`,
+              sub: 'INS-2026-0912 · APAR & Hydrant',
+              body: chipRow([
+                chip(b.jawab === 'Sesuai' ? 'SESUAI' : 'TIDAK SESUAI', b.jawab === 'Sesuai' ? 'low' : 'critical'),
+                b.risiko ? chip('RISIKO ' + b.risiko, zone(b.risiko)) : ''
+              ]) + lead(b.butir) + kv([
+                ['Jawaban', b.jawab],
+                b.temuan && ['Temuan', b.temuan],
+                b.risiko && ['Tingkat risiko', `<span class="mono">${b.risiko}</span> — kemungkinan × keparahan pada matriks 5×5`],
+                b.pj && ['Penanggung jawab', b.pj],
+                b.tenggat && ['Tenggat', `<span class="mono">${b.tenggat}</span>`]
+              ]) + foot(b.jawab === 'Sesuai'
+                ? 'Butir yang sesuai tetap disimpan sebagai rekaman, karena inspeksi tanpa jejak butir yang lolos tidak dapat dibuktikan kepada auditor.'
+                : 'Jawaban Tidak Sesuai langsung membuka isian temuan — foto, tingkat risiko, penanggung jawab, dan tenggat — dan temuan itu menjadi CAPA bernomor.')
+            })}>
               <div>
                 <div class="param-name">${i + 1}. ${b.butir}</div>
                 ${b.temuan ? `<div style="font-size:13px;color:var(--ink-500);margin-top:4px">${b.temuan}</div>
@@ -379,7 +467,7 @@
       <section class="section">
         <div class="section-head"><h2>Izin Kerja</h2><span class="sub">Kartu, bukan baris tabel — izin dibaca sekilas di lapangan</span></div>
         ${D.izin.map(p => `
-          <article class="card permit-card" data-detail="izin:${p.id}">
+          <article class="card permit-card" data-detail="izin:${p.id}" tabindex="0" role="button">
             <span class="feed-icon chip--${kindClass[p.ikon]}" style="width:56px;height:56px;border-radius:var(--radius-md);flex-direction:column;gap:2px">
               ${I(icon.permit, 20)}<span style="font-size:9px;font-weight:700;letter-spacing:.06em">${kindLabel[p.ikon]}</span>
             </span>
@@ -444,7 +532,20 @@
           <div class="card-sub">Tertahan pada langkah ketiga</div>
           <ol class="timeline">
             ${j.persetujuan.map((s, i) => `
-              <li class="${s.state}">
+              <li class="${s.state} is-clickable" ${infoAttr({
+                title: s.peran,
+                sub: `Persetujuan ${j.permit} · langkah ${i + 1} dari ${j.persetujuan.length}`,
+                body: chipRow([
+                  chip(s.state === 'done' ? 'SUDAH DISETUJUI' : s.state === 'now' ? 'MENUNGGU LANGKAH INI' : 'BELUM GILIRANNYA',
+                    s.state === 'done' ? 'low' : s.state === 'now' ? 'high' : 'neutral', true)
+                ]) + lead(s.nama) + kv([
+                  ['Langkah', `${i + 1} dari ${j.persetujuan.length}`],
+                  ['Peran', s.peran],
+                  ['Nama', s.nama],
+                  ['Catatan', s.catatan],
+                  [s.tunggu ? 'Lama menunggu' : 'Waktu', `<span class="mono">${s.tunggu || s.waktu}</span>`]
+                ]) + foot('Persetujuan berjenjang tidak dapat dilompati. Izin kerja tidak berstatus Aktif sebelum seluruh langkah selesai dan JSEA-nya lengkap.')
+              })}>
                 <span class="node">${s.state === 'done' ? '✓' : s.state === 'now' ? '!' : i + 1}</span>
                 <span>
                   <span class="label-caps">${s.peran}</span>
@@ -466,7 +567,22 @@
             <tbody>
               ${j.langkah.map(s => {
                 const a = s.awal.k * s.awal.s, b = s.sisa.k * s.sisa.s;
-                return `<tr>
+                return `<tr ${infoAttr({
+                  title: `Langkah ${s.no} · ${s.kerja}`,
+                  sub: `JSEA ${j.permit} · ${j.judul}`,
+                  body: chipRow([
+                    chip('RISIKO AWAL ' + a, zone(a)),
+                    chip('RISIKO SISA ' + b, zone(b)),
+                    chip('TURUN ' + (a - b) + ' TINGKAT', a - b > 0 ? 'low' : 'neutral')
+                  ]) + lead(s.bahaya) + kv([
+                    ['Langkah pekerjaan', s.kerja],
+                    ['Bahaya', s.bahaya],
+                    ['Risiko awal', `${a} — kemungkinan ${s.awal.k} × keparahan ${s.awal.s}`],
+                    ['Risiko sisa', `${b} — kemungkinan ${s.sisa.k} × keparahan ${s.sisa.s}`]
+                  ]) + `<div class="label-caps" style="margin:var(--space-5) 0 var(--space-2)">PENGENDALIAN · HIERARKI</div>
+                    ${s.kendali.map(([tipe, isi]) => `<div style="font-size:13px;line-height:19px;margin-bottom:6px"><b style="color:var(--brand-700)">${tipe}</b> — ${isi}</div>`).join('')}`
+                    + foot('Risiko sisa di zona merah menutup penerbitan izin, bukan sekadar memberi peringatan.')
+                })}>
                   <td class="mono mono--muted">${s.no}</td>
                   <td style="font-weight:600;color:var(--ink-900)">${s.kerja}</td>
                   <td>${s.bahaya}</td>
@@ -515,7 +631,7 @@
             return `<div class="kan-col">
               <h3><span>${k.toUpperCase()}</span><span class="mono">${items.length}</span></h3>
               ${items.map(b => `
-                <div class="kan-card" data-detail="bahaya:${b.id}">
+                <div class="kan-card" data-detail="bahaya:${b.id}" tabindex="0" role="button">
                   ${chip(b.kategori.toUpperCase(), b.kategori === 'Aspek Lingkungan' ? 'low' : b.kategori === 'Unsafe Action' ? 'medium' : 'high')}
                   <div class="t">${b.isi}</div>
                   <div class="m">
@@ -559,7 +675,7 @@
             <thead><tr><th>NO.</th><th>STANDAR</th><th>LINGKUP</th><th>AUDITOR</th><th>JADWAL</th><th>TEMUAN</th><th>STATUS</th></tr></thead>
             <tbody>
               ${D.audit.map(a => `
-                <tr data-detail="audit:${a.id}">
+                <tr data-detail="audit:${a.id}" tabindex="0" role="button">
                   <td class="mono mono--id">${a.id}</td>
                   <td style="font-weight:600;color:var(--ink-900)">${a.standar}</td>
                   <td>${a.lingkup}</td>
@@ -586,7 +702,21 @@
               <thead><tr><th>NO.</th><th>KLAUSUL / ELEMEN</th><th>KATEGORI</th><th>PJ</th><th>TENGGAT</th></tr></thead>
               <tbody>
                 ${D.temuanAudit.map(t => `
-                  <tr class="${t.kategori === 'Major' ? 'is-overdue' : ''}">
+                  <tr class="${t.kategori === 'Major' ? 'is-overdue' : ''}" ${infoAttr({
+                    title: t.id,
+                    sub: `Temuan ${t.kategori} · ${t.klausul}`,
+                    body: chipRow([
+                      chip(t.kategori.toUpperCase(), T.temuan[t.kategori]),
+                      chip('TENGGAT ' + t.tenggat, 'neutral')
+                    ]) + lead(t.isi) + kv([
+                      ['Klausul / elemen', t.klausul],
+                      ['Kategori temuan', t.kategori],
+                      ['Penanggung jawab', t.pj],
+                      ['Tenggat', `<span class="mono">${t.tenggat}</span>`]
+                    ]) + foot(t.kategori === 'Major'
+                      ? 'Temuan Major wajib punya CAPA dengan tenggat. Yang lewat tenggat naik ke merah di seluruh papan.'
+                      : 'Temuan Minor wajib punya CAPA. Observasi dan Peluang Perbaikan tidak wajib, tetapi tetap dicatat.')
+                  })}>
                     <td class="mono mono--id">${t.id}</td>
                     <td><div style="font-weight:600;color:var(--ink-900)">${t.klausul}</div>
                       <div style="font-size:13px;color:var(--ink-500)">${t.isi}</div></td>
@@ -603,7 +733,19 @@
           <div class="card-sub">PP 50/2012 · ${totalK} kriteria · audit internal Sep 2026</div>
           ${D.elemenSMK3.map(e => {
             const p = Math.round(e.penuhi / e.kriteria * 100);
-            return `<div style="margin-bottom:var(--space-3)">
+            return `<div class="is-clickable" style="margin-bottom:var(--space-3)" ${infoAttr({
+              title: `Elemen ${e.no} · ${e.nama}`,
+              sub: `SMK3 PP 50/2012 · audit internal ${D.periode}`,
+              body: `<div class="info-num">${p}<span class="tile-unit">% terpenuhi</span></div>`
+                + chipRow([chip(p === 100 ? 'LENGKAP' : p >= 80 ? 'HAMPIR LENGKAP' : 'PERLU PERBAIKAN',
+                  p === 100 ? 'low' : p >= 80 ? 'medium' : 'critical')])
+                + kv([
+                  ['Elemen', `${e.no} — ${e.nama}`],
+                  ['Kriteria terpenuhi', `<span class="mono">${e.penuhi}</span> dari <span class="mono">${e.kriteria}</span>`],
+                  ['Belum terpenuhi', `<span class="mono">${e.kriteria - e.penuhi}</span> kriteria`],
+                  ['Pemenuhan', `<span class="mono">${p}%</span>`]
+                ]) + foot('Pemenuhan ditampilkan per elemen, bukan sebagai satu angka gabungan. Satu elemen yang lemah tidak boleh tertutup oleh sebelas elemen yang baik.')
+            })}>
               <div style="display:flex;justify-content:space-between;gap:var(--space-3);font-size:13px;margin-bottom:5px">
                 <span style="color:var(--ink-900)"><b class="mono" style="color:var(--ink-500)">${e.no}</b> ${e.nama}</span>
                 <span class="mono mono--muted">${e.penuhi}/${e.kriteria}</span>
@@ -622,7 +764,21 @@
         <h3>${b.judul}</h3>
         <div class="card-sub">${b.sub}</div>
         ${b.param.map(p => `
-          <div class="param">
+          <div class="param is-clickable" ${infoAttr({
+            title: p.nama,
+            sub: `${b.judul} · ${b.sub}`,
+            body: `<div class="info-num" style="color:var(--signal-${p.ok ? 'low' : 'critical'})">${p.nilai}${p.satuan ? `<span class="tile-unit">${p.satuan}</span>` : ''}</div>`
+              + chipRow([chip(p.ok ? 'MEMENUHI BAKU MUTU' : 'MELEWATI AMBANG', p.ok ? 'low' : 'critical')])
+              + kv([
+                ['Parameter', p.nama],
+                ['Hasil uji', `<span class="mono">${p.nilai}${p.satuan ? ' ' + p.satuan : ''}</span>`],
+                ['Baku mutu', p.ambang],
+                ['Kesimpulan', p.ok ? 'Di dalam ambang' : 'Melewati ambang — uji ulang dan tindakan perbaikan wajib'],
+                ['Acuan regulasi', b.acuan]
+              ]) + foot(p.ok
+                ? 'Setiap nilai terukur selalu disandingkan dengan baku mutunya. Angka tanpa ambang pembanding tidak berarti apa-apa bagi pembaca.'
+                : 'Nilai yang melewati ambang melahirkan satu entri CAPA dan muncul di kolom Perhatian Segera pada Dashboard.')
+          })}>
             <div>
               <div class="param-name">${p.nama}</div>
               <div class="param-limit">${p.ambang}</div>
@@ -658,8 +814,17 @@
 
   /* ───────── Modul 8 · KPI ───────── */
   function viewKpi() {
-    const k = (x) => tile({ label: x.nama.toUpperCase(), value: x.nilai, unit: x.satuan,
-      icon: 'kpi', arah: x.arah, delta: x.delta, note: x.note });
+    const k = (x, jenis) => tile({ label: x.nama.toUpperCase(), value: x.nilai, unit: x.satuan,
+      icon: 'kpi', arah: x.arah, delta: x.delta, note: x.note,
+      sub: `${jenis} indicator · tahun berjalan s.d. ${D.periode}`,
+      rumus: x.note.indexOf('÷') !== -1 ? x.note.split(' · ')[0] : '—',
+      sumber: jenis === 'Lagging'
+        ? 'Insiden, jam kerja, dan hari hilang dari modul Incident'
+        : 'Laporan bahaya, inspeksi, pelatihan, patroli, dan CAPA dari modulnya masing-masing',
+      periode: `Tahun berjalan s.d. ${D.periode} · ${D.plant}`,
+      catatan: jenis === 'Lagging'
+        ? 'Lagging mengukur hasil yang sudah terjadi. TRIR memakai basis 200.000 jam dan LTIFR 1.000.000 jam — membandingkan keduanya secara langsung adalah kekeliruan basis.'
+        : 'Leading mengukur usaha yang sedang dilakukan. Arah "baik" mengikuti arti indikatornya, bukan arah angkanya: jumlah laporan bahaya yang naik adalah kabar baik.' });
     return hero({
       eyebrow: 'MODUL 08 · SHE KPI & ANALYTICS',
       title: 'Indikator Kinerja QHSE',
@@ -672,14 +837,14 @@
           <h2>Lagging Indicator</h2>
           <span class="sub">Hasil yang sudah terjadi · periode tahun berjalan s.d. ${D.periode}</span>
         </div>
-        <div class="grid grid--3">${D.kpiLagging.map(k).join('')}</div>
+        <div class="grid grid--3">${D.kpiLagging.map(x => k(x, 'Lagging')).join('')}</div>
       </section>
       <section class="section">
         <div class="section-head">
           <h2>Leading Indicator</h2>
           <span class="sub">Usaha yang sedang dilakukan · arah "baik" mengikuti arti, bukan arah angka</span>
         </div>
-        <div class="grid grid--3">${D.kpiLeading.map(k).join('')}</div>
+        <div class="grid grid--3">${D.kpiLeading.map(x => k(x, 'Leading')).join('')}</div>
       </section>
       <section class="section grid grid--2">
         <div class="card">
@@ -707,7 +872,19 @@
                    ['Bekasi', '1.980.000', 3, '0,30', '1,01', true],
                    ['Semarang', '1.420.000', 4, '0,56', '2,11', false],
                    ['Medan', '980.000', 2, '0,41', '2,04', true]].map(r => `
-                  <tr>
+                  <tr ${infoAttr({
+                    title: `Pabrik ${r[0]}`,
+                    sub: `Pembandingan TRIR tahun berjalan · basis 200.000 jam kerja`,
+                    body: `<div class="info-num">${r[3]}<span class="tile-unit">TRIR</span></div>` + chipRow([
+                      chip(r[5] ? 'DI BAWAH TARGET' : 'DI ATAS TARGET', r[5] ? 'low' : 'critical')
+                    ]) + kv([
+                      ['Jam kerja', `<span class="mono">${r[1]}</span>`],
+                      ['TRC — total recordable cases', `<span class="mono">${r[2]}</span>`],
+                      ['TRIR', `<span class="mono">${r[3]}</span> — (${r[2]} × 200.000) ÷ ${r[1]} jam`],
+                      ['LTIFR', `<span class="mono">${r[4]}</span> — basis 1.000.000 jam`],
+                      ['Terhadap target', r[5] ? 'Di bawah target tahun berjalan' : 'Di atas target tahun berjalan']
+                    ]) + foot('TRIR dan LTIFR memakai basis berbeda (200.000 jam versus 1.000.000 jam). Membandingkan keduanya secara langsung adalah kekeliruan paling sering dalam pelaporan K3.')
+                  })}>
                     <td style="font-weight:600;color:var(--ink-900)">${r[0]}</td>
                     <td class="mono mono--muted">${r[1]}</td>
                     <td class="mono">${r[2]}</td>
@@ -743,7 +920,7 @@
         <div class="section-head"><h2>${D.periode}</h2><span class="sub">Setiap entri membawa foto, daftar hadir terpindai, dan lokasi</span></div>
         <div class="grid grid--3">
           ${D.kegiatan.map(k => `
-            <article class="card act-card" data-detail="kegiatan:${k.id}">
+            <article class="card act-card" data-detail="kegiatan:${k.id}" tabindex="0" role="button">
               <div class="act-thumb">${I(icon.activity, 40)}</div>
               <div class="act-body">
                 ${chip(k.jenis.toUpperCase(), 'info')}
@@ -794,7 +971,7 @@
             return `<div class="kan-col">
               <h3><span>${k.toUpperCase()}</span><span class="mono">${items.length}</span></h3>
               ${items.map(c => `
-                <div class="kan-card" data-detail="capa:${c.id}">
+                <div class="kan-card" data-detail="capa:${c.id}" tabindex="0" role="button">
                   <div class="m">
                     ${chip(c.sumberJenis.toUpperCase(), srcChip[c.sumberJenis])}
                     ${c.terlambat ? chip('LEWAT TEMPO', 'critical') : ''}
@@ -822,7 +999,7 @@
               <th>TENGGAT</th><th>UMUR</th><th>STATUS</th></tr></thead>
             <tbody>
               ${D.capa.map(c => `
-                <tr class="${c.terlambat ? 'is-overdue' : ''}" data-detail="capa:${c.id}">
+                <tr class="${c.terlambat ? 'is-overdue' : ''}" data-detail="capa:${c.id}" tabindex="0" role="button">
                   <td class="mono mono--id">${c.id}</td>
                   <td style="font-weight:600;color:var(--ink-900)">${c.judul}</td>
                   <td>${chip(c.sumberJenis.toUpperCase(), srcChip[c.sumberJenis])}
@@ -1169,10 +1346,10 @@
     }) + `
     <div class="page">
       <div class="grid grid--4">
-        ${tile({ label: 'TRIR GRUP', value: '0,43', icon: 'kpi', arah: 'good', delta: '0,29 vs 2025', note: '(TRC × 200.000) ÷ jam kerja · target ≤ 0,50' })}
-        ${tile({ label: 'LTIFR GRUP', value: '1,71', icon: 'kpi', arah: 'good', delta: '0,54 vs 2025', note: '(LTI × 1.000.000) ÷ jam kerja · target ≤ 2,00' })}
-        ${tile({ label: 'TOTAL SAFE MANHOURS', value: mh.toLocaleString('id-ID'), big: true, icon: 'clock', arah: 'good', delta: '4 pabrik · tahun berjalan', note: 'Akumulasi jam kerja aman seluruh grup' })}
-        ${tile({ label: 'PABRIK NIHIL LTI', value: '3', unit: '/4', icon: 'shield', arah: 'good', delta: 'Semarang belum nihil', note: 'Sepanjang 2026 · target 4 dari 4' })}
+        ${tile({ label: 'TRIR GRUP', value: '0,43', icon: 'kpi', arah: 'good', delta: '0,29 vs 2025', note: '(TRC × 200.000) ÷ jam kerja · target ≤ 0,50', sub: 'Tingkat grup · 4 pabrik · tahun berjalan', periode: 'Tahun berjalan 2026 · seluruh grup', rumus: '(TRC × 200.000) ÷ total jam kerja grup', sumber: 'Agregasi modul Incident seluruh pabrik', rincian: bars([['Cibitung', 0.44, 0.6, 'high'], ['Bekasi', 0.30, 0.6, 'low'], ['Semarang', 0.56, 0.6, 'critical'], ['Medan', 0.41, 0.6, 'medium']]), catatan: 'Angka grup menyembunyikan sebaran antarpabrik. Semarang di 0,56 berada di atas target meskipun angka grup lolos — karena itu kartu skor pabrik dibaca berdampingan dengan ubin ini.' })}
+        ${tile({ label: 'LTIFR GRUP', value: '1,71', icon: 'kpi', arah: 'good', delta: '0,54 vs 2025', note: '(LTI × 1.000.000) ÷ jam kerja · target ≤ 2,00', sub: 'Tingkat grup · 4 pabrik · tahun berjalan', periode: 'Tahun berjalan 2026 · seluruh grup', rumus: '(LTI × 1.000.000) ÷ total jam kerja grup', sumber: 'Agregasi modul Incident seluruh pabrik', catatan: 'LTIFR memakai basis 1.000.000 jam, TRIR memakai 200.000 jam. Dua angka ini tidak boleh dibandingkan langsung satu sama lain.' })}
+        ${tile({ label: 'TOTAL SAFE MANHOURS', value: mh.toLocaleString('id-ID'), big: true, icon: 'clock', arah: 'good', delta: '4 pabrik · tahun berjalan', note: 'Akumulasi jam kerja aman seluruh grup', sub: 'Tingkat grup · 4 pabrik · tahun berjalan', periode: 'Tahun berjalan 2026 · seluruh grup', rumus: 'Σ jam kerja seluruh pabrik sejak LTI masing-masing', sumber: 'Absensi produksi tiap pabrik', rincian: bars(D.pabrikKinerja.map(function (x) { return [x.nama, Number(x.manhours.replace(/\./g, '')), mh, 'info']; })), catatan: 'Angka akumulatif ini kembali ke nol per pabrik pada kecelakaan hilang waktu kerja berikutnya, jadi ia tidak pernah dipakai sendirian sebagai ukuran keberhasilan program.' })}
+        ${tile({ label: 'PABRIK NIHIL LTI', value: '3', unit: '/4', icon: 'shield', arah: 'good', delta: 'Semarang belum nihil', note: 'Sepanjang 2026 · target 4 dari 4', sub: 'Tingkat grup · 4 pabrik · tahun berjalan', periode: 'Tahun berjalan 2026 · seluruh grup', rumus: 'Jumlah pabrik tanpa kecelakaan hilang waktu kerja sepanjang tahun berjalan', sumber: 'Modul Incident tiap pabrik', catatan: 'Status pabrik ditentukan oleh indikator terburuk, bukan rata-rata. Satu pabrik yang belum nihil tidak boleh tertutup oleh tiga pabrik yang sudah nihil.' })}
       </div>
 
       <section class="section panel">
@@ -1184,7 +1361,22 @@
               <th>INSIDEN</th><th>LAPORAN BAHAYA</th><th>CAPA TEPAT WAKTU</th><th>SMK3</th><th>STATUS</th></tr></thead>
             <tbody>
               ${D.pabrikKinerja.map(p => `
-                <tr class="${p.status === 'Kritis' ? 'is-overdue' : ''}">
+                <tr class="${p.status === 'Kritis' ? 'is-overdue' : ''}" ${infoAttr({
+                  title: `Pabrik ${p.nama}`,
+                  sub: `Kartu skor pabrik · ${D.periode}`,
+                  body: chipRow([
+                    chip(p.status.toUpperCase(), p.status === 'Kritis' ? 'critical' : p.status === 'Perhatian' ? 'high' : 'low')
+                  ]) + kv([
+                    ['Pekerja', `<span class="mono">${p.pekerja}</span> orang`],
+                    ['Jam kerja', `<span class="mono">${p.manhours}</span>`],
+                    ['TRIR', `<span class="mono">${p.trir}</span> · basis 200.000 jam`],
+                    ['LTIFR', `<span class="mono">${p.ltifr}</span> · basis 1.000.000 jam`],
+                    ['Insiden tercatat', `<span class="mono">${p.insiden}</span>`],
+                    ['Laporan bahaya', `<span class="mono">${p.bahaya}</span> — leading indicator, makin tinggi makin baik`],
+                    ['CAPA tepat waktu', `<span class="mono">${p.capa}</span>`],
+                    ['Pemenuhan SMK3', `<span class="mono">${p.smk3}</span>`]
+                  ]) + foot('Status pabrik ditentukan oleh indikator terburuk, bukan rata-rata. Merata-ratakan akan menyembunyikan satu angka yang bermasalah di balik angka lain yang baik.')
+                })}>
                   <td style="font-weight:600;color:var(--ink-900)">${p.nama}</td>
                   <td class="mono mono--muted">${p.pekerja}</td>
                   <td class="mono mono--muted">${p.manhours}</td>
@@ -1213,7 +1405,19 @@
           <div class="card-sub">Komitmen tahun berjalan dan kemajuannya</div>
           ${D.programStrategis.map(p => {
             const pct = Math.round(p.capai / p.dari * 100);
-            return `<div style="margin-bottom:var(--space-4)">
+            return `<div class="is-clickable" style="margin-bottom:var(--space-4)" ${infoAttr({
+              title: p.nama,
+              sub: `Program strategis · tenggat ${p.tenggat}`,
+              body: `<div class="info-num">${pct}<span class="tile-unit">% tercapai</span></div>`
+                + chipRow([
+                  chip(p.status.toUpperCase(), p.status === 'Terjadwal' ? 'info' : pct === 100 ? 'low' : 'medium', true)
+                ]) + kv([
+                  ['Target', p.target],
+                  ['Kemajuan', `<span class="mono">${p.capai}</span> dari <span class="mono">${p.dari}</span> (${pct}%)`],
+                  ['Tenggat', `<span class="mono">${p.tenggat}</span>`],
+                  ['Status', p.status]
+                ]) + foot('Program strategis dipantau di tingkat grup. Yang tidak dapat diselesaikan di tingkat pabrik naik ke bagian Perlu keputusan manajemen.')
+            })}>
               <div style="display:flex;justify-content:space-between;gap:var(--space-3);margin-bottom:5px">
                 <span style="font-size:14px;font-weight:600;color:var(--ink-900)">${p.nama}</span>
                 <span class="mono mono--muted" style="white-space:nowrap">${p.capai}/${p.dari}</span>
@@ -1233,7 +1437,16 @@
           ${[['critical', 'SKLO Boiler 2 Cibitung kedaluwarsa', 'Boiler beroperasi tanpa Surat Keterangan Layak Operasi sejak 30 Jun 2026. Pilihan: hentikan boiler 2 sampai riksa uji selesai, atau percepat penjadwalan PJK3 dengan biaya ekspres.'],
              ['critical', 'Semarang di atas target TRIR', 'TRIR 0,56 dan penyelesaian CAPA 68%. Perlu penugasan petugas K3 tambahan atau pendampingan dari tim Cibitung selama satu triwulan.'],
              ['high', 'Penggantian boiler tua Cibitung', 'Boiler 2 berumur 14 tahun dan menjadi risiko RSK-2026-001. Anggaran belanja modal Q2 2027 perlu diputuskan pada rapat anggaran Oktober.']]
-            .map(([k, t, d]) => `<div class="card">
+            .map(([k, t, d]) => `<div class="card is-clickable" ${infoAttr({
+              title: t,
+              sub: 'Perlu keputusan manajemen · tingkat grup',
+              body: chipRow([chip(k === 'critical' ? 'KEPUTUSAN SEGERA' : 'KEPUTUSAN ANGGARAN', k)])
+                + `<p style="font-size:14px;line-height:21px;color:var(--ink-700);margin:0 0 var(--space-5)">${d}</p>`
+                + kv([
+                  ['Tingkat', k === 'critical' ? 'Keputusan segera' : 'Keputusan anggaran'],
+                  ['Diputuskan oleh', k === 'critical' ? 'Plant Manager dan manajemen grup' : 'Rapat anggaran grup']
+                ]) + foot('Papan eksekutif tanpa bagian ini hanya memindahkan angka, tidak memindahkan keputusan. Isinya adalah hal yang tidak dapat diselesaikan di tingkat pabrik: belanja modal, penugasan orang, dan penjadwalan lembaga sertifikasi.')
+            })}>
               ${chip(k === 'critical' ? 'KEPUTUSAN SEGERA' : 'KEPUTUSAN ANGGARAN', k)}
               <h3 style="margin-top:10px">${t}</h3>
               <p style="font-size:13px;line-height:20px;color:var(--ink-500);margin:0">${d}</p>
@@ -1285,7 +1498,27 @@
             <tbody>
               ${D.pelatihan.map(p => {
                 const d = p.aktualPeserta - p.rencanaPeserta;
-                return `<tr class="${p.status === 'Tertunda' ? 'is-overdue' : ''}">
+                return `<tr class="${p.status === 'Tertunda' ? 'is-overdue' : ''}" ${infoAttr({
+                  title: p.id,
+                  sub: `${p.nama} · ${p.penyelenggara}`,
+                  body: chipRow([
+                    chip(p.jenis.toUpperCase(), p.jenis === 'Wajib Regulasi' ? 'critical' : p.jenis === 'Refreshment' ? 'medium' : 'info'),
+                    chip(p.status.toUpperCase(), p.status === 'Tertunda' ? 'critical' : T.status[p.status] || 'info', true),
+                    p.status === 'Selesai' && d !== 0 ? chip((d > 0 ? '+' : '') + d + ' PESERTA', 'high') : ''
+                  ]) + lead(p.nama) + kv([
+                    ['Jenis', p.jenis],
+                    ['Penyelenggara', p.penyelenggara],
+                    ['Target peserta', `<span class="mono">${p.target}</span> orang`],
+                    ['Rencana', `<span class="mono">${p.rencanaTgl}</span> · ${p.rencanaPeserta} peserta`],
+                    ['Aktual', `<span class="mono">${p.aktualTgl}</span> · ${p.aktualPeserta} peserta`],
+                    ['Selisih peserta', p.status === 'Selesai'
+                      ? (d === 0 ? 'Sesuai rencana' : `<span class="mono">${d > 0 ? '+' : ''}${d}</span> terhadap rencana`)
+                      : 'Belum dapat dihitung — pelaksanaan belum selesai'],
+                    ['Biaya', `Rp ${p.biaya} juta`]
+                  ]) + foot(p.status === 'Tertunda'
+                    ? 'Yang ditanya auditor bukan daftar pelatihan yang pernah diadakan, melainkan mengapa yang direncanakan belum terlaksana.'
+                    : 'Jam-orang pelatihan ini mengalir ke KPI Jam Pelatihan K3 di modul SHE KPI & Analytics.')
+                })}>
                   <td class="mono mono--id">${p.id}</td>
                   <td><div style="font-weight:600;color:var(--ink-900)">${p.nama}</div>
                     <div style="font-size:12px;color:var(--ink-500)">${p.penyelenggara} · Rp ${p.biaya} jt</div></td>
@@ -1312,7 +1545,21 @@
             <thead><tr><th>SERTIFIKASI</th><th>PEMEGANG</th><th>NOMOR</th><th>BERLAKU SAMPAI</th><th>SISA</th><th>STATUS</th></tr></thead>
             <tbody>
               ${D.sertifikasi.map(s => `
-                <tr class="${s.sisa <= 30 ? 'is-overdue' : ''}">
+                <tr class="${s.sisa <= 30 ? 'is-overdue' : ''}" ${infoAttr({
+                  title: s.nama,
+                  sub: `${s.pemegang} · berlaku sampai ${s.berlaku}`,
+                  body: `<div class="info-num">${s.sisa}<span class="tile-unit">hari tersisa</span></div>`
+                    + chipRow([
+                      chip(s.sisa <= 30 ? 'SEGERA HABIS' : s.sisa <= 60 ? 'PERHATIAN' : 'AMAN',
+                        s.sisa <= 30 ? 'critical' : s.sisa <= 60 ? 'high' : 'low')
+                    ]) + kv([
+                      ['Sertifikasi', s.nama],
+                      ['Pemegang', s.pemegang],
+                      ['Nomor', `<span class="mono">${s.nomor}</span>`],
+                      ['Berlaku sampai', `<span class="mono">${s.berlaku}</span>`],
+                      ['Sisa masa berlaku', `<span class="mono">${s.sisa}</span> hari`]
+                    ]) + foot('Ambang tetap: sisa ≤ 30 hari merah, ≤ 60 hari jingga. Perpanjangan sertifikasi wajib dimulai sebelum masuk ambang merah, karena penjadwalan lembaga sertifikasi memerlukan waktu.')
+                })}>
                   <td style="font-weight:600;color:var(--ink-900)">${s.nama}</td>
                   <td>${s.pemegang}</td>
                   <td class="mono mono--muted">${s.nomor}</td>
@@ -1389,7 +1636,23 @@
           ${['critical', 'high', 'medium', 'low'].map(z => {
             const label = { critical: 'Ekstrem 15–25', high: 'Tinggi 10–14', medium: 'Sedang 5–9', low: 'Rendah 1–4' }[z];
             const n = R.filter(r => zone(r.sisaL * r.sisaS) === z).length;
-            return `<div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-2)">
+            const isi = R.filter(r => zone(r.sisaL * r.sisaS) === z);
+            return `<div class="is-clickable" style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-2)" ${infoAttr({
+              title: `Zona ${label}`,
+              sub: 'Sebaran risiko sisa · risk register',
+              body: `<div class="info-num">${n}<span class="tile-unit">dari ${R.length} risiko</span></div>`
+                + chipRow([chip(label.toUpperCase(), z)])
+                + kv([
+                  ['Zona', label],
+                  ['Jumlah risiko sisa', `<span class="mono">${n}</span> dari <span class="mono">${R.length}</span>`],
+                  ['Kriteria penerimaan', z === 'critical' ? 'Tidak boleh diterima — pekerjaan terkait dihentikan sampai skor turun'
+                    : z === 'high' ? 'Perlu persetujuan manajemen dan pemantauan ketat'
+                    : z === 'medium' ? 'Dapat diterima dengan pengendalian dan reviu berkala'
+                    : 'Dapat diterima · reviu tahunan']
+                ]) + (isi.length ? `<div class="label-caps" style="margin:var(--space-5) 0 var(--space-2)">RISIKO DI ZONA INI</div>
+                  ${isi.map(r => `<div style="font-size:13px;line-height:20px;margin-bottom:4px"><span class="mono mono--id">${r.id}</span> — ${r.ancaman}</div>`).join('')}` : '')
+                + foot('Tidak ada risiko sisa yang boleh berada di zona Ekstrem. Bila ada, pekerjaan terkait tidak boleh berjalan sampai skornya turun.')
+            })}>
               <span class="chip chip--${z}" style="min-width:132px">${label.toUpperCase()}</span>
               <div class="bar bar--${z === 'critical' ? 'critical' : z === 'low' ? 'low' : 'medium'}" style="flex:1"><span style="width:${n / R.length * 100}%"></span></div>
               <span class="mono" style="width:24px;text-align:right">${n}</span>
@@ -1409,7 +1672,26 @@
               ${R.map(r => {
                 const a = r.L * r.S, b = r.sisaL * r.sisaS;
                 const opsiChip = { 'Kurangi': 'medium', 'Hindari': 'low', 'Transfer': 'info', 'Terima': 'neutral' };
-                return `<tr class="${a >= 15 ? 'is-overdue' : ''}">
+                return `<tr class="${a >= 15 ? 'is-overdue' : ''}" ${infoAttr({
+                  title: r.id,
+                  sub: `${r.proses} · reviu berikutnya ${r.reviu}`,
+                  body: chipRow([
+                    chip('RISIKO AWAL ' + a, zone(a)),
+                    chip('RISIKO SISA ' + b, zone(b)),
+                    chip('OPSI ' + r.opsi.toUpperCase(), opsiChip[r.opsi])
+                  ]) + lead(r.ancaman) + kv([
+                    ['Proses', r.proses],
+                    ['Ancaman', r.ancaman],
+                    ['Penyebab', r.penyebab],
+                    ['Dampak', r.dampak],
+                    ['Analisis awal', `kemungkinan ${r.L} × dampak ${r.S} = ${a}`],
+                    ['Opsi penanganan', r.opsi],
+                    ['Tindakan mitigasi', r.mitigasi],
+                    ['Risiko sisa', `kemungkinan ${r.sisaL} × dampak ${r.sisaS} = ${b}`],
+                    ['Penanggung jawab', `${r.pj} · tenggat <span class="mono">${r.target}</span>`],
+                    ['Reviu berikutnya', `<span class="mono">${r.reviu}</span>`]
+                  ]) + foot('Matriks 5×5 dan kosakata zonanya sama persis dengan yang dipakai JSEA pada modul Work Permit. Dua matriks berbeda dalam satu aplikasi menghasilkan dua angka yang tidak dapat dibandingkan.')
+                })}>
                   <td class="mono mono--id">${r.id}</td>
                   <td style="font-weight:600;color:var(--ink-900)">${r.proses}</td>
                   <td><div style="font-weight:600;color:var(--ink-900)">${r.ancaman}</div>
@@ -1458,7 +1740,22 @@
         <div class="grid grid--4">
           ${lv.map(l => {
             const n = L.filter(d => d.level === l.n).length;
-            return `<div class="card">
+            const isi = L.filter(d => d.level === l.n);
+            return `<div class="card is-clickable" ${infoAttr({
+              title: `Tingkat L${l.n} · ${l.nama}`,
+              sub: l.desc,
+              body: `<div class="info-num">${n}<span class="tile-unit">dokumen</span></div>`
+                + kv([
+                  ['Tingkat', `L${l.n} — ${l.nama}`],
+                  ['Pertanyaan yang dijawab', l.desc],
+                  ['Jumlah dokumen', `<span class="mono">${n}</span>`],
+                  ['Berlaku', `<span class="mono">${isi.filter(d => d.status === 'Berlaku').length}</span>`],
+                  ['Dalam revisi', `<span class="mono">${isi.filter(d => d.status === 'Dalam Revisi').length}</span>`],
+                  ['Kedaluwarsa', `<span class="mono">${isi.filter(d => d.status === 'Kedaluwarsa').length}</span>`]
+                ]) + `<div class="label-caps" style="margin:var(--space-5) 0 var(--space-2)">DOKUMEN PADA TINGKAT INI</div>
+                  ${isi.map(d => `<div style="font-size:13px;line-height:20px;margin-bottom:4px"><span class="mono mono--id">${d.id}</span> — ${d.judul}</div>`).join('')}`
+                + foot('Tingkat 1 mengikat tingkat di bawahnya. Instruksi kerja yang bertentangan dengan prosedur di atasnya adalah ketidaksesuaian, bukan penyesuaian lapangan.')
+            })}>
               <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-3)">
                 <span class="tile-icon" style="width:36px;height:36px;font-family:var(--font-mono);font-weight:600">L${l.n}</span>
                 <span class="mono" style="font-size:22px;font-weight:600;color:var(--ink-900);margin-left:auto">${n}</span>
@@ -1480,7 +1777,24 @@
               <th>TERBIT</th><th>TINJAU ULANG</th><th>PEMILIK</th><th>STATUS</th></tr></thead>
             <tbody>
               ${L.map(d => `
-                <tr class="${d.status === 'Kedaluwarsa' ? 'is-overdue' : ''}">
+                <tr class="${d.status === 'Kedaluwarsa' ? 'is-overdue' : ''}" ${infoAttr({
+                  title: d.id,
+                  sub: `${d.jenis} · tingkat L${d.level} · revisi ${d.rev}`,
+                  body: chipRow([
+                    chip('L' + d.level + ' · ' + d.jenis.toUpperCase(), d.level === 1 ? 'info' : d.level === 2 ? 'medium' : d.level === 3 ? 'high' : 'neutral'),
+                    chip(d.status.toUpperCase(), d.status === 'Berlaku' ? 'low' : d.status === 'Dalam Revisi' ? 'medium' : 'critical', true)
+                  ]) + lead(d.judul) + kv([
+                    ['Nomor dokumen', `<span class="mono">${d.id}</span>`],
+                    ['Tingkat', `L${d.level} — ${d.jenis}`],
+                    ['Revisi', `<span class="mono">${d.rev}</span>`],
+                    ['Tanggal terbit', `<span class="mono">${d.terbit}</span>`],
+                    ['Tanggal tinjau ulang', `<span class="mono">${d.tinjau}</span>`],
+                    ['Pemilik dokumen', d.pemilik],
+                    ['Status', d.status]
+                  ]) + foot(d.status === 'Kedaluwarsa'
+                    ? 'Dokumen yang lewat masa tinjau tertaut ke temuan audit yang bersangkutan. Tanggal tinjau ulang tidak pernah boleh kosong.'
+                    : 'Saat revisi baru disahkan, versi sebelumnya ditarik dari peredaran dan ditandai kedaluwarsa.')
+                })}>
                   <td class="mono mono--id">${d.id}</td>
                   <td>${chip('L' + d.level + ' · ' + d.jenis.toUpperCase(), d.level === 1 ? 'info' : d.level === 2 ? 'medium' : d.level === 3 ? 'high' : 'neutral')}</td>
                   <td style="font-weight:600;color:var(--ink-900)">${d.judul}</td>
@@ -1526,7 +1840,26 @@
               <th>BERLAKU SAMPAI</th><th>SISA</th><th>STATUS</th></tr></thead>
             <tbody>
               ${L.slice().sort((a, b) => a.sisa - b.sisa).map(d => `
-                <tr class="${d.sisa < 0 ? 'is-overdue' : ''}">
+                <tr class="${d.sisa < 0 ? 'is-overdue' : ''}" ${infoAttr({
+                  title: d.judul,
+                  sub: `${d.jenis} · diterbitkan ${d.penerbit}`,
+                  body: `<div class="info-num">${d.sisa < 0 ? '−' + Math.abs(d.sisa) : d.sisa}<span class="tile-unit">${d.sisa < 0 ? 'hari lewat' : 'hari tersisa'}</span></div>`
+                    + chipRow([
+                      chip(d.jenis.toUpperCase(), jenisChip[d.jenis]),
+                      d.sisa < 0 ? chip('KEDALUWARSA', 'critical', true)
+                        : d.sisa <= 30 ? chip('PERPANJANG SEKARANG', 'critical')
+                        : d.sisa <= 60 ? chip('SIAPKAN PERPANJANGAN', 'high')
+                        : chip('BERLAKU', 'low', true)
+                    ]) + kv([
+                      ['Nomor dokumen', `<span class="mono">${d.nomor}</span>`],
+                      ['Jenis', d.jenis],
+                      ['Penerbit', d.penerbit],
+                      ['Berlaku sampai', `<span class="mono">${d.berlaku}</span>`],
+                      ['Sisa masa berlaku', d.sisa < 0
+                        ? `<span class="mono">lewat ${Math.abs(d.sisa)} hari</span>`
+                        : `<span class="mono">${d.sisa}</span> hari`]
+                    ]) + foot('Peringatan otomatis dikirim pada H-60, H-30, H-14, dan H-7. Pelaporan wajib diperlakukan sama seperti izin, karena keterlambatan keduanya sama-sama berakibat hukum.')
+                })}>
                   <td class="mono mono--id">${d.id}</td>
                   <td>${chip(d.jenis.toUpperCase(), jenisChip[d.jenis])}</td>
                   <td style="font-weight:600;color:var(--ink-900)">${d.judul}</td>
@@ -1592,7 +1925,28 @@
             <tbody>
               ${L.map(c => {
                 const pct = Math.round(c.selesai / c.butir * 100);
-                return `<tr class="${c.status === 'Terbuka' ? 'is-overdue' : ''}">
+                return `<tr class="${c.status === 'Terbuka' ? 'is-overdue' : ''}" ${infoAttr({
+                  title: c.id,
+                  sub: `${c.nama} · ${c.area} · ${c.shift}`,
+                  body: chipRow([
+                    chip(c.status.toUpperCase(), T.status[c.status], true),
+                    chip(c.shift.toUpperCase(), 'neutral'),
+                    c.temuan ? chip(c.temuan + ' TEMUAN', 'high') : chip('BERSIH', 'low')
+                  ]) + lead(c.nama) + `
+                    <div class="bar ${pct === 100 ? 'bar--low' : pct === 0 ? 'bar--critical' : 'bar--medium'}" style="margin-bottom:var(--space-2)"><span style="width:${pct}%"></span></div>
+                    <div class="mono mono--muted" style="font-size:12px;margin-bottom:var(--space-5)">${c.selesai} dari ${c.butir} butir · ${pct}%</div>`
+                    + kv([
+                      ['Frekuensi', c.frekuensi],
+                      ['Area', c.area],
+                      ['Shift', c.shift],
+                      ['Kemajuan', `<span class="mono">${c.selesai}/${c.butir}</span> butir (${pct}%)`],
+                      ['Temuan', c.temuan ? `<span class="mono">${c.temuan}</span> butir Tidak Sesuai` : 'Tidak ada butir Tidak Sesuai'],
+                      ['Petugas', c.pj],
+                      ['Waktu', `<span class="mono">${c.waktu}</span>`]
+                    ]) + foot(c.temuan
+                      ? 'Satu butir Tidak Sesuai mengunci unit dari operasi sampai temuannya ditutup. Ini gerbang operasi, bukan peringatan.'
+                      : 'Checklist dikerjakan tiap shift oleh operator dan bersifat gerbang operasi — berbeda dari Inspection yang bulanan dan bersifat penilaian.')
+                })}>
                   <td class="mono mono--id">${c.id}</td>
                   <td style="font-weight:600;color:var(--ink-900)">${c.nama}</td>
                   <td class="mono mono--muted">${c.frekuensi}</td>
@@ -1617,7 +1971,19 @@
           <span class="sub">Pemeriksaan sebelum operasi · Shift 1 · Agus Prasetyo · 06:40</span></div>
         <div class="card">
           ${D.checklistP2H.map((b, i) => `
-            <div class="param" style="grid-template-columns:1fr auto">
+            <div class="param is-clickable" style="grid-template-columns:1fr auto" ${infoAttr({
+              title: `Butir ${i + 1}`,
+              sub: 'CHK-2026-1841 · P2H Forklift FL-03 · Shift 1',
+              body: chipRow([chip(b.jawab === 'Sesuai' ? 'SESUAI' : 'TIDAK SESUAI', b.jawab === 'Sesuai' ? 'low' : 'critical')])
+                + lead(b.butir) + kv([
+                  ['Jawaban', b.jawab],
+                  b.catatan && ['Catatan pemeriksa', b.catatan],
+                  ['Pemeriksa', 'Agus Prasetyo · Shift 1 · 06:40'],
+                  ['Unit', 'FL-03 — forklift Gudang Bahan Baku']
+                ]) + foot(b.jawab === 'Sesuai'
+                  ? 'Butir yang sesuai tetap disimpan sebagai rekaman. Checklist yang hanya mencatat pelanggaran tidak dapat membuktikan bahwa pemeriksaan benar-benar dilakukan.'
+                  : 'Satu butir Tidak Sesuai membuat unit FL-03 otomatis berstatus tidak boleh dioperasikan sampai temuan ditutup. Ini gerbang, bukan peringatan yang bisa dilewati.')
+            })}>
               <div>
                 <div class="param-name">${i + 1}. ${b.butir}</div>
                 ${b.catatan ? `<div style="font-size:13px;color:var(--signal-critical);margin-top:4px">${b.catatan}</div>` : ''}
@@ -1659,7 +2025,21 @@
           <div class="card-sub">${(aman + risk).toLocaleString('id-ID')} perilaku teramati · September 2026</div>
           ${K.map(k => {
             const t = k.aman + k.berisiko, p = k.berisiko / t * 100;
-            return `<div style="margin-bottom:var(--space-4)">
+            return `<div class="is-clickable" style="margin-bottom:var(--space-4)" ${infoAttr({
+              title: k.nama,
+              sub: `Observasi perilaku · ${D.periode}`,
+              body: `<div class="info-num">${(100 - p).toFixed(1).replace('.', ',')}<span class="tile-unit">% aman</span></div>`
+                + chipRow([
+                  chip(k.aman + ' AMAN', 'low'),
+                  chip(k.berisiko + ' BERISIKO', k.berisiko === 0 ? 'neutral' : 'critical')
+                ]) + bars([['Perilaku aman', k.aman, t, 'low'], ['Perilaku berisiko', k.berisiko, t, 'critical']])
+                + kv([
+                  ['Kategori', k.nama],
+                  ['Total teramati', `<span class="mono">${t}</span> perilaku`],
+                  ['Aman', `<span class="mono">${k.aman}</span> (${(100 - p).toFixed(1).replace('.', ',')}%)`],
+                  ['Berisiko', `<span class="mono">${k.berisiko}</span> (${p.toFixed(1).replace('.', ',')}%)`]
+                ]) + foot('Kolom perilaku aman diisi lebih dulu dan selalu lebih besar. Kategori dengan pita merah terpanjang menjadi tema safety talk bulan berikutnya.')
+            })}>
               <div style="display:flex;justify-content:space-between;gap:var(--space-3);margin-bottom:5px;font-size:13px">
                 <span style="font-weight:600;color:var(--ink-900)">${k.nama}</span>
                 <span class="mono mono--muted">${k.berisiko} berisiko / ${t}</span>
@@ -1686,7 +2066,23 @@
       <section class="section">
         <div class="section-head"><h2>Observasi Terbaru</h2><span class="sub">Lima catatan terakhir dari 302 bulan ini</span></div>
         ${D.observasi.map(o => `
-          <article class="card obs-card">
+          <article class="card obs-card is-clickable" ${infoAttr({
+            title: o.id,
+            sub: `${o.area} · pengamat ${o.observer} · ${o.tanggal}`,
+            body: chipRow([
+              chip(o.aman + ' PERILAKU AMAN', 'low'),
+              o.berisiko ? chip(o.berisiko + ' BERISIKO', 'critical') : '',
+              o.kategori !== '—' ? chip(o.kategori.toUpperCase(), 'neutral') : ''
+            ]) + lead(o.catatan) + kv([
+              ['Kategori perilaku', o.kategori === '—' ? 'Tidak ada perilaku berisiko yang dicatat' : o.kategori],
+              ['Perilaku aman', `<span class="mono">${o.aman}</span>`],
+              ['Perilaku berisiko', `<span class="mono">${o.berisiko}</span>`],
+              ['Tindak lanjut', o.tindakan],
+              ['Pengamat', o.observer],
+              ['Area', o.area],
+              ['Tanggal', `<span class="mono">${o.tanggal}</span>`]
+            ]) + foot('Pekerja yang diamati tidak pernah dicatat namanya. Satu temuan perilaku juga tidak otomatis menjadi CAPA — yang menjadi CAPA adalah pola yang berulang.')
+          })}>
             <span class="feed-icon chip--${o.berisiko === 0 ? 'low' : 'medium'}" style="width:44px;height:44px;border-radius:var(--radius-md)">
               ${I(icon.bbs, 20)}</span>
             <div>
@@ -1728,7 +2124,24 @@
         </div>
         <div style="padding:0 var(--space-5)">
           ${N.map(n => `
-            <div class="notif" data-goto="${n.aksi}">
+            <div class="notif is-clickable" ${infoAttr({
+              title: n.judul,
+              sub: `${n.modul} · ${n.waktu}`,
+              goto: n.aksi,
+              gotoLabel: 'Buka ' + n.modul,
+              body: chipRow([
+                chip(jenisLabel[n.jenis], n.jenis),
+                chip(n.modul.toUpperCase(), 'neutral'),
+                !n.baca ? chip('BARU', 'info') : ''
+              ]) + lead(n.judul) + `<p style="font-size:14px;line-height:21px;color:var(--ink-700);margin:0 0 var(--space-5)">${n.isi}</p>`
+                + kv([
+                  ['Nomor', `<span class="mono mono--id">${n.id}</span>`],
+                  ['Modul asal', n.modul],
+                  ['Tingkat', jenisLabel[n.jenis]],
+                  ['Waktu', `<span class="mono">${n.waktu}</span>`],
+                  ['Status baca', n.baca ? 'Sudah dibaca' : 'Belum dibaca']
+                ]) + foot('Menandai terbaca tidak menghentikan pengingat: item yang lewat tenggat tetap dikirim ulang setiap hari sampai ditutup di modulnya.')
+            })}>
               <span class="notif-dot chip--${n.jenis}" ${n.baca ? 'style="opacity:.35"' : ''}></span>
               <div style="min-width:0">
                 <div style="display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap;margin-bottom:4px">
@@ -1752,7 +2165,17 @@
             <thead><tr><th>PERISTIWA</th><th>KANAL</th><th>PENERIMA</th><th>WAKTU KIRIM</th></tr></thead>
             <tbody>
               ${D.aturanNotifikasi.map(a => `
-                <tr>
+                <tr ${infoAttr({
+                  title: a.peristiwa,
+                  sub: 'Aturan pengiriman pemberitahuan',
+                  body: chipRow([chip(a.segera.toUpperCase(), /Seketika|Eskalasi/.test(a.segera) ? 'critical' : 'info')])
+                    + kv([
+                      ['Peristiwa pemicu', a.peristiwa],
+                      ['Kanal', a.kanal],
+                      ['Penerima', a.penerima],
+                      ['Waktu kirim', a.segera]
+                    ]) + foot('Pemberitahuan hanya dikirim bila membawa tindakan: sesuatu yang lewat tenggat, menunggu keputusan penerimanya, atau melewati ambang. Perubahan status biasa tidak dikirim — cukup terlihat di modulnya.')
+                })}>
                   <td style="font-weight:600;color:var(--ink-900)">${a.peristiwa}</td>
                   <td>${a.kanal}</td>
                   <td>${a.penerima}</td>
@@ -1882,6 +2305,13 @@
     const statusChip = { 'Aktif': 'low', 'Nonaktif': 'neutral', 'Menunggu': 'high' };
     const cell = (v) => v === '—' ? '<span class="mono mono--muted">—</span>'
       : chip(v.toUpperCase(), v === 'Kelola' ? 'critical' : v === 'Verifikasi' ? 'high' : v === 'Isi' ? 'medium' : 'low');
+    const arti = (v) => ({
+      'Kelola': 'Kelola — ditambah pengaturan induk modul: jenis, ambang, dan penerima pemberitahuan',
+      'Verifikasi': 'Verifikasi — memeriksa, menyetujui, menolak, dan menutup catatan orang lain',
+      'Isi': 'Isi — membuat dan mengubah catatan miliknya sendiri',
+      'Baca': 'Baca — melihat dan mengunduh, tidak mengubah apa pun',
+      '—': 'Tidak ada akses — modul ini tidak muncul di navigasinya'
+    })[v] || v;
     return hero({
       eyebrow: 'ADMINISTRASI · USER MANAGEMENT',
       title: 'Pengguna & Hak Akses',
@@ -1907,7 +2337,29 @@
             <thead><tr><th>PENGGUNA</th><th>EMAIL</th><th>PERAN</th><th>PABRIK</th><th>TERAKHIR MASUK</th><th>STATUS</th></tr></thead>
             <tbody>
               ${U.map(u => `
-                <tr class="${u.status === 'Menunggu' ? 'is-overdue' : ''}">
+                <tr class="${u.status === 'Menunggu' ? 'is-overdue' : ''}" ${infoAttr({
+                  title: u.nama,
+                  sub: `${D.peran[u.peran].nama} · ${u.lokasi}`,
+                  body: chipRow([
+                    `<span class="role-chip role-${u.peran}">${D.peran[u.peran].nama.toUpperCase()}</span>`,
+                    chip(u.status.toUpperCase(), statusChip[u.status], true)
+                  ]) + kv([
+                    ['Surel', `<span class="mono">${u.email}</span>`],
+                    ['Peran', D.peran[u.peran].nama],
+                    ['Pabrik', u.lokasi],
+                    ['Terakhir masuk', `<span class="mono">${u.masuk}</span>`],
+                    ['Status akun', u.status],
+                    ['Modul yang terlihat', `${D.peran[u.peran].modul.length} dari ${Object.keys(VIEWS).length} modul`]
+                  ]) + `<div class="label-caps" style="margin:var(--space-5) 0 var(--space-2)">MODUL YANG DAPAT DIBUKA</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:var(--space-2)">${
+                      D.peran[u.peran].modul.map(id => {
+                        const m = ALL.filter(x => x.id === id)[0];
+                        return `<span class="chip chip--neutral" style="font-weight:600;letter-spacing:0;font-size:12px">${m ? m.label : id}</span>`;
+                      }).join('')}</div>`
+                    + foot(u.status === 'Nonaktif'
+                      ? 'Akun tidak pernah dihapus, hanya dinonaktifkan. Menghapus akun akan memutus nama pelapor dari catatan insiden yang sudah ada.'
+                      : 'Hak akses dihitung ulang dari peran pada setiap pemuatan halaman, tidak pernah dititipkan di dalam sesi.')
+                })}>
                   <td>
                     <div style="display:flex;align-items:center;gap:var(--space-3)">
                       <span class="avatar" style="width:30px;height:30px;font-size:11px;background:var(--brand-100);color:var(--brand-700)">${u.inisial}</span>
@@ -1933,7 +2385,16 @@
             <thead><tr><th>MODUL</th><th>OPERATOR</th><th>QHSE SUPERVISOR</th><th>PLANT MANAGER</th><th>ADMINISTRATOR SISTEM</th></tr></thead>
             <tbody>
               ${D.hakAkses.map(r => `
-                <tr>
+                <tr ${infoAttr({
+                  title: r.modul,
+                  sub: 'Hak akses per peran',
+                  body: kv([
+                    ['Operator Produksi', arti(r.operator)],
+                    ['QHSE Supervisor', arti(r.qhse)],
+                    ['Plant Manager', arti(r.manajemen)],
+                    ['Administrator Sistem', arti(r.admin)]
+                  ]) + foot('Tidak ada peran yang boleh memverifikasi catatannya sendiri. Sistem K3 yang memperbolehkan penutupan sendiri kehilangan gunanya sebagai bukti audit.')
+                })}>
                   <td style="font-weight:600;color:var(--ink-900)">${r.modul}</td>
                   <td>${cell(r.operator)}</td>
                   <td>${cell(r.qhse)}</td>
@@ -2151,6 +2612,7 @@
   function render() {
     document.getElementById('nav').innerHTML = KGI18N.tr(renderNav());
     const main = document.getElementById('view');
+    resetInfo();
     main.innerHTML = KGI18N.tr((VIEWS[current] || viewDashboard)());
     const item = ALL.filter(function (x) { return x.id === current; })[0];
     document.getElementById('mobile-title').textContent = KGI18N.t(item ? item.label : 'KG SafeGuard');
@@ -2187,6 +2649,7 @@
       '    <div class="modal-foot">',
       (o.autosave ? '<span class="autosave">Draf tersimpan 08:42</span>' : ''),
       '      <button class="btn btn--ghost" data-close>' + (o.ok ? 'Batal' : 'Tutup') + '</button>',
+      (o.goto ? '<button class="btn btn--primary" data-goto="' + o.goto + '">' + (o.gotoLabel || 'Buka modul') + '</button>' : ''),
       (o.ok ? '<button class="btn btn--primary" data-submit="' + (o.toast || '') + '">' + o.ok + '</button>' : ''),
       '    </div>',
       '  </div>',
@@ -2260,7 +2723,11 @@
     if (act) { const a = ACTIONS[act.dataset.act]; if (a) openModal(Object.assign({ autosave: true }, a)); return; }
 
     const goto = e.target.closest('[data-goto]');
-    if (goto && VIEWS[goto.dataset.goto]) { location.hash = '#/' + goto.dataset.goto; return; }
+    if (goto && VIEWS[goto.dataset.goto]) {
+      closeModal();
+      location.hash = '#/' + goto.dataset.goto;
+      return;
+    }
 
     const row = e.target.closest('[data-detail]');
     if (row) {
@@ -2269,6 +2736,9 @@
       if (d) openModal(d);
       return;
     }
+
+    const box = e.target.closest('[data-info]');
+    if (box) { const d = INFO[box.dataset.info]; if (d) openModal(d); return; }
 
     const f = e.target.closest('[data-filter]');
     if (f) { incFilter = f.dataset.filter; render(); return; }
@@ -2287,7 +2757,19 @@
   });
 
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && !document.getElementById('modal-host').hidden) closeModal();
+    if (e.key === 'Escape' && !document.getElementById('modal-host').hidden) { closeModal(); return; }
+    /* Baris dan ubin dapat dibuka dengan papan ketik, bukan hanya tetikus. */
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    const t = e.target;
+    if (!t || !t.closest) return;
+    if (t.matches('input, textarea, select, button, a')) return;
+    const box = t.closest('[data-info], [data-detail]');
+    if (!box) return;
+    e.preventDefault();
+    if (box.dataset.info) { const d = INFO[box.dataset.info]; if (d) openModal(d); return; }
+    const parts = box.dataset.detail.split(':');
+    const d = detail(parts[0], parts[1]);
+    if (d) openModal(d);
   });
 
   window.addEventListener('hashchange', route);

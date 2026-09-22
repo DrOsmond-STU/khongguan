@@ -11,6 +11,75 @@ window.KGI18N = (function () {
   'use strict';
 
   const EN = {
+    /* ── Rincian sekali klik: label yang muncul di banyak modal ── */
+    'Angka': 'Figure', 'Perubahan': 'Change', 'Cakupan': 'Scope', 'Rumus': 'Formula',
+    'Sumber data': 'Data source', 'Periode': 'Period', 'RINCIAN': 'BREAKDOWN',
+    'Jawaban': 'Answer', 'Zona': 'Zone', 'Tingkat': 'Level', 'Proses': 'Process',
+    'Nomor dokumen': 'Document number', 'Sertifikasi': 'Certification', 'Pemegang': 'Holder',
+    'Kategori': 'Category', 'Tindakan mitigasi': 'Mitigation action',
+    'Opsi penanganan': 'Treatment option', 'Analisis awal': 'Initial analysis',
+    'Risiko sisa': 'Residual risk', 'Risiko awal': 'Initial risk',
+    'Reviu berikutnya': 'Next review',
+    'Langkah pekerjaan': 'Work step', 'Bahaya': 'Hazard', 'Langkah': 'Step',
+    'Nama': 'Name', 'Catatan': 'Note', 'Waktu': 'Time',
+    'Lama menunggu': 'Waiting time', 'Klausul / elemen': 'Clause / element',
+    'Kategori temuan': 'Finding category', 'Elemen': 'Element',
+    'Kriteria terpenuhi': 'Criteria met', 'Belum terpenuhi': 'Not yet met',
+    'Pemenuhan': 'Conformance', 'Jumlah dokumen': 'Documents', 'Berlaku': 'In force',
+    'Dalam revisi': 'Under revision', 'Kedaluwarsa': 'Expired',
+    'Pertanyaan yang dijawab': 'Question it answers',
+    'DOKUMEN PADA TINGKAT INI': 'DOCUMENTS AT THIS LEVEL',
+    'RISIKO DI ZONA INI': 'RISKS IN THIS ZONE',
+    'PENGENDALIAN · HIERARKI': 'CONTROLS · HIERARCHY',
+    'MODUL YANG DAPAT DIBUKA': 'MODULES THEY CAN OPEN',
+    'Tanggal terbit': 'Issue date', 'Tanggal tinjau ulang': 'Review date',
+    'Jenis': 'Type', 'Penerbit': 'Issuer',
+    'Berlaku sampai': 'Valid until', 'Sisa masa berlaku': 'Validity remaining',
+    'Hasil uji': 'Test result', 'Baku mutu': 'Quality standard',
+    'Kesimpulan': 'Conclusion', 'Acuan regulasi': 'Regulatory reference',
+    'Parameter': 'Parameter', 'Frekuensi': 'Frequency', 'Area': 'Area', 'Shift': 'Shift',
+    'Kemajuan': 'Progress', 'Temuan': 'Findings', 'Petugas': 'Officer', 'Unit': 'Unit',
+    'Pemeriksa': 'Inspector', 'Tingkat risiko': 'Risk level',
+    'Jam kerja': 'Work hours', 'Pekerja': 'Workers', 'Insiden tercatat': 'Recorded incidents',
+    'Laporan bahaya': 'Hazard reports', 'CAPA tepat waktu': 'CAPA on time',
+    'Pemenuhan SMK3': 'SMK3 conformance', 'Terhadap target': 'Against target',
+    'Target peserta': 'Target participants', 'Rencana': 'Plan', 'Aktual': 'Actual',
+    'Selisih peserta': 'Participant variance', 'Biaya': 'Cost',
+    'Surel': 'Email', 'Terakhir masuk': 'Last sign-in',
+    'Status akun': 'Account status', 'Modul yang terlihat': 'Modules visible',
+    'Peristiwa pemicu': 'Triggering event', 'Kanal': 'Channel', 'Penerima': 'Recipients',
+    'Waktu kirim': 'Send time', 'Modul asal': 'Source module', 'Status baca': 'Read status',
+    'Sudah dibaca': 'Read', 'Belum dibaca': 'Unread', 'Nomor': 'Number',
+    'Rincian': 'Details', 'Total teramati': 'Total observed', 'Aman': 'Safe',
+    'Berisiko': 'At risk', 'Perilaku aman': 'Safe behaviour',
+    'Kategori perilaku': 'Behaviour category', 'Tanggal': 'Date', 'Target': 'Target',
+    'Diputuskan oleh': 'Decided by', 'Buka modul': 'Open module',
+    'Jumlah risiko sisa': 'Residual risks', 'Kriteria penerimaan': 'Acceptance criteria',
+    'Accident': 'Accident', 'Incident': 'Incident', 'Nearmiss': 'Near miss',
+    'Temuan inspeksi': 'Inspection findings', 'Temuan audit': 'Audit findings',
+    'Lewat tenggat': 'Overdue', 'Jatuh tempo ≤ 7 hari': 'Due within 7 days',
+    'Sumber': 'Source', 'Terbit': 'Issued', 'Tenggat': 'Due', 'Umur': 'Age',
+    'MEMENUHI BAKU MUTU': 'MEETS QUALITY LIMIT', 'Di dalam ambang': 'Within limit',
+    'Melewati ambang — uji ulang dan tindakan perbaikan wajib':
+      'Exceeds the limit — retest and corrective action required',
+    'Sesuai rencana': 'As planned', 'Belum dapat dihitung — pelaksanaan belum selesai':
+      'Cannot be computed yet — the session has not finished',
+    'Tidak ada butir Tidak Sesuai': 'No non-conforming items',
+    'Tidak ada perilaku berisiko yang dicatat': 'No at-risk behaviour recorded',
+    'Tidak ada akses — modul ini tidak muncul di navigasinya':
+      'No access — this module does not appear in their navigation',
+    'Sudah disetujui': 'Approved', 'Belum gilirannya': 'Not their turn yet',
+    'Di bawah target tahun berjalan': 'Below the year-to-date target',
+    'Di atas target tahun berjalan': 'Above the year-to-date target',
+    'Keputusan segera': 'Immediate decision', 'Keputusan anggaran': 'Budget decision',
+    'Rapat anggaran grup': 'Group budget meeting',
+    'Plant Manager dan manajemen grup': 'Plant Manager and group management',
+    'Ubin ringkasan': 'Summary tile',
+    'Pelapor': 'Reported by', 'Prasyarat': 'Prerequisites',
+    'Anonim (kanal tanpa nama)': 'Anonymous (nameless channel)',
+    'Pemindahan ke Selesai hanya oleh petugas QHSE, dengan bukti terlampir.':
+      'Only QHSE officers may move an item to Closed, and only with evidence attached.',
+
     /* ── Bulan & label grafik ── */
     'Okt': 'Oct', 'Des': 'Dec', 'Mei': 'May', 'Ags': 'Aug', 'Agu': 'Aug',
     'Jan': 'Jan', 'Feb': 'Feb', 'Mar': 'Mar', 'Apr': 'Apr', 'Jun': 'Jun',
@@ -260,7 +329,7 @@ window.KGI18N = (function () {
     'Jendela waktu': 'Time window', 'Pelaksana': 'Performed by',
     'Pengawas': 'Supervisor', 'Terbitkan Izin': 'Issue Permit',
     'Tutup Izin': 'Close Permit',
-    'PANAS': 'HOT', 'RUANG': 'CONFINED', 'TINGGI': 'HEIGHT', 'LISTRIK': 'ELECTRICAL',
+    'PANAS': 'HOT', 'RUANG': 'CONFINED', 'KETINGGIAN': 'WORKING AT HEIGHT', 'LISTRIK': 'ELECTRICAL',
 
     /* ── Bahaya ── */
     'Laporan Bahaya': 'Hazard Reports', 'Lapor Bahaya': 'Report Hazard',
@@ -481,11 +550,142 @@ window.KGI18N = (function () {
     'Nonaktif': 'Inactive', 'Aktif': 'Active', 'Menunggu': 'Pending',
     'NONAKTIF': 'INACTIVE', 'MENUNGGU': 'PENDING',
     'Kirim Undangan': 'Send Invitation',
-    'Modul': 'Module', 'Baca': 'View', 'Isi': 'Create', 'Verifikasi': 'Verify', 'Kelola': 'Administer'
+    'Modul': 'Module', 'Baca': 'View', 'Isi': 'Create', 'Verifikasi': 'Verify', 'Kelola': 'Administer',
+
+    /* ── Catatan penjelas tambahan pada modal rincian ── */
+    "Modul Incident, Nearmiss & Accident — hanya yang berstatus Terverifikasi":
+      "Incident, Nearmiss & Accident module — Verified records only",
+    "Jumlah CAPA belum selesai dengan tenggat dalam 7 hari ke depan":
+      "Count of unfinished CAPAs falling due within the next 7 days",
+    "Modul CAPA — status Terbuka dan Dalam Proses yang tenggatnya ≤ 7 hari":
+      "CAPA module — Open and In Progress items due in ≤ 7 days",
+    "Butir yang sesuai tetap disimpan sebagai rekaman, karena inspeksi tanpa jejak butir yang lolos tidak dapat dibuktikan kepada auditor.":
+      "Conforming items are still kept on the record, because an inspection with no trace of the items that passed cannot be proven to an auditor.",
+    "Jawaban Tidak Sesuai langsung membuka isian temuan — foto, tingkat risiko, penanggung jawab, dan tenggat — dan temuan itu menjadi CAPA bernomor.":
+      "A Not Conforming answer opens the finding form straight away — photo, risk level, owner and due date — and that finding becomes a numbered CAPA.",
+    "Satu butir Tidak Sesuai mengunci unit dari operasi sampai temuannya ditutup. Ini gerbang operasi, bukan peringatan.":
+      "A single Not Conforming item locks the unit out of operation until its finding is closed. This is an operating gate, not a warning.",
+    "Checklist dikerjakan tiap shift oleh operator dan bersifat gerbang operasi — berbeda dari Inspection yang bulanan dan bersifat penilaian.":
+      "The checklist is run every shift by the operator and acts as an operating gate — unlike Inspection, which is monthly and assessment-based.",
+    "Butir yang sesuai tetap disimpan sebagai rekaman. Checklist yang hanya mencatat pelanggaran tidak dapat membuktikan bahwa pemeriksaan benar-benar dilakukan.":
+      "Conforming items are still kept on the record. A checklist that logs only violations cannot prove the check was actually carried out.",
+    "Satu butir Tidak Sesuai membuat unit FL-03 otomatis berstatus tidak boleh dioperasikan sampai temuan ditutup. Ini gerbang, bukan peringatan yang bisa dilewati.":
+      "A single Not Conforming item automatically puts unit FL-03 out of service until the finding is closed. This is a gate, not a warning that can be waved through.",
+    "Tidak boleh diterima — pekerjaan terkait dihentikan sampai skor turun":
+      "Unacceptable — the work it covers stops until the score comes down",
+    "Temuan Major wajib punya CAPA dengan tenggat. Yang lewat tenggat naik ke merah di seluruh papan.":
+      "Every Major finding must carry a CAPA with a due date. Anything past due turns red across every board.",
+    "Temuan Minor wajib punya CAPA. Observasi dan Peluang Perbaikan tidak wajib, tetapi tetap dicatat.":
+      "Every Minor finding must carry a CAPA. Observations and Improvement Opportunities are not mandatory, but are still recorded.",
+    "Setiap nilai terukur selalu disandingkan dengan baku mutunya. Angka tanpa ambang pembanding tidak berarti apa-apa bagi pembaca.":
+      "Every measured value is always placed next to its quality standard. A figure with no threshold beside it means nothing to the reader.",
+    "Nilai yang melewati ambang melahirkan satu entri CAPA dan muncul di kolom Perhatian Segera pada Dashboard.":
+      "A value that crosses the threshold creates one CAPA entry and appears in the Immediate Attention column on the Dashboard.",
+    "Saat revisi baru disahkan, versi sebelumnya ditarik dari peredaran dan ditandai kedaluwarsa.":
+      "Once a new revision is approved, the previous version is withdrawn from circulation and marked obsolete.",
+    "Dokumen yang lewat masa tinjau tertaut ke temuan audit yang bersangkutan. Tanggal tinjau ulang tidak pernah boleh kosong.":
+      "A document past its review date is linked to the audit finding that raised it. The review date must never be left empty.",
+    "Jam-orang pelatihan ini mengalir ke KPI Jam Pelatihan K3 di modul SHE KPI & Analytics.":
+      "These training man-hours flow into the OHS Training Hours KPI in the SHE KPI & Analytics module.",
+    "Yang ditanya auditor bukan daftar pelatihan yang pernah diadakan, melainkan mengapa yang direncanakan belum terlaksana.":
+      "What an auditor asks for is not the list of training already held, but why the training that was planned has not happened.",
+    "Lagging mengukur hasil yang sudah terjadi. TRIR memakai basis 200.000 jam dan LTIFR 1.000.000 jam — membandingkan keduanya secara langsung adalah kekeliruan basis.":
+      "Lagging measures outcomes that have already happened. TRIR uses a 200,000-hour base and LTIFR 1,000,000 hours — comparing the two directly is a base error.",
+    "Laporan bahaya, inspeksi, pelatihan, patroli, dan CAPA dari modulnya masing-masing":
+      "Hazard reports, inspections, training, patrols and CAPAs, each from its own module",
+    "Leading mengukur usaha yang sedang dilakukan. Arah \"baik\" mengikuti arti indikatornya, bukan arah angkanya: jumlah laporan bahaya yang naik adalah kabar baik.":
+      "Leading measures the effort being made now. The \"good\" direction follows what the indicator means, not which way the number moves: a rising hazard report count is good news.",
+    "Hak akses dihitung ulang dari peran pada setiap pemuatan halaman, tidak pernah dititipkan di dalam sesi.":
+      "Access rights are recomputed from the role on every page load, never carried inside the session.",
+    "Akun tidak pernah dihapus, hanya dinonaktifkan. Menghapus akun akan memutus nama pelapor dari catatan insiden yang sudah ada.":
+      "An account is never deleted, only deactivated. Deleting an account would cut the reporter's name loose from incident records that already exist.",
+
+    /* ── Catatan panjang pada modal rincian ── */
+    "Aktivitas Terbaru menampilkan tujuh hari terakhir dari seluruh modul, tanpa perlu membuka laporan satu per satu.":
+      "Recent Activity shows the last seven days across every module, without opening each report one by one.",
+    "Kolom ini hanya memuat item kritis dan tinggi dari seluruh modul. Perubahan status biasa tidak muncul di sini.":
+      "This column carries only critical and high items from across the modules. Ordinary status changes do not appear here.",
+    "Persetujuan berjenjang tidak dapat dilompati. Izin kerja tidak berstatus Aktif sebelum seluruh langkah selesai dan JSEA-nya lengkap.":
+      "The approval chain cannot be skipped. A work permit is not Active until every step is complete and its JSEA is filled in.",
+    "Risiko sisa di zona merah menutup penerbitan izin, bukan sekadar memberi peringatan.":
+      "Residual risk in the red zone blocks permit issuance outright; it does not merely raise a warning.",
+    "Pemenuhan ditampilkan per elemen, bukan sebagai satu angka gabungan. Satu elemen yang lemah tidak boleh tertutup oleh sebelas elemen yang baik.":
+      "Compliance is shown element by element, not as a single combined figure. One weak element must never be hidden behind eleven good ones.",
+    "TRIR dan LTIFR memakai basis berbeda (200.000 jam versus 1.000.000 jam). Membandingkan keduanya secara langsung adalah kekeliruan paling sering dalam pelaporan K3.":
+      "TRIR and LTIFR use different bases (200,000 hours versus 1,000,000 hours). Comparing the two directly is the most common error in OHS reporting.",
+    "Status pabrik ditentukan oleh indikator terburuk, bukan rata-rata. Merata-ratakan akan menyembunyikan satu angka yang bermasalah di balik angka lain yang baik.":
+      "Plant status is set by the worst indicator, not by the average. Averaging would hide one problem figure behind the good ones.",
+    "Program strategis dipantau di tingkat grup. Yang tidak dapat diselesaikan di tingkat pabrik naik ke bagian Perlu keputusan manajemen.":
+      "Strategic programmes are tracked at group level. Whatever cannot be settled at the plant escalates to the Management decision required section.",
+    "Papan eksekutif tanpa bagian ini hanya memindahkan angka, tidak memindahkan keputusan. Isinya adalah hal yang tidak dapat diselesaikan di tingkat pabrik: belanja modal, penugasan orang, dan penjadwalan lembaga sertifikasi.":
+      "An executive board without this section moves numbers, not decisions. What sits here is what a plant cannot settle on its own: capital spending, staffing, and certification-body scheduling.",
+    "Ambang tetap: sisa ≤ 30 hari merah, ≤ 60 hari jingga. Perpanjangan sertifikasi wajib dimulai sebelum masuk ambang merah, karena penjadwalan lembaga sertifikasi memerlukan waktu.":
+      "Fixed thresholds: ≤ 30 days left is red, ≤ 60 days amber. Renewal of a mandatory certification has to start before the red threshold, because booking a certification body takes time.",
+    "Tidak ada risiko sisa yang boleh berada di zona Ekstrem. Bila ada, pekerjaan terkait tidak boleh berjalan sampai skornya turun.":
+      "No residual risk may sit in the Extreme zone. If one does, the work it covers must not run until the score comes down.",
+    "Matriks 5×5 dan kosakata zonanya sama persis dengan yang dipakai JSEA pada modul Work Permit. Dua matriks berbeda dalam satu aplikasi menghasilkan dua angka yang tidak dapat dibandingkan.":
+      "The 5×5 matrix and its zone vocabulary are exactly the ones the JSEA uses in the Work Permit module. Two different matrices inside one application produce two numbers that cannot be compared.",
+    "Tingkat 1 mengikat tingkat di bawahnya. Instruksi kerja yang bertentangan dengan prosedur di atasnya adalah ketidaksesuaian, bukan penyesuaian lapangan.":
+      "Level 1 binds every level beneath it. A work instruction that contradicts the procedure above it is a nonconformity, not a field adjustment.",
+    "Peringatan otomatis dikirim pada H-60, H-30, H-14, dan H-7. Pelaporan wajib diperlakukan sama seperti izin, karena keterlambatan keduanya sama-sama berakibat hukum.":
+      "Automatic alerts go out at D-60, D-30, D-14 and D-7. Mandatory reporting is treated exactly like a permit, because being late on either carries the same legal consequence.",
+    "Kolom perilaku aman diisi lebih dulu dan selalu lebih besar. Kategori dengan pita merah terpanjang menjadi tema safety talk bulan berikutnya.":
+      "The safe-behaviour column is filled in first and always runs higher. The category with the longest red bar becomes next month's safety talk theme.",
+    "Pekerja yang diamati tidak pernah dicatat namanya. Satu temuan perilaku juga tidak otomatis menjadi CAPA — yang menjadi CAPA adalah pola yang berulang.":
+      "The worker being observed is never recorded by name. A single behavioural finding does not automatically become a CAPA either — what becomes a CAPA is a repeating pattern.",
+    "Menandai terbaca tidak menghentikan pengingat: item yang lewat tenggat tetap dikirim ulang setiap hari sampai ditutup di modulnya.":
+      "Marking as read does not stop the reminder: an overdue item is resent every day until it is closed in its own module.",
+    "Pemberitahuan hanya dikirim bila membawa tindakan: sesuatu yang lewat tenggat, menunggu keputusan penerimanya, atau melewati ambang. Perubahan status biasa tidak dikirim — cukup terlihat di modulnya.":
+      "A notification is sent only when it carries an action: something overdue, something waiting on the recipient's decision, or a threshold crossed. Ordinary status changes are not sent — they are visible in the module itself.",
+    "Tidak ada peran yang boleh memverifikasi catatannya sendiri. Sistem K3 yang memperbolehkan penutupan sendiri kehilangan gunanya sebagai bukti audit.":
+      "No role may verify its own record. An OHS system that allows self-closure loses its worth as audit evidence.",
+    "Angka turun bukan selalu kabar baik. Bacalah bersama jumlah laporan bahaya: insiden turun sementara laporan bahaya juga turun biasanya berarti pelaporan yang melemah, bukan pabrik yang membaik.":
+      "A falling figure is not always good news. Read it alongside the hazard report count: incidents down while hazard reports are also down usually means reporting is weakening, not that the plant is improving.",
+    "Angka ini kembali ke nol pada kecelakaan hilang waktu kerja berikutnya. Karena itu ia tidak pernah dipakai sendirian sebagai ukuran keberhasilan program.":
+      "This figure resets to zero at the next lost-time injury. That is why it is never used on its own as a measure of programme success.",
+    "Setiap temuan Major dan Minor wajib punya CAPA dengan tenggat. Temuan tanpa CAPA adalah temuan audit berikutnya yang sedang menunggu.":
+      "Every Major and Minor finding must carry a CAPA with a due date. A finding without a CAPA is next audit's finding, already waiting.",
+    "Penuaan dihitung dari tanggal terbit, bukan tanggal tenggat. Modul CAPA adalah tempat sistem QHSE paling sering gagal dalam praktik, jadi item macet sengaja dibuat tidak bisa tidak terlihat.":
+      "Ageing is counted from the issue date, not the due date. The CAPA module is where QHSE systems most often fail in practice, so stalled items are deliberately made impossible to miss.",
+    "Angka grup menyembunyikan sebaran antarpabrik. Semarang di 0,56 berada di atas target meskipun angka grup lolos — karena itu kartu skor pabrik dibaca berdampingan dengan ubin ini.":
+      "The group figure hides the spread between plants. Semarang at 0.56 is above target even though the group figure passes — which is why the plant scorecard is read side by side with this tile.",
+    "LTIFR memakai basis 1.000.000 jam, TRIR memakai 200.000 jam. Dua angka ini tidak boleh dibandingkan langsung satu sama lain.":
+      "LTIFR uses a 1,000,000-hour base, TRIR a 200,000-hour base. The two figures must never be compared directly against each other.",
+    "Angka akumulatif ini kembali ke nol per pabrik pada kecelakaan hilang waktu kerja berikutnya, jadi ia tidak pernah dipakai sendirian sebagai ukuran keberhasilan program.":
+      "This running figure resets to zero for that plant at the next lost-time injury, so it is never used on its own as a measure of programme success.",
+    "Status pabrik ditentukan oleh indikator terburuk, bukan rata-rata. Satu pabrik yang belum nihil tidak boleh tertutup oleh tiga pabrik yang sudah nihil.":
+      "Plant status is set by the worst indicator, not by the average. One plant that is not yet at zero must not be hidden behind three that are.",
   };
 
   /* Pola yang memuat angka: ditangani dengan aturan, bukan entri kamus. */
   const RULES = [
+    /* ── Rincian sekali klik ── */
+    [/^(\d+) hari sejak terbit$/, (m) => `${m[1]} days since issue`],
+    [/^(\d+) dari (\d+) butir \((\d+)%\)$/, (m) => `${m[1]} of ${m[2]} items (${m[3]}%)`],
+    [/^(\d+) dari (\d+) butir · (\d+)%$/, (m) => `${m[1]} of ${m[2]} items · ${m[3]}%`],
+    [/^(\d+) dari (\d+) modul$/, (m) => `${m[1]} of ${m[2]} modules`],
+    [/^(\d+) dari (\d+)$/, (m) => `${m[1]} of ${m[2]}`],
+    [/^(\d+) butir Tidak Sesuai$/, (m) => `${m[1]} non-conforming items`],
+    [/^(\d+) kriteria$/, (m) => `${m[1]} criteria`],
+    [/^(\d+) dokumen$/, (m) => `${m[1]} documents`],
+    [/^(\d+) perilaku$/, (m) => `${m[1]} behaviours`],
+    [/^(\d+) orang$/, (m) => `${m[1]} people`],
+    [/^(\d+) hari$/, (m) => `${m[1]} days`],
+    [/^lewat (\d+) hari$/, (m) => `${m[1]} days overdue`],
+    [/^Lihat rincian (.+)$/, (m) => `View details for ${phrase(m[1])}`],
+    [/^kemungkinan (\d+) × dampak (\d+) = (\d+)$/, (m) => `likelihood ${m[1]} × impact ${m[2]} = ${m[3]}`],
+    [/^(\d+) — kemungkinan (\d+) × keparahan (\d+)$/, (m) => `${m[1]} — likelihood ${m[2]} × severity ${m[3]}`],
+    [/^RISIKO AWAL (\d+)$/, (m) => `INITIAL RISK ${m[1]}`],
+    [/^RISIKO SISA (\d+)$/, (m) => `RESIDUAL RISK ${m[1]}`],
+    [/^TURUN (\d+) TINGKAT$/, (m) => `DOWN ${m[1]} LEVELS`],
+    [/^OPSI (.+)$/, (m) => `OPTION ${phrase(m[1])}`],
+    [/^Butir (\d+)$/, (m) => `Item ${m[1]}`],
+    [/^Langkah (\d+) · (.+)$/, (m) => `Step ${m[1]} · ${m[2]}`],
+    [/^Elemen (\d+) · (.+)$/, (m) => `Element ${m[1]} · ${m[2]}`],
+    [/^Pabrik (.+)$/, (m) => `${m[1]} Plant`],
+    [/^Zona (.+)$/, (m) => `Zone ${phrase(m[1])}`],
+    [/^Tingkat L(\d) · (.+)$/, (m) => `Level L${m[1]} · ${phrase(m[2])}`],
+
     [/^(\d+(?:[.,]\d+)?)\s*(?:jt|juta)?\s*vs (\d{4})$/, (m) => `${m[1]} vs ${m[2]}`],
     [/^(.+) vs Agustus$/, (m) => `${phrase(m[1])} vs August`],
     [/^(.+) vs bulan lalu$/, (m) => `${phrase(m[1])} vs last month`],
