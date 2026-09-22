@@ -1,6 +1,6 @@
 # KG SafeGuard — Purwarupa Aplikasi QHSE Khong Guan Group
 
-Purwarupa antarmuka untuk sistem QHSE (Quality, Health, Safety, Environment) Khong Guan Group, mencakup delapan belas modul operasional. Arah visual mengikuti permintaan: **biru bergradasi dengan setiap kontrol tampak melayang dan berbayang**.
+Purwarupa antarmuka untuk sistem QHSE (Quality, Health, Safety, Environment) Khong Guan Group, mencakup dua puluh modul operasional. Arah visual mengikuti permintaan: **biru bergradasi dengan setiap kontrol tampak melayang dan berbayang**.
 
 > Seluruh isi data dalam purwarupa ini adalah **data rekaan** untuk demonstrasi alur kerja, bukan catatan QHSE Khong Guan yang sebenarnya.
 
@@ -15,7 +15,7 @@ python3 -m http.server 8000
 
 Membuka `index.html` langsung dari berkas (`file://`) juga bekerja, hanya saja huruf dari Google Fonts mungkin tidak termuat.
 
-## Delapan belas modul
+## Dua puluh modul
 
 | # | Modul | Pola layar | Isi purwarupa |
 |---|---|---|---|
@@ -37,6 +37,8 @@ Membuka `index.html` langsung dari berkas (`file://`) juga bekerja, hanya saja h
 | 16 | Observasi Perilaku | Papan + catatan | Indeks perilaku aman, 6 kategori perilaku, 5 catatan observasi dengan percakapan tindak lanjut |
 | 17 | Dashboard Eksekutif | Papan | Kartu skor 4 pabrik, arah TRIR grup, 5 program strategis, dan hal yang perlu keputusan manajemen |
 | 18 | Notifikasi | Kotak masuk | 10 pemberitahuan lintas modul dengan tautan langsung, dan tabel aturan pengiriman |
+| 19 | Pengaturan | Papan preferensi | Tema, bahasa, pabrik aktif, periode, dan kanal pemberitahuan |
+| 20 | User Management | Daftar + matriks | 10 pengguna, 5 peran, dan matriks hak akses Baca / Isi / Verifikasi / Kelola |
 
 ## Keputusan desain yang berdampak pada alur kerja
 
@@ -57,31 +59,48 @@ Beberapa aturan sengaja dikeraskan dalam purwarupa karena inilah yang membedakan
 - **Notifikasi hanya dikirim bila membawa tindakan.** Perubahan status biasa tidak dikirim; cukup terlihat di modulnya.
 - **Panah tren hanya muncul untuk perbandingan antarperiode** (teks yang memuat "vs"). Angka pendamping yang bersifat keterangan tetap berwarna, tetapi tanpa panah, supaya panah tidak pernah berbohong soal arah.
 
+## Masuk, tema, dan bahasa
+
+**Login.** Aplikasi dibuka dengan layar masuk. Autentikasi berjalan sepenuhnya di peramban — tidak ada server, tidak ada kata sandi yang dikirim ke mana pun. Seluruh akun demo memakai kata sandi `demo1234` dan tercantum di layar masuk:
+
+| Email | Peran | Yang terlihat |
+|---|---|---|
+| `fadli.saldi@khongguan.co.id` | QHSE Supervisor | 18 modul, tanpa User Management |
+| `agus.prasetyo@khongguan.co.id` | Operator Produksi | 6 modul lapangan |
+| `yuni.astuti@khongguan.co.id` | Petugas Lingkungan | 6 modul lingkungan dan kepatuhan |
+| `plant.manager@khongguan.co.id` | Plant Manager | 10 modul, dibuka di Dashboard Eksekutif |
+| `admin@khongguan.co.id` | Administrator Sistem | 20 modul, termasuk User Management |
+
+Peran menentukan modul mana yang muncul di sidebar. Membuka alamat modul yang tidak diizinkan akan dialihkan ke modul pertama yang boleh dilihat, dan alamatnya ikut dibetulkan.
+
+**Tema.** Terang, Gelap, atau Sistem. Tersimpan di `localStorage` dan dipasang sebelum halaman digambar, jadi tidak ada kedipan putih saat memuat dalam mode gelap.
+
+**Bahasa.** Indonesia atau English. Tampilan ditulis dalam bahasa Indonesia, lalu `assets/i18n.js` menerjemahkan simpul teks yang cocok persis dengan kamus. Frasa yang belum ada di kamus dibiarkan apa adanya, sehingga terjemahan yang hilang tidak pernah merusak tata letak.
+
+Isi rekaman — kronologi insiden, catatan observasi, nama orang dan lokasi — **sengaja tidak diterjemahkan**. Rekaman K3 ditulis pekerja dalam bahasa mereka sendiri; menerjemahkannya otomatis akan mengubah bukti.
+
 ## Navigasi
 
-Delapan belas modul dikelompokkan menurut cara kerja QHSE sehari-hari, bukan menurut nomor:
+Dua puluh modul dikelompokkan menurut cara kerja QHSE sehari-hari, bukan menurut nomor:
 
 - **Dashboard Eksekutif** dan **Dashboard & Laporan** di puncak — dua pembaca berbeda, dua layar berbeda.
 - **Kejadian & Bahaya** — Incident & Nearmiss, Laporan Bahaya K3L, Observasi Perilaku.
 - **Pengendalian** — Inspection, Safety Checklist, Work Permit & JSEA, Manajemen Risiko, CAPA.
 - **Kepatuhan** — Audit, Environment, Dokumen Internal, Dokumen Eksternal.
 - **Pengembangan** — Manajemen Pelatihan, SHE Activity, SHE KPI & Analytics.
-- **Notifikasi** di kaki, dengan lencana hitung.
+- **Administrasi** — Notifikasi, Pengaturan, User Management.
 
 ## Susunan berkas
 
 ```
-index.html          Kerangka: sidebar, top bar ponsel, FAB, wadah modal
+index.html          Layar masuk, kerangka aplikasi, sakelar tema & bahasa
 assets/tokens.css   Token desain — warna, huruf, jarak, sudut, bayangan (tema terang & gelap)
 assets/app.css      Komponen antarmuka; tidak ada warna harfiah, semuanya lewat token
-assets/data.js      Data contoh seluruh modul
-assets/app.js       Perutean hash, 18 tampilan modul, modal, grafik SVG
+assets/i18n.js      Kamus Indonesia–Inggris dan penerjemah simpul teks
+assets/data.js      Data contoh seluruh modul, pengguna, peran, dan matriks hak akses
+assets/app.js       Sesi, tema, bahasa, perutean hash, 20 tampilan modul, modal, grafik SVG
 assets/img/         Lambang aplikasi dan ikon modul
 ```
-
-## Tema
-
-Antarmuka mengikuti tema sistem pengguna. Tema gelap bukan pembalikan mekanis — tangga biru dinaikkan terangnya agar tetap lolos kontras di atas permukaan gelap.
 
 ## Sistem desain
 
@@ -90,5 +109,6 @@ Token, komponen, dan panduan pemakaian dipelihara sebagai design system terpisah
 ## Yang belum ada
 
 - **Lambang korporat Khong Guan.** Berkas resminya harus diminta ke tim Corporate Communication. Purwarupa memakai lambang aplikasi KG SafeGuard (perisai dengan centang) dan teks biasa; lambang korporat sengaja tidak digambar ulang atau didekati bentuknya.
-- Backend, autentikasi, dan hak akses per peran. Purwarupa berjalan sebagai satu peran (QHSE Supervisor) dengan data statis.
+- **Autentikasi sungguhan.** Login purwarupa ini berjalan di peramban tanpa server: kata sandi dibandingkan di sisi klien dan sesi disimpan di `localStorage`. Cukup untuk memperagakan alur dan hak akses per peran, tetapi bukan pengamanan. Jangan memakai kata sandi sungguhan di layar ini.
+- Backend dan basis data. Seluruh data bersifat statis di berkas JavaScript.
 - Unggahan berkas sungguhan, ekspor PDF/Excel, dan pengiriman notifikasi ke email/WhatsApp. Modul 18 menampilkan antrean dan aturan kirimnya, tetapi tidak benar-benar mengirim apa pun.

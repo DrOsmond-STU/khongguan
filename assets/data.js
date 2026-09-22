@@ -676,6 +676,41 @@ window.KG = (function () {
     { peristiwa: 'Checklist shift belum dikerjakan', kanal: 'Aplikasi', penerima: 'Penanggung jawab shift', segera: '2 jam setelah shift mulai' }
   ];
 
+  /* ─── Pengguna & peran (purwarupa) ─── */
+  const peran = {
+    operator:  { nama: 'Operator Produksi',      modul: ['dashboard','incident','hazard','checklist','bbs','activity'] },
+    qhse:      { nama: 'QHSE Supervisor',        modul: ['dashboard','incident','hazard','bbs','inspection','checklist','permit','risk','capa','audit','environment','docint','docext','training','activity','kpi','notif','settings'] },
+    lingkungan:{ nama: 'Petugas Lingkungan',     modul: ['dashboard','environment','docext','capa','notif','settings'] },
+    manajemen: { nama: 'Plant Manager',          modul: ['exec','dashboard','kpi','audit','environment','risk','capa','permit','notif','settings'] },
+    admin:     { nama: 'Administrator Sistem',   modul: ['exec','dashboard','incident','hazard','bbs','inspection','checklist','permit','risk','capa','audit','environment','docint','docext','training','activity','kpi','notif','settings','users'] }
+  };
+
+  const pengguna = [
+    { email: 'fadli.saldi@khongguan.co.id',   nama: 'Fadli Saldi',      inisial: 'FS', peran: 'qhse',       lokasi: 'Cibitung', status: 'Aktif',    masuk: '22 Sep 2026, 06:12' },
+    { email: 'agus.prasetyo@khongguan.co.id', nama: 'Agus Prasetyo',    inisial: 'AP', peran: 'operator',   lokasi: 'Cibitung', status: 'Aktif',    masuk: '22 Sep 2026, 05:48' },
+    { email: 'yuni.astuti@khongguan.co.id',   nama: 'Yuni Astuti',      inisial: 'YA', peran: 'lingkungan', lokasi: 'Cibitung', status: 'Aktif',    masuk: '21 Sep 2026, 16:30' },
+    { email: 'plant.manager@khongguan.co.id', nama: 'Hartono Wijaya',   inisial: 'HW', peran: 'manajemen',  lokasi: 'Cibitung', status: 'Aktif',    masuk: '21 Sep 2026, 14:05' },
+    { email: 'admin@khongguan.co.id',         nama: 'Siti Nurhaliza',   inisial: 'SN', peran: 'admin',      lokasi: 'Kantor Pusat', status: 'Aktif', masuk: '22 Sep 2026, 07:01' },
+    { email: 'rina.wulandari@khongguan.co.id',nama: 'Rina Wulandari',   inisial: 'RW', peran: 'qhse',       lokasi: 'Cibitung', status: 'Aktif',    masuk: '20 Sep 2026, 16:05' },
+    { email: 'bambang.s@khongguan.co.id',     nama: 'Bambang Sutrisno', inisial: 'BS', peran: 'operator',   lokasi: 'Cibitung', status: 'Aktif',    masuk: '19 Sep 2026, 07:20' },
+    { email: 'dewi.kartika@khongguan.co.id',  nama: 'Dewi Kartika',     inisial: 'DK', peran: 'operator',   lokasi: 'Cibitung', status: 'Aktif',    masuk: '20 Sep 2026, 15:12' },
+    { email: 'hendra.g@khongguan.co.id',      nama: 'Hendra Gunawan',   inisial: 'HG', peran: 'operator',   lokasi: 'Cibitung', status: 'Nonaktif', masuk: '02 Agu 2026, 09:40' },
+    { email: 'qhse.semarang@khongguan.co.id', nama: 'Lilis Suryani',    inisial: 'LS', peran: 'qhse',       lokasi: 'Semarang', status: 'Menunggu', masuk: '—' }
+  ];
+
+  const hakAkses = [
+    { modul: 'Incident & Nearmiss',  operator: 'Isi',   qhse: 'Verifikasi', manajemen: 'Baca', admin: 'Kelola' },
+    { modul: 'Laporan Bahaya K3L',   operator: 'Isi',   qhse: 'Verifikasi', manajemen: 'Baca', admin: 'Kelola' },
+    { modul: 'Safety Checklist',     operator: 'Isi',   qhse: 'Verifikasi', manajemen: '—',    admin: 'Kelola' },
+    { modul: 'Work Permit & JSEA',   operator: '—',     qhse: 'Verifikasi', manajemen: 'Verifikasi', admin: 'Kelola' },
+    { modul: 'Manajemen Risiko',     operator: '—',     qhse: 'Isi',        manajemen: 'Verifikasi', admin: 'Kelola' },
+    { modul: 'CAPA',                 operator: 'Baca',  qhse: 'Verifikasi', manajemen: 'Baca', admin: 'Kelola' },
+    { modul: 'Audit',                operator: '—',     qhse: 'Isi',        manajemen: 'Baca', admin: 'Kelola' },
+    { modul: 'Environment',          operator: '—',     qhse: 'Isi',        manajemen: 'Baca', admin: 'Kelola' },
+    { modul: 'SHE KPI & Analytics',  operator: '—',     qhse: 'Baca',       manajemen: 'Baca', admin: 'Kelola' },
+    { modul: 'User Management',      operator: '—',     qhse: '—',          manajemen: '—',    admin: 'Kelola' }
+  ];
+
   return {
     plant, periode, user, lokasi, orang,
     insiden, inspeksi, checklistAPAR, izin, jsea, bahaya,
@@ -685,6 +720,7 @@ window.KG = (function () {
     pelatihan, sertifikasi, risikoKonteks, risikoRegister,
     dokInternal, dokEksternal, checklistHarian, checklistP2H,
     obsKategori, observasi, pabrikKinerja, programStrategis, trenTrir,
-    notifikasi, aturanNotifikasi
+    notifikasi, aturanNotifikasi,
+    peran, pengguna, hakAkses
   };
 })();

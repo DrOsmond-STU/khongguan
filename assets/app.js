@@ -36,7 +36,8 @@
     checklist: '<path d="M8 5h11M8 12h11M8 19h11"/><path d="m3 5 1.4 1.4L7 3.8"/><path d="m3 12 1.4 1.4L7 10.8"/><path d="m3 19 1.4 1.4L7 17.8"/>',
     bbs: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.8"/>',
     exec: '<path d="M8 6.5V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1.5"/><rect x="2.5" y="6.5" width="19" height="13" rx="2"/><path d="M2.5 12h19"/>',
-    notif: '<path d="M18 9a6 6 0 1 0-12 0c0 5-2 6.5-2 6.5h16S18 14 18 9Z"/><path d="M13.7 19.5a2 2 0 0 1-3.4 0"/>'
+    notif: '<path d="M18 9a6 6 0 1 0-12 0c0 5-2 6.5-2 6.5h16S18 14 18 9Z"/><path d="M13.7 19.5a2 2 0 0 1-3.4 0"/>',
+    settings: '<circle cx="12" cy="12" r="3.2"/><path d="M19.4 14.5a1.6 1.6 0 0 0 .32 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.6 1.6 0 0 0-1.77-.32 1.6 1.6 0 0 0-1 1.47V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1.05-1.47 1.6 1.6 0 0 0-1.77.32l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.6 1.6 0 0 0 .32-1.77 1.6 1.6 0 0 0-1.47-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.47-1.05 1.6 1.6 0 0 0-.32-1.77l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.6 1.6 0 0 0 1.77.32H9a1.6 1.6 0 0 0 1-1.47V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.47 1.6 1.6 0 0 0 1.77-.32l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.6 1.6 0 0 0-.32 1.77V9a1.6 1.6 0 0 0 1.47 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/>'
   };
 
   /* ───────── Pemetaan warna ───────── */
@@ -83,8 +84,10 @@
       { id: 'activity', label: 'SHE Activity', icon: 'activity', modul: 9 },
       { id: 'kpi', label: 'SHE KPI & Analytics', icon: 'kpi', modul: 8 }
     ] },
-    { group: null, items: [
-      { id: 'notif', label: 'Notifikasi', icon: 'notif', modul: 18, count: 3 }
+    { group: 'ADMINISTRASI', items: [
+      { id: 'notif', label: 'Notifikasi', icon: 'notif', modul: 18, count: 3 },
+      { id: 'settings', label: 'Pengaturan', icon: 'settings', modul: 19 },
+      { id: 'users', label: 'User Management', icon: 'people', modul: 20 }
     ] }
   ];
   const ALL = NAV.flatMap(g => g.items);
@@ -1130,6 +1133,25 @@
     'tandai-baca': { title: 'Tandai Semua Terbaca', sub: 'Pemberitahuan tetap tersimpan di riwayat',
       body: `<div class="tile-note" style="border:0;padding:0">Tiga pemberitahuan belum dibaca akan ditandai terbaca. Item yang lewat tenggat tetap dikirim ulang setiap hari sampai ditutup di modulnya, jadi menandai terbaca tidak menghentikan pengingat.</div>`,
       ok: 'Tandai Terbaca', toast: 'Semua pemberitahuan ditandai terbaca.' },
+    'lupa-sandi': { title: 'Lupa Kata Sandi', sub: 'Purwarupa — tidak ada email yang benar-benar dikirim',
+      body: `<div class="tile-note" style="border:0;padding:0">Pada sistem sebenarnya, tautan pengaturan ulang dikirim ke alamat email korporat Anda dan berlaku 60 menit. Di purwarupa ini seluruh akun demo memakai kata sandi <code>demo1234</code>.</div>`,
+      ok: 'Mengerti', toast: 'Tautan pengaturan ulang akan dikirim ke email korporat Anda.' },
+    'tambah-pengguna': { title: 'Tambah Pengguna', sub: 'Undangan dikirim ke email korporat dan berlaku 14 hari',
+      body: `<div class="field"><label for="u-nama">Nama lengkap <span class="req">*</span></label>
+        <input id="u-nama" type="text" placeholder="Nama sesuai data kepegawaian"></div>
+        <div class="field"><label for="u-email">Alamat email <span class="req">*</span></label>
+        <input id="u-email" type="email" placeholder="nama@khongguan.co.id"></div>
+        <div class="row2">
+          <div class="field"><label for="u-peran">Peran <span class="req">*</span></label>
+          <select id="u-peran"><option>Operator Produksi</option><option selected>QHSE Supervisor</option><option>Petugas Lingkungan</option><option>Plant Manager</option><option>Administrator Sistem</option></select></div>
+          <div class="field"><label for="u-lokasi">Pabrik <span class="req">*</span></label>
+          <select id="u-lokasi"><option>Pabrik Cibitung</option><option>Pabrik Bekasi</option><option>Pabrik Semarang</option><option>Pabrik Medan</option><option>Kantor Pusat</option></select></div>
+        </div>
+        <div class="tile-note">Hak akses mengikuti peran, bukan per orang. Peran dapat diubah kapan saja tanpa membuat akun baru.</div>`,
+      ok: 'Kirim Undangan', toast: 'Undangan terkirim. Akun aktif setelah pengguna menyetel kata sandi.' },
+    'simpan-preferensi': { title: 'Simpan Preferensi', sub: 'Tersimpan di peramban ini',
+      body: `<div class="tile-note" style="border:0;padding:0">Tema dan bahasa langsung tersimpan begitu Anda mengubahnya, jadi tombol ini hanya menyimpan pilihan pabrik, periode, dan kanal pemberitahuan. Pada sistem sebenarnya ketiganya tersimpan di profil pengguna, bukan di peramban.</div>`,
+      ok: 'Simpan', toast: 'Preferensi tersimpan.' },
     'unduh': { title: 'Siapkan Laporan', sub: 'Purwarupa — berkas tidak benar-benar dihasilkan',
       body: `<div class="tile-note" style="border:0;padding:0">Pada sistem sebenarnya, laporan dirakit dari data modul terkait, diberi kop dengan lambang korporat Khong Guan, lalu dikirim sebagai PDF ke daftar penerima.</div>`,
       ok: 'Mengerti', toast: 'Laporan sedang disiapkan.' }
@@ -1755,122 +1777,528 @@
     </div>`;
   }
 
+  /* ───────── Pengaturan ───────── */
+  function viewSettings() {
+    const sw = (group, opts) => `<div class="switch" role="group" aria-label="${group}">${
+      opts.map(o => `<button type="button" ${o.attr}>${o.label}</button>`).join('')}</div>`;
+    const toggle = (id, on) => `<button type="button" class="toggle" data-toggle="${id}" aria-pressed="${on}" aria-label="Aktifkan"></button>`;
+    return hero({
+      eyebrow: 'PENGATURAN',
+      title: 'Preferensi Aplikasi',
+      desc: 'Tema, bahasa, lokasi kerja, dan kanal pemberitahuan. Preferensi tampilan tersimpan di peramban ini saja, bukan di server — jadi setiap perangkat punya pilihannya sendiri.'
+    }) + `
+    <div class="page">
+      <section class="section grid grid--2">
+        <div class="card">
+          <h3>Tampilan</h3>
+          <div class="card-sub">Tema dan bahasa tersimpan di peramban ini saja</div>
+          <div class="pref-row">
+            <div>
+              <div class="pref-label">Mode tampilan</div>
+              <div class="pref-help">Sistem mengikuti pengaturan perangkat Anda</div>
+            </div>
+            ${sw('Tema', [
+              { attr: 'data-theme-set="light"', label: 'Terang' },
+              { attr: 'data-theme-set="dark"', label: 'Gelap' },
+              { attr: 'data-theme-set="system"', label: 'Sistem' }
+            ])}
+          </div>
+          <div class="pref-row">
+            <div>
+              <div class="pref-label">Bahasa antarmuka</div>
+              <div class="pref-help">Isi rekaman tetap dalam bahasa aslinya</div>
+            </div>
+            ${sw('Bahasa', [
+              { attr: 'data-lang="id"', label: 'Indonesia' },
+              { attr: 'data-lang="en"', label: 'English' }
+            ])}
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Lokasi Kerja</h3>
+          <div class="card-sub">Angka KPI berbeda per pabrik</div>
+          <div class="field">
+            <label for="s-plant">Pabrik aktif</label>
+            <select id="s-plant">${D.pabrikKinerja.map(p => `<option${p.nama === 'Cibitung' ? ' selected' : ''}>Pabrik ${p.nama}</option>`).join('')}</select>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label for="s-period">Periode laporan</label>
+            <select id="s-period"><option>September 2026</option><option>Agustus 2026</option><option>Triwulan III 2026</option><option>Tahun berjalan 2026</option></select>
+          </div>
+          <div class="tile-note" style="margin-top:var(--space-4)">Mengubah pabrik akan memuat ulang seluruh ubin KPI dan daftar modul. Pada purwarupa ini data hanya tersedia untuk Pabrik Cibitung.</div>
+        </div>
+      </section>
+
+      <section class="section grid grid--2">
+        <div class="card">
+          <h3>Kanal Pemberitahuan</h3>
+          <div class="card-sub">Pilih cara Anda menerima pemberitahuan</div>
+          <div class="pref-row">
+            <div><div class="pref-label">Pemberitahuan dalam aplikasi</div>
+              <div class="pref-help">Selalu aktif untuk item yang lewat tenggat</div></div>
+            ${toggle('n-app', true)}
+          </div>
+          <div class="pref-row">
+            <div><div class="pref-label">Ringkasan harian lewat email</div>
+              <div class="pref-help">Dikirim setiap hari kerja pukul 07.00 WIB</div></div>
+            ${toggle('n-mail', true)}
+          </div>
+          <div class="pref-row">
+            <div><div class="pref-label">Insiden Accident lewat WhatsApp</div>
+              <div class="pref-help">Seketika, tanpa menunggu ringkasan</div></div>
+            ${toggle('n-wa', true)}
+          </div>
+          <div class="pref-row">
+            <div><div class="pref-label">Pengingat dokumen kedaluwarsa</div>
+              <div class="pref-help">H-60, H-30, H-14, dan H-7</div></div>
+            ${toggle('n-doc', false)}
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Tentang Purwarupa</h3>
+          <div class="card-sub">Batas yang perlu diketahui sebelum dipakai menilai</div>
+          <dl class="kv">
+            <dt>Versi</dt><dd>Purwarupa antarmuka 0.3 · 20 modul</dd>
+            <dt>Data</dt><dd>Seluruh isi adalah data rekaan untuk demonstrasi alur kerja, bukan catatan QHSE Khong Guan yang sebenarnya.</dd>
+            <dt>Autentikasi</dt><dd>Login berjalan di peramban tanpa server. Jangan memakai kata sandi sungguhan di layar ini.</dd>
+            <dt>Lambang korporat</dt><dd>Belum disertakan. Berkas resminya perlu diminta ke tim Corporate Communication.</dd>
+          </dl>
+          <div style="display:flex;gap:var(--space-3);margin-top:var(--space-5);flex-wrap:wrap">
+            <button class="btn btn--primary btn--sm" data-act="simpan-preferensi">Simpan Preferensi</button>
+          </div>
+        </div>
+      </section>
+    </div>`;
+  }
+
+  /* ───────── User Management ───────── */
+  function viewUsers() {
+    const U = D.pengguna;
+    const aktif = U.filter(u => u.status === 'Aktif').length;
+    const tunggu = U.filter(u => u.status === 'Menunggu').length;
+    const perans = new Set(U.map(u => u.peran));
+    const statusChip = { 'Aktif': 'low', 'Nonaktif': 'neutral', 'Menunggu': 'high' };
+    const cell = (v) => v === '—' ? '<span class="mono mono--muted">—</span>'
+      : chip(v.toUpperCase(), v === 'Kelola' ? 'critical' : v === 'Verifikasi' ? 'high' : v === 'Isi' ? 'medium' : 'low');
+    return hero({
+      eyebrow: 'ADMINISTRASI · USER MANAGEMENT',
+      title: 'Pengguna & Hak Akses',
+      desc: 'Peran menentukan modul mana yang muncul di sidebar dan tindakan apa yang boleh dilakukan. Operator tidak melihat Audit dan KPI; hanya Administrator yang melihat halaman ini.',
+      action: { act: 'tambah-pengguna', icon: 'people', label: 'Tambah Pengguna' }
+    }) + `
+    <div class="page">
+      <div class="grid grid--4">
+        ${tile({ label: 'TOTAL PENGGUNA', value: String(U.length), icon: 'people', arah: 'flat', delta: '3 pabrik', note: 'Termasuk akun nonaktif dan menunggu aktivasi' })}
+        ${tile({ label: 'AKTIF 30 HARI', value: String(aktif), icon: 'capa', arah: 'good', delta: '1 vs Agustus', note: 'Pernah masuk dalam 30 hari terakhir' })}
+        ${tile({ label: 'MENUNGGU AKTIVASI', value: String(tunggu), icon: 'clock', arah: 'bad', delta: 'undangan belum diterima', note: 'Undangan kedaluwarsa setelah 14 hari' })}
+        ${tile({ label: 'PERAN BERBEDA', value: String(perans.size), icon: 'shield', arah: 'flat', delta: 'operator sampai administrator', note: 'Hak akses diatur per peran, bukan per orang' })}
+      </div>
+
+      <section class="section panel">
+        <div class="panel-bar"><h2>Daftar Pengguna</h2>
+          <button class="pill" aria-pressed="true">Semua</button>
+          <button class="pill" aria-pressed="false">Aktif</button>
+          <button class="pill" aria-pressed="false">Menunggu</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>PENGGUNA</th><th>EMAIL</th><th>PERAN</th><th>PABRIK</th><th>TERAKHIR MASUK</th><th>STATUS</th></tr></thead>
+            <tbody>
+              ${U.map(u => `
+                <tr class="${u.status === 'Menunggu' ? 'is-overdue' : ''}">
+                  <td>
+                    <div style="display:flex;align-items:center;gap:var(--space-3)">
+                      <span class="avatar" style="width:30px;height:30px;font-size:11px;background:var(--brand-100);color:var(--brand-700)">${u.inisial}</span>
+                      <span style="font-weight:600;color:var(--ink-900)">${u.nama}</span>
+                    </div>
+                  </td>
+                  <td class="mono mono--muted">${u.email}</td>
+                  <td><span class="role-chip role-${u.peran}">${D.peran[u.peran].nama.toUpperCase()}</span></td>
+                  <td>${u.lokasi}</td>
+                  <td class="mono mono--muted">${u.masuk}</td>
+                  <td>${chip(u.status.toUpperCase(), statusChip[u.status], true)}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section panel">
+        <div class="panel-bar"><h2>Matriks Hak Akses</h2>
+          <span class="sub" style="font-size:12px;color:var(--ink-500)">Baca &lt; Isi &lt; Verifikasi &lt; Kelola</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>MODUL</th><th>OPERATOR</th><th>QHSE SUPERVISOR</th><th>PLANT MANAGER</th><th>ADMINISTRATOR SISTEM</th></tr></thead>
+            <tbody>
+              ${D.hakAkses.map(r => `
+                <tr>
+                  <td style="font-weight:600;color:var(--ink-900)">${r.modul}</td>
+                  <td>${cell(r.operator)}</td>
+                  <td>${cell(r.qhse)}</td>
+                  <td>${cell(r.manajemen)}</td>
+                  <td>${cell(r.admin)}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="card">
+          <h3>Mengapa hak akses diatur per peran</h3>
+          <p style="font-size:14px;line-height:22px;color:var(--ink-700);margin:0">
+            Memberi hak per orang terasa fleksibel di awal dan berubah menjadi kekacauan dalam setahun: tidak ada
+            yang tahu lagi siapa boleh menutup CAPA. Peran membuat pertanyaan itu selalu terjawab oleh satu tabel,
+            dan perpindahan orang antarbagian cukup diselesaikan dengan mengganti perannya. Pengecualian per orang
+            sengaja tidak disediakan di purwarupa ini.
+          </p>
+        </div>
+      </section>
+    </div>`;
+  }
+
   /* ───────── Render ───────── */
   const VIEWS = { exec: viewExec, dashboard: viewDashboard, incident: viewIncident,
     hazard: viewHazard, bbs: viewBbs, inspection: viewInspection, checklist: viewChecklist,
     permit: viewPermit, risk: viewRisk, capa: viewCapa, audit: viewAudit,
     environment: viewEnvironment, docint: viewDocInt, docext: viewDocExt,
-    training: viewTraining, activity: viewActivity, kpi: viewKpi, notif: viewNotif };
+    training: viewTraining, activity: viewActivity, kpi: viewKpi, notif: viewNotif,
+    settings: viewSettings, users: viewUsers };
 
   let current = 'dashboard';
+  let session = null;
+
+  /* ───────── Preferensi: tema & bahasa ───────── */
+
+  const store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+
+  let theme = store.get('kg-theme') || 'system';
+  let lang = store.get('kg-lang') || 'id';
+
+  function applyTheme(t) {
+    theme = (t === 'dark' || t === 'light') ? t : 'system';
+    if (theme === 'system') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', theme);
+    store.set('kg-theme', theme);
+    syncSwitches();
+  }
+
+  function applyLang(l) {
+    lang = (l === 'en') ? 'en' : 'id';
+    KGI18N.setLang(lang);
+    document.documentElement.lang = lang;
+    store.set('kg-lang', lang);
+    translateDom(document.getElementById('login'));
+    translateDom(document.querySelector('.brand'));
+    if (session) { setUserCard(); render(); }
+    syncSwitches();
+  }
+
+  function syncSwitches() {
+    const b1 = document.querySelectorAll('[data-theme-set]');
+    for (let i = 0; i < b1.length; i++) b1[i].setAttribute('aria-pressed', String(b1[i].dataset.themeSet === theme));
+    const b2 = document.querySelectorAll('[data-lang]');
+    for (let i = 0; i < b2.length; i++) b2[i].setAttribute('aria-pressed', String(b2[i].dataset.lang === lang));
+  }
+
+  /* Menerjemahkan markup statis (layar masuk, kartu pengguna) di tempat.
+     Teks asli disimpan pada simpulnya supaya perpindahan bahasa bisa bolak-balik. */
+  function translateDom(root) {
+    if (!root) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(function (n) {
+      const raw = n.nodeValue;
+      if (!raw || !raw.trim()) return;
+      if (n.__kg === undefined) n.__kg = raw.trim();
+      const v = KGI18N.t(n.__kg);
+      if (v !== n.__kg || raw.trim() !== n.__kg) n.nodeValue = raw.replace(raw.trim(), v);
+    });
+    ['placeholder', 'aria-label', 'title'].forEach(function (a) {
+      const els = root.querySelectorAll('[' + a + ']');
+      for (let i = 0; i < els.length; i++) {
+        const el = els[i], key = '__kg_' + a;
+        if (el[key] === undefined) el[key] = el.getAttribute(a);
+        el.setAttribute(a, KGI18N.t(el[key]));
+      }
+    });
+  }
+
+  /* ───────── Sesi ───────── */
+
+  const PASSWORD = 'demo1234';
+
+  function loadSession() {
+    let email = null;
+    try { email = sessionStorage.getItem('kg-session') || localStorage.getItem('kg-session'); } catch (e) {}
+    if (!email) return null;
+    return D.pengguna.filter(function (u) { return u.email === email && u.status === 'Aktif'; })[0] || null;
+  }
+  function saveSession(email, remember) {
+    try {
+      if (remember) { localStorage.setItem('kg-session', email); sessionStorage.removeItem('kg-session'); }
+      else { sessionStorage.setItem('kg-session', email); localStorage.removeItem('kg-session'); }
+    } catch (e) {}
+  }
+  function clearSession() {
+    try { sessionStorage.removeItem('kg-session'); localStorage.removeItem('kg-session'); } catch (e) {}
+  }
+
+  function allowed(id) {
+    if (!session) return false;
+    const r = D.peran[session.peran];
+    return !!r && r.modul.indexOf(id) !== -1;
+  }
+  function firstAllowed() {
+    const f = ALL.filter(function (x) { return allowed(x.id); })[0];
+    return f ? f.id : 'dashboard';
+  }
+
+  function setUserCard() {
+    document.getElementById('user-initials').textContent = session.inisial;
+    document.getElementById('user-name').textContent = session.nama;
+    document.getElementById('user-role').textContent =
+      KGI18N.t(D.peran[session.peran].nama) + ' · ' + session.lokasi;
+  }
+
+  function showApp() {
+    document.getElementById('login').hidden = true;
+    document.getElementById('app').hidden = false;
+    document.querySelector('.fab').hidden = false;
+    setUserCard();
+  }
+
+  function showLogin() {
+    document.getElementById('app').hidden = true;
+    document.querySelector('.fab').hidden = true;
+    const el = document.getElementById('login');
+    el.hidden = false;
+    renderLoginAccounts();
+    translateDom(el);
+    syncSwitches();
+  }
+
+  function renderLoginAccounts() {
+    const host = document.getElementById('login-accounts');
+    if (!host) return;
+    host.innerHTML = KGI18N.tr(D.pengguna.filter(function (u) { return u.status === 'Aktif'; })
+      .slice(0, 5).map(function (u) {
+        return '<button type="button" class="demo-acct" data-acct="' + u.email + '">' +
+          '<span class="av">' + u.inisial + '</span>' +
+          '<span><span class="nm">' + u.nama + '</span><br>' +
+          '<span class="rl">' + D.peran[u.peran].nama + ' · ' + u.lokasi + '</span></span></button>';
+      }).join(''));
+  }
+
+  function loginError(msg) {
+    const box = document.getElementById('login-error');
+    if (!msg) { box.hidden = true; box.textContent = ''; return; }
+    box.hidden = false;
+    box.textContent = KGI18N.t(msg);
+  }
+
+  function attemptLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const pass = document.getElementById('login-pass').value;
+    const remember = document.getElementById('login-remember').checked;
+    if (!email) return loginError('Alamat email belum diisi.');
+    if (!pass) return loginError('Kata sandi belum diisi.');
+    const u = D.pengguna.filter(function (x) {
+      return x.email.toLowerCase() === email.toLowerCase() && x.status === 'Aktif';
+    })[0];
+    if (!u || pass !== PASSWORD) {
+      return loginError('Email atau kata sandi salah. Periksa kembali, atau pakai salah satu akun demo di bawah.');
+    }
+    loginError(null);
+    session = u;
+    saveSession(u.email, remember);
+    showApp();
+    const start = firstAllowed();
+    if (location.hash === '#/' + start) route(); else location.hash = '#/' + start;
+    toast('Selamat datang, ' + u.nama.split(' ')[0] + '.');
+  }
+
+  function logout() {
+    session = null;
+    clearSession();
+    closeModal();
+    location.hash = '';
+    showLogin();
+  }
+
+  /* ───────── Render ───────── */
 
   function renderNav() {
-    return NAV.map(g => `
-      ${g.group ? `<div class="nav-group">${g.group}</div>` : ''}
-      ${g.items.map(it => `
-        <a class="nav-item" href="#/${it.id}" ${current === it.id ? 'aria-current="page"' : ''}>
-          ${I(icon[it.icon], 18)}<span>${it.label}</span>
-          ${it.count ? `<span class="nav-count">${it.count}</span>` : ''}
-        </a>`).join('')}`).join('');
+    return NAV.map(function (g) {
+      const items = g.items.filter(function (it) { return allowed(it.id); });
+      if (!items.length) return '';
+      return (g.group ? '<div class="nav-group">' + g.group + '</div>' : '') +
+        items.map(function (it) {
+          return '<a class="nav-item" href="#/' + it.id + '"' +
+            (current === it.id ? ' aria-current="page"' : '') + '>' +
+            I(icon[it.icon], 18) + '<span>' + it.label + '</span>' +
+            (it.count ? '<span class="nav-count">' + it.count + '</span>' : '') + '</a>';
+        }).join('');
+    }).join('');
   }
 
   function render() {
-    document.getElementById('nav').innerHTML = renderNav();
+    document.getElementById('nav').innerHTML = KGI18N.tr(renderNav());
     const main = document.getElementById('view');
-    main.innerHTML = (VIEWS[current] || viewDashboard)();
-    document.getElementById('mobile-title').textContent =
-      (ALL.find(x => x.id === current) || {}).label || 'KG SafeGuard';
-    main.scrollTop = 0;
+    main.innerHTML = KGI18N.tr((VIEWS[current] || viewDashboard)());
+    const item = ALL.filter(function (x) { return x.id === current; })[0];
+    document.getElementById('mobile-title').textContent = KGI18N.t(item ? item.label : 'KG SafeGuard');
+    syncSwitches();
     window.scrollTo(0, 0);
   }
 
   function route() {
-    const id = (location.hash || '#/dashboard').replace('#/', '');
-    current = VIEWS[id] ? id : 'dashboard';
+    if (!session) { showLogin(); return; }
+    const id = (location.hash || '#/').replace('#/', '');
+    const target = (VIEWS[id] && allowed(id)) ? id : firstAllowed();
+    /* Alamat tidak boleh berbohong: kalau modul tidak diizinkan, hash ikut dibetulkan. */
+    if (target !== id) { try { history.replaceState(null, '', '#/' + target); } catch (e) {} }
+    current = target;
     document.querySelector('.sidebar').classList.remove('is-open');
     render();
   }
 
   /* ───────── Modal ───────── */
+
   function openModal(o) {
     const host = document.getElementById('modal-host');
-    host.innerHTML = `
-      <div class="scrim" data-close>
-        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-          <div class="modal-head">
-            <div>
-              <h2 id="modal-title">${o.title}</h2>
-              <div class="sub">${o.sub}</div>
-            </div>
-            <button class="icon-btn" data-close aria-label="Tutup">${I(icon.close, 18)}</button>
-          </div>
-          <div class="modal-body">${o.body}</div>
-          <div class="modal-foot">
-            ${o.autosave ? `<span class="autosave">Draf tersimpan 08:42</span>` : ''}
-            <button class="btn btn--ghost" data-close>${o.ok ? 'Batal' : 'Tutup'}</button>
-            ${o.ok ? `<button class="btn btn--primary" data-submit="${o.toast || ''}">${o.ok}</button>` : ''}
-          </div>
-        </div>
-      </div>`;
+    host.innerHTML = KGI18N.tr([
+      '<div class="scrim" data-close>',
+      '  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">',
+      '    <div class="modal-head">',
+      '      <div>',
+      '        <h2 id="modal-title">' + o.title + '</h2>',
+      '        <div class="sub">' + o.sub + '</div>',
+      '      </div>',
+      '      <button class="icon-btn" data-close aria-label="Tutup">' + I(icon.close, 18) + '</button>',
+      '    </div>',
+      '    <div class="modal-body">' + o.body + '</div>',
+      '    <div class="modal-foot">',
+      (o.autosave ? '<span class="autosave">Draf tersimpan 08:42</span>' : ''),
+      '      <button class="btn btn--ghost" data-close>' + (o.ok ? 'Batal' : 'Tutup') + '</button>',
+      (o.ok ? '<button class="btn btn--primary" data-submit="' + (o.toast || '') + '">' + o.ok + '</button>' : ''),
+      '    </div>',
+      '  </div>',
+      '</div>'
+    ].join(''));
     host.hidden = false;
     const first = host.querySelector('button, select, input, textarea');
     if (first) first.focus();
   }
+
   function closeModal() {
     const host = document.getElementById('modal-host');
     host.hidden = true; host.innerHTML = '';
   }
+
   function toast(msg) {
     const t = document.createElement('div');
-    t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = msg;
+    t.className = 'toast'; t.setAttribute('role', 'status');
+    t.textContent = KGI18N.t(msg);
     document.body.appendChild(t);
-    setTimeout(() => t.remove(), 3200);
+    setTimeout(function () { t.remove(); }, 3200);
   }
 
   /* ───────── Peristiwa ───────── */
-  document.addEventListener('click', (e) => {
-    const closeBtn = e.target.closest('[data-close]');
-    if (closeBtn && (closeBtn.hasAttribute('data-close') && (e.target === closeBtn || closeBtn.tagName === 'BUTTON'))) {
-      closeModal(); return;
+
+  document.addEventListener('submit', function (e) {
+    if (e.target && e.target.id === 'login-form') { e.preventDefault(); attemptLogin(); }
+  });
+
+  document.addEventListener('click', function (e) {
+    const langBtn = e.target.closest('[data-lang]');
+    if (langBtn) { applyLang(langBtn.dataset.lang); return; }
+
+    const themeBtn = e.target.closest('[data-theme-set]');
+    if (themeBtn) { applyTheme(themeBtn.dataset.themeSet); return; }
+
+    const acct = e.target.closest('[data-acct]');
+    if (acct) {
+      document.getElementById('login-email').value = acct.dataset.acct;
+      document.getElementById('login-pass').value = PASSWORD;
+      loginError(null);
+      return;
     }
+
+    if (e.target.closest('#pass-toggle')) {
+      const f = document.getElementById('login-pass');
+      f.type = f.type === 'password' ? 'text' : 'password';
+      return;
+    }
+
+    if (e.target.closest('#logout-btn')) { logout(); return; }
+
+    const tg = e.target.closest('[data-toggle]');
+    if (tg) { tg.setAttribute('aria-pressed', tg.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); return; }
+
+    const closeBtn = e.target.closest('[data-close]');
+    if (closeBtn && (e.target === closeBtn || closeBtn.tagName === 'BUTTON')) { closeModal(); return; }
+
     const submit = e.target.closest('[data-submit]');
     if (submit) { closeModal(); if (submit.dataset.submit) toast(submit.dataset.submit); return; }
 
     const pick = e.target.closest('[data-pick]');
     if (pick) {
-      pick.parentElement.querySelectorAll('[data-pick]').forEach(p => p.setAttribute('aria-pressed', 'false'));
-      pick.setAttribute('aria-pressed', 'true'); return;
+      const sibs = pick.parentElement.querySelectorAll('[data-pick]');
+      for (let i = 0; i < sibs.length; i++) sibs[i].setAttribute('aria-pressed', 'false');
+      pick.setAttribute('aria-pressed', 'true');
+      return;
     }
+
     const act = e.target.closest('[data-act]');
     if (act) { const a = ACTIONS[act.dataset.act]; if (a) openModal(Object.assign({ autosave: true }, a)); return; }
 
+    const goto = e.target.closest('[data-goto]');
+    if (goto && VIEWS[goto.dataset.goto]) { location.hash = '#/' + goto.dataset.goto; return; }
+
     const row = e.target.closest('[data-detail]');
     if (row) {
-      const [kind, id] = row.dataset.detail.split(':');
-      const d = detail(kind, id);
+      const parts = row.dataset.detail.split(':');
+      const d = detail(parts[0], parts[1]);
       if (d) openModal(d);
       return;
     }
-    const goto = e.target.closest('[data-goto]');
-    if (goto && VIEWS[goto.dataset.goto]) { location.hash = '#/' + goto.dataset.goto; return; }
+
     const f = e.target.closest('[data-filter]');
     if (f) { incFilter = f.dataset.filter; render(); return; }
 
     if (e.target.closest('#menu-btn')) {
       document.querySelector('.sidebar').classList.toggle('is-open'); return;
     }
-    if (e.target.closest('.pill') && !e.target.closest('[data-filter]')) {
-      const p = e.target.closest('.pill');
-      const on = p.getAttribute('aria-pressed') === 'true';
-      p.parentElement.querySelectorAll('.pill').forEach(x => x.setAttribute('aria-pressed', 'false'));
-      p.setAttribute('aria-pressed', on ? 'false' : 'true');
+
+    const pill = e.target.closest('.pill');
+    if (pill && !e.target.closest('[data-filter]')) {
+      const on = pill.getAttribute('aria-pressed') === 'true';
+      const sibs = pill.parentElement.querySelectorAll('.pill');
+      for (let i = 0; i < sibs.length; i++) sibs[i].setAttribute('aria-pressed', 'false');
+      pill.setAttribute('aria-pressed', on ? 'false' : 'true');
     }
   });
 
-  document.addEventListener('keydown', (e) => {
+  document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && !document.getElementById('modal-host').hidden) closeModal();
   });
 
   window.addEventListener('hashchange', route);
-  route();
+
+  /* ───────── Boot ───────── */
+
+  KGI18N.setLang(lang);
+  document.documentElement.lang = lang;
+  applyTheme(theme);
+  translateDom(document.querySelector('.brand'));
+
+  session = loadSession();
+  if (session) { showApp(); route(); } else { showLogin(); }
 })();
