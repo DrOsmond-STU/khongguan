@@ -1548,7 +1548,13 @@
      di gudang dan lantai produksi, dan syarat agar dapat dipasang sebagai aplikasi. */
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('sw.js').catch(function () {});
+      /* Penanda ?v= disertakan karena peladen melayani sw.js dengan masa simpan
+         satu bulan, dan simpanan di depannya sempat menyajikan versi lama
+         berhari-hari. Alamat yang berbeda menjadi pendaftaran yang berbeda,
+         jadi pekerja layanan baru benar-benar terpasang, menggantikan yang
+         lama pada cakupan yang sama. Angkanya disamakan dengan penanda di
+         index.html supaya keduanya naik bersamaan. */
+      navigator.serviceWorker.register('sw.js?v=3').catch(function () {});
     });
   }
 })();
