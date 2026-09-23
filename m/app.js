@@ -1423,7 +1423,7 @@
 
     if (t.closest('#tbl-keluar')) {
       try { localStorage.removeItem('kg-session'); sessionStorage.removeItem('kg-session'); } catch (e) {}
-      sesi = null; tab = 'beranda';
+      sesi = null; tab = 'beranda'; rujukanBuka = null; cariQ = '';
       tampilkanMasuk();
       return;
     }
