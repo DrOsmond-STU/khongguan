@@ -1,8 +1,14 @@
 # KG SafeGuard — Purwarupa Aplikasi QHSE Khong Guan Group
 
-Purwarupa antarmuka untuk sistem QHSE (Quality, Health, Safety, Environment) Khong Guan Group, mencakup dua puluh modul operasional. Arah visual mengikuti permintaan: **biru bergradasi dengan setiap kontrol tampak melayang dan berbayang**.
+Purwarupa antarmuka untuk sistem QHSE (Quality, Health, Safety, Environment) Khong Guan Group: **25 modul aplikasi meja** dan satu **aplikasi lapangan** yang dapat dipasang di Android dan tetap bekerja tanpa sinyal. Arah visual mengikuti permintaan: **biru bergradasi dengan setiap kontrol tampak melayang dan berbayang**.
 
 > Seluruh isi data dalam purwarupa ini adalah **data rekaan** untuk demonstrasi alur kerja, bukan catatan QHSE Khong Guan yang sebenarnya.
+
+## Dokumentasi
+
+Paket dokumen yang disiapkan **sebelum pengembangan sistem produksi dimulai** ada di **[`docs/`](docs/)** — ikhtisar produk, kebutuhan fungsional dan nonfungsional, aturan bisnis, matriks hak akses, model data, spesifikasi API, arsitektur, aplikasi lapangan, panduan antarmuka, rencana pengujian, rencana rilis, dan glosarium.
+
+Purwarupa ini menunjukkan **bentuknya**; dokumen di `docs/` menetapkan **apa yang harus dibangun di belakangnya**.
 
 ## Menjalankan
 
@@ -15,7 +21,7 @@ python3 -m http.server 8000
 
 Membuka `index.html` langsung dari berkas (`file://`) juga bekerja, hanya saja huruf dari Google Fonts mungkin tidak termuat.
 
-## Dua puluh modul
+## Dua puluh lima modul
 
 | # | Modul | Pola layar | Isi purwarupa |
 |---|---|---|---|
@@ -39,6 +45,11 @@ Membuka `index.html` langsung dari berkas (`file://`) juga bekerja, hanya saja h
 | 18 | Notifikasi | Kotak masuk | 10 pemberitahuan lintas modul dengan tautan langsung, dan tabel aturan pengiriman |
 | 19 | Pengaturan | Papan preferensi | Tema, bahasa, pabrik aktif, periode, dan kanal pemberitahuan |
 | 20 | User Management | Daftar + matriks | 10 pengguna, 5 peran, dan matriks hak akses Baca / Isi / Verifikasi / Kelola |
+| 21 | Asisten QHSE | Pencarian + ringkasan | Pencarian menyeluruh ke seluruh catatan sistem, disaring menurut peran |
+| 22 | Analisis JSA | Pustaka + langkah | 4 JSA, 19 langkah kerja, kolom Awal → Sisa, sebaran hierarki pengendalian |
+| 23 | HIRADC K3 | Kategori + register | 12 aktivitas rutin/non-rutin/darurat, 7 kategori sumber bahaya |
+| 24 | Induksi K3 | Kartu + materi | 7 kartu induksi dengan masa berlaku per jenis peserta, 8 materi wajib |
+| 25 | Regulasi K3 | Register | 12 peraturan dengan kolom penerapan dan bukti, status pemenuhan tiga tingkat |
 
 ## Keputusan desain yang berdampak pada alur kerja
 
@@ -65,11 +76,11 @@ Beberapa aturan sengaja dikeraskan dalam purwarupa karena inilah yang membedakan
 
 | Email | Peran | Yang terlihat |
 |---|---|---|
-| `fadli.saldi@khongguan.co.id` | QHSE Supervisor | 18 modul, tanpa User Management |
-| `agus.prasetyo@khongguan.co.id` | Operator Produksi | 6 modul lapangan |
-| `yuni.astuti@khongguan.co.id` | Petugas Lingkungan | 6 modul lingkungan dan kepatuhan |
-| `plant.manager@khongguan.co.id` | Plant Manager | 10 modul, dibuka di Dashboard Eksekutif |
-| `admin@khongguan.co.id` | Administrator Sistem | 20 modul, termasuk User Management |
+| `fadli.saldi@khongguan.co.id` | QHSE Supervisor | 23 modul, tanpa User Management |
+| `agus.prasetyo@khongguan.co.id` | Operator Produksi | 10 modul lapangan |
+| `yuni.astuti@khongguan.co.id` | Petugas Lingkungan | 10 modul lingkungan dan kepatuhan |
+| `plant.manager@khongguan.co.id` | Plant Manager | 15 modul, dibuka di Dashboard Eksekutif |
+| `admin@khongguan.co.id` | Administrator Sistem | 25 modul, termasuk User Management |
 
 Peran menentukan modul mana yang muncul di sidebar. Membuka alamat modul yang tidak diizinkan akan dialihkan ke modul pertama yang boleh dilihat, dan alamatnya ikut dibetulkan.
 
@@ -81,14 +92,18 @@ Isi rekaman — kronologi insiden, catatan observasi, nama orang dan lokasi — 
 
 ## Navigasi
 
-Dua puluh modul dikelompokkan menurut cara kerja QHSE sehari-hari, bukan menurut nomor:
+Dua puluh lima modul dikelompokkan menurut cara kerja QHSE sehari-hari, bukan menurut nomor:
 
-- **Dashboard Eksekutif** dan **Dashboard & Laporan** di puncak — dua pembaca berbeda, dua layar berbeda.
+- **Dashboard Eksekutif**, **Dashboard & Laporan**, dan **Asisten QHSE** di puncak.
 - **Kejadian & Bahaya** — Incident & Nearmiss, Laporan Bahaya K3L, Observasi Perilaku.
-- **Pengendalian** — Inspection, Safety Checklist, Work Permit & JSEA, Manajemen Risiko, CAPA.
-- **Kepatuhan** — Audit, Environment, Dokumen Internal, Dokumen Eksternal.
-- **Pengembangan** — Manajemen Pelatihan, SHE Activity, SHE KPI & Analytics.
+- **Pengendalian** — Inspection, Safety Checklist, Work Permit & JSEA, Analisis JSA, HIRADC K3, Manajemen Risiko, CAPA.
+- **Kepatuhan** — Audit, Environment, Dokumen Internal, Dokumen Eksternal, Regulasi K3.
+- **Pengembangan** — Induksi K3, Manajemen Pelatihan, SHE Activity, SHE KPI & Analytics.
 - **Administrasi** — Notifikasi, Pengaturan, User Management.
+
+### Aplikasi lapangan
+
+`/m/` adalah aplikasi terpisah untuk telepon: lima jenis laporan (bahaya, insiden, observasi perilaku, observasi APD, pengajuan izin kerja), tugas harian, dan empat rujukan K3 yang terbaca tanpa sinyal. Dapat dipasang dari Chrome tanpa toko aplikasi. Rinciannya pada [`docs/08-aplikasi-lapangan.md`](docs/08-aplikasi-lapangan.md).
 
 ## Susunan berkas
 
@@ -98,8 +113,13 @@ assets/tokens.css   Token desain — warna, huruf, jarak, sudut, bayangan (tema 
 assets/app.css      Komponen antarmuka; tidak ada warna harfiah, semuanya lewat token
 assets/i18n.js      Kamus Indonesia–Inggris dan penerjemah simpul teks
 assets/data.js      Data contoh seluruh modul, pengguna, peran, dan matriks hak akses
-assets/app.js       Sesi, tema, bahasa, perutean hash, 20 tampilan modul, modal, grafik SVG
+assets/app.js       Sesi, tema, bahasa, perutean hash, 25 tampilan modul, modal, grafik SVG
+assets/ai.js        Indeks pencarian seluruh sistem dan Asisten QHSE
+assets/lapangan.js  Antrean laporan lapangan; titik temu aplikasi meja dan aplikasi lapangan
 assets/img/         Lambang aplikasi dan ikon modul
+m/                  Aplikasi lapangan: PWA yang dapat dipasang dan bekerja tanpa sinyal
+android/            Kerangka pembungkus Android (Trusted Web Activity), belum dikompilasi
+docs/               Paket dokumen sebelum pengembangan
 ```
 
 ## Sistem desain
