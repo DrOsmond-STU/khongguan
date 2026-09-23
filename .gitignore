@@ -2,3 +2,8 @@
 # tetapi bukan bagian dari aplikasi — dan gambar besar di dalam repositori
 # membuat setiap orang yang mengklonnya ikut mengunduhnya selamanya.
 .layar/
+
+# Bahan proposal: tangkapan layar dan halaman yang sudah diterbitkan sebagai
+# artifact. Sama alasannya — hasilnya sudah ada di tempat lain, dan gambarnya
+# tidak dipakai aplikasi ini.
+.prop/
