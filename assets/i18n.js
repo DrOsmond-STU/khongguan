@@ -1736,6 +1736,8 @@ window.KGI18N = (function () {
     'Lebih dari satu shift': 'More than one shift',
     'Prasyarat yang sudah disiapkan': 'Prerequisites already in place',
     'Prasyarat disiapkan': 'Prerequisites in place',
+    'Boleh lebih dari satu. Yang belum ditandai akan diperiksa pengawas di lokasi sebelum izin diterbitkan.':
+      'More than one may be ticked. Anything left unticked is checked on site by the supervisor before the permit is issued.',
     'belum ada yang ditandai': 'none ticked',
     'belum ada yang ditandai pelapor': 'none ticked by the reporter',
     'APAR di lokasi': 'Extinguisher on site',

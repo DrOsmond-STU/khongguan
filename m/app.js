@@ -304,7 +304,7 @@
       </div>
       <div class="f">
         <label>Jenis APD yang diperiksa</label>
-        <div class="keping keping--banyak" id="k-apd">
+        <div class="keping" id="k-apd">
           ${D.apdJenis.map(function (a, i) {
             return `<button type="button" data-nilai="${a.nama}" data-banyak="1" aria-pressed="${i < 3}">${a.nama}</button>`;
           }).join('')}
@@ -364,11 +364,12 @@
       </div>
       <div class="f">
         <label>Prasyarat yang sudah disiapkan</label>
-        <div class="keping keping--banyak" id="k-syarat">
+        <div class="keping" id="k-syarat">
           ${PRASYARAT_IZIN.map(function (k) {
             return `<button type="button" data-nilai="${k}" data-banyak="1" aria-pressed="false">${k}</button>`;
           }).join('')}
         </div>
+        <div class="bantu">Boleh lebih dari satu. Yang belum ditandai akan diperiksa pengawas di lokasi sebelum izin diterbitkan.</div>
       </div>` + isianFoto() + isianLokasi() + `
       <div class="catatan">Pengajuan ini belum menjadi izin. Pekerjaan baru boleh dimulai setelah izin disetujui dan prasyaratnya diperiksa di lokasi oleh pengawas.</div>`;
   }
