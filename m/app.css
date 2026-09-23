@@ -239,6 +239,47 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .aksi--bahaya span { color: rgba(255, 255, 255, .82); }
 .aksi--bahaya .aksi-teks { flex: 1; }
 
+/* Menu ikon: pintasan ke seluruh fitur, empat per baris.
+   Empat kolom dipilih karena pada lebar 360px sekalipun satu petak masih
+   selebar 76px — cukup untuk sasaran ketuk 44px yang disarankan, dengan
+   label dua baris di bawahnya. Lima kolom memaksa label dipotong. */
+.menu-kisi {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2); margin-bottom: var(--space-5);
+}
+.menu-petak {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: var(--space-3) 4px var(--space-2);
+  background: var(--surface-000); border: 1px solid var(--border-100);
+  border-radius: var(--radius-md); cursor: pointer;
+  min-height: 78px;
+}
+.menu-petak:active { background: var(--surface-100); transform: translateY(1px); }
+.menu-petak:focus-visible { outline: 2px solid var(--brand-600); outline-offset: 2px; }
+.menu-ikon {
+  width: 34px; height: 34px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--brand-050); color: var(--brand-700);
+}
+.menu-ikon svg { width: 18px; height: 18px; }
+/* Label dibiarkan membungkus ke baris kedua, bukan dipotong: nama fitur yang
+   terpotong ("Observasi A…") memaksa pengguna menebak isi menunya.
+   Label memakai kelasnya sendiri, bukan pemilih '.menu-petak span': pemilih itu
+   ikut mengenai pembungkus ikon dan lencana angka, dan warnanya menang atas
+   warna lencana karena lebih spesifik — angkanya berubah gelap di atas merah. */
+.menu-label {
+  font-size: 10.5px; line-height: 13px; font-weight: 600;
+  color: var(--ink-700); text-align: center; word-break: break-word;
+}
+.menu-angka {
+  position: absolute; top: 5px; right: 5px; min-width: 16px; height: 16px;
+  padding: 0 4px; border-radius: 8px;
+  background: var(--signal-critical); color: #fff;
+  font-family: var(--font-mono); font-size: 10px; line-height: 16px;
+  font-weight: 600; text-align: center;
+}
+
 /* ───────── Baris daftar ───────── */
 .baris {
   display: flex; gap: var(--space-3); align-items: flex-start;

@@ -1751,6 +1751,11 @@ window.KGI18N = (function () {
     'Pengajuan ini belum menjadi izin. Pekerjaan baru boleh dimulai setelah izin disetujui dan prasyaratnya diperiksa di lokasi oleh pengawas.':
       'This request is not yet a permit. Work may only start once the permit is approved and its prerequisites have been checked on site by the supervisor.',
 
+    /* ══ Aplikasi lapangan · menu ikon ══ */
+    'Menu': 'Menu',
+    'seluruh fitur': 'every feature',
+    'Antrean Kirim': 'Send Queue',
+
     /* ══ Aplikasi lapangan · tab Panduan ══ */
     'Panduan': 'Reference',
     'Rujukan K3': 'OHS reference',

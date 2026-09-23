@@ -480,6 +480,48 @@
     return j + ' hari ini';
   }
 
+  /* ───────── Menu ikon ─────────
+     Sebelum ini seluruh fitur selain tiga tombol cepat hanya dapat dicapai
+     lewat tab bawah, dan apa yang ada di dalam tiap tab tidak terlihat sampai
+     tabnya dibuka. Petak ikon membuat seluruh isi aplikasi terlihat sekaligus
+     di layar pertama — di lapangan, fitur yang tidak terlihat sama dengan
+     fitur yang tidak ada.
+
+     'boleh' berisi id modul yang harus terbuka untuk peran pengguna; petak
+     tanpa 'boleh' terbuka untuk semua, karena melapor tidak pernah dibatasi
+     peran — yang dibatasi adalah membaca register dan menyetujuinya. */
+  const MENU = [
+    { id: 'insiden',   nama: 'Lapor Insiden',  ikon: 'insiden',  aksi: 'form:insiden' },
+    { id: 'observasi', nama: 'Observasi',      ikon: 'mata',     aksi: 'form:observasi' },
+    { id: 'apd',       nama: 'Observasi APD',  ikon: 'apd',      aksi: 'form:apd' },
+    { id: 'izin',      nama: 'Izin Kerja',     ikon: 'izin',     aksi: 'form:izin' },
+    { id: 'tugas',     nama: 'Tugas',          ikon: 'centang',  aksi: 'tab:tugas', angka: 'tugas' },
+    { id: 'antrean',   nama: 'Antrean Kirim',  ikon: 'kirim',    aksi: 'tab:lapor', angka: 'antre' },
+    { id: 'jsa',       nama: 'Analisis JSA',   ikon: 'jsa',      aksi: 'rujukan:jsa',      boleh: 'jsa' },
+    { id: 'hiradc',    nama: 'HIRADC K3',      ikon: 'hiradc',   aksi: 'rujukan:hiradc',   boleh: 'hiradc' },
+    { id: 'induksi',   nama: 'Induksi K3',     ikon: 'induksi',  aksi: 'rujukan:induksi',  boleh: 'induksi' },
+    { id: 'regulasi',  nama: 'Regulasi K3',    ikon: 'regulasi', aksi: 'rujukan:regulasi', boleh: 'regulasi' },
+    { id: 'cari',      nama: 'Cari',           ikon: 'cari',     aksi: 'tab:panduan' },
+    { id: 'saya',      nama: 'Saya',           ikon: 'orang',    aksi: 'tab:saya' }
+  ];
+
+  function menuIkon() {
+    const r = LAP.ringkas();
+    const nTugas = tugasHariIni().length;
+    const petak = MENU.filter(function (m) { return !m.boleh || boleh(m.boleh); });
+
+    return `<div class="menu-kisi">
+      ${petak.map(function (m) {
+        const n = m.angka === 'tugas' ? nTugas : m.angka === 'antre' ? r.antre : 0;
+        return `<button type="button" class="menu-petak" data-menu="${m.aksi}" aria-label="${m.nama}">
+          <span class="menu-ikon">${I(ikon[m.ikon], 18)}</span>
+          <span class="menu-label">${m.nama}</span>
+          ${n ? `<span class="menu-angka">${n}</span>` : ''}
+        </button>`;
+      }).join('')}
+    </div>`;
+  }
+
   /* ───────── Layar: Beranda ───────── */
   function layarBeranda() {
     const r = LAP.ringkas();
@@ -500,17 +542,13 @@
           ${I(ikon.bahaya, 26)}
           <span class="aksi-teks"><b>Lapor Bahaya</b><br><span>Foto, area, satu kalimat — 30 detik</span></span>
         </button>
-        <button type="button" class="aksi" data-form="insiden">
-          ${I(ikon.insiden, 24)}
-          <b>Lapor Insiden</b>
-          <span>Nyaris celaka atau kecelakaan</span>
-        </button>
-        <button type="button" class="aksi" data-form="observasi">
-          ${I(ikon.mata, 24)}
-          <b>Observasi</b>
-          <span>Perilaku aman & berisiko</span>
-        </button>
       </div>
+
+      <section class="bagian">
+        <div class="bagian-kepala"><h2>Menu</h2>
+          <span class="sub">seluruh fitur</span></div>
+        ${menuIkon()}
+      </section>
 
       <section class="bagian">
         <div class="bagian-kepala"><h2>Tugas hari ini</h2>
@@ -1317,6 +1355,19 @@
 
     const tabBtn = t.closest('.tab');
     if (tabBtn) { tab = tabBtn.dataset.tab; if (tab !== 'panduan') rujukanBuka = null; gambar(); return; }
+
+    /* Satu petak menu dapat berarti tiga hal berbeda: membuka formulir,
+       berpindah tab, atau membuka rujukan di dalam tab Panduan. Ketiganya
+       ditulis sebagai "jenis:nilai" supaya daftar MENU tetap dapat dibaca
+       sebagai daftar, bukan sebagai cabang logika. */
+    const menu = t.closest('[data-menu]');
+    if (menu) {
+      const bagi = menu.dataset.menu.split(':');
+      if (bagi[0] === 'form') { bukaForm(bagi[1]); return; }
+      if (bagi[0] === 'tab') { tab = bagi[1]; if (tab !== 'panduan') rujukanBuka = null; gambar(); return; }
+      if (bagi[0] === 'rujukan') { tab = 'panduan'; rujukanBuka = bagi[1]; gambar(); return; }
+      return;
+    }
 
     const form = t.closest('[data-form]');
     if (form) { bukaForm(form.dataset.form); return; }

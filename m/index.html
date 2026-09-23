@@ -17,8 +17,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
-<link rel="stylesheet" href="../assets/tokens.css">
-<link rel="stylesheet" href="app.css">
+<!-- Penanda ?v= dinaikkan setiap kali salah satu berkas ini berubah.
+     Halaman ini sendiri selalu diambil dari jaringan lebih dulu oleh pekerja
+     layanan, sedangkan berkas pendukungnya diambil dari simpanan lebih dulu.
+     Tanpa penanda yang berubah, perangkat yang sudah membuka aplikasi tetap
+     memakai salinan lama meski versinya sudah tayang di server — dan pengguna
+     tidak punya cara untuk tahu, apalagi memperbaikinya sendiri. -->
+<link rel="stylesheet" href="../assets/tokens.css?v=3">
+<link rel="stylesheet" href="app.css?v=3">
 <script>
   /* Tema dipasang sebelum halaman digambar supaya tidak ada kedipan putih di lapangan,
      dan dibaca dari kunci yang sama dengan aplikasi meja. */
@@ -116,10 +122,10 @@
 <div id="lembar" hidden></div>
 <div id="roti" class="roti" hidden></div>
 
-<script src="../assets/i18n.js"></script>
-<script src="../assets/data.js"></script>
-<script src="../assets/lapangan.js"></script>
-<script src="../assets/ai.js"></script>
-<script src="app.js"></script>
+<script src="../assets/i18n.js?v=3"></script>
+<script src="../assets/data.js?v=3"></script>
+<script src="../assets/lapangan.js?v=3"></script>
+<script src="../assets/ai.js?v=3"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>
