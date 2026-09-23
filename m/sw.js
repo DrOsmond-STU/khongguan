@@ -12,7 +12,11 @@
    - Berkas pihak ketiga (huruf): tidak pernah menghalangi; bila gagal, huruf
      bawaan sistem dipakai dan aplikasi tetap terbaca. */
 
-const VERSI = 'kg-lapangan-v1';
+/* Nomor versi dinaikkan setiap kali isi INTI berubah. Tanpa itu perangkat yang
+   sudah memasang aplikasi tetap menyajikan salinan lama dari simpanannya, dan
+   fitur yang sudah tayang di server tidak pernah sampai ke lapangan.
+   v2: tab Panduan, formulir Observasi APD dan pengajuan izin kerja. */
+const VERSI = 'kg-lapangan-v2';
 const INTI = [
   './',
   './index.html',
