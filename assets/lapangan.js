@@ -61,7 +61,10 @@ window.KGLAP = (function () {
     return arr;
   }
 
-  const AWALAN = { bahaya: 'HZ-L', insiden: 'INC-L', observasi: 'OBS-L', checklist: 'CHK-L' };
+  const AWALAN = {
+    bahaya: 'HZ-L', insiden: 'INC-L', observasi: 'OBS-L', checklist: 'CHK-L',
+    apd: 'APD-L', izin: 'WP-L'
+  };
 
   function nomorBerikut(jenis) {
     const awal = AWALAN[jenis] || 'LAP';

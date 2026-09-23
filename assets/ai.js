@@ -359,6 +359,101 @@ window.KGAI = (function () {
       }));
     });
 
+    D.jsa.forEach(function (r) {
+      const sisa = r.langkah.reduce(function (m, x) { return Math.max(m, x.sk * x.ss); }, 0);
+      X.push(rekam({
+        id: r.id, judul: r.pekerjaan, modul: 'Analisis JSA', rute: 'jsa', badge: r.jenis,
+        nada: sisa >= 15 ? 'critical' : sisa >= 10 ? 'high' : sisa >= 5 ? 'medium' : 'low',
+        detail: 'jsa:' + r.id,
+        teks: [r.area, r.jenis, r.penyusun, r.peninjau, r.pengesah, r.status]
+          .concat(r.apd || [])
+          .concat(r.langkah.map(function (x) { return x.kerja + ' ' + x.bahaya; }))
+          .concat(r.langkah.reduce(function (a, x) {
+            return a.concat((x.kendali || []).map(function (k) { return k[0] + ': ' + k[1]; }));
+          }, [])),
+        meta: [['Area', r.area], ['Jenis pekerjaan', r.jenis], ['Langkah', r.langkah.length],
+               ['Penyusun', r.penyusun], ['Pengesah', r.pengesah], ['Status', r.status],
+               ['Risiko sisa tertinggi', sisa], ['Tinjau berikutnya', r.tinjau], ['Revisi', r.rev]]
+      }));
+      r.langkah.forEach(function (x) {
+        X.push(rekam({
+          id: r.id + '/L' + x.no, judul: x.kerja, modul: 'Analisis JSA', rute: 'jsa',
+          badge: 'Langkah ' + x.no,
+          nada: x.sk * x.ss >= 15 ? 'critical' : x.sk * x.ss >= 10 ? 'high' : 'medium',
+          detail: 'jsa:' + r.id,
+          teks: [x.bahaya, r.pekerjaan].concat((x.kendali || []).map(function (k) { return k[0] + ': ' + k[1]; })),
+          meta: [['Pekerjaan', r.pekerjaan], ['Bahaya', x.bahaya],
+                 ['Risiko awal', x.k * x.s], ['Risiko sisa', x.sk * x.ss],
+                 ['Pengendalian', (x.kendali || []).map(function (k) { return k[0] + ' — ' + k[1]; }).join('; ')]]
+        }));
+      });
+    });
+
+    D.hiradc.forEach(function (r) {
+      X.push(rekam({
+        id: r.id, judul: r.bahaya, modul: 'HIRADC K3', rute: 'hiradc', badge: r.kategori,
+        nada: r.sk * r.sp >= 15 ? 'critical' : r.sk * r.sp >= 10 ? 'high' : r.sk * r.sp >= 5 ? 'medium' : 'low',
+        detail: 'hiradc:' + r.id,
+        teks: [r.proses, r.aktivitas, r.risiko, r.korban, r.kendaliAda, r.kendaliTambah,
+               r.hierarki, r.pj, r.status, r.rutin, r.kategori],
+        meta: [['Proses', r.proses], ['Aktivitas', r.aktivitas], ['Sifat', r.rutin],
+               ['Kategori bahaya', r.kategori], ['Risiko', r.risiko], ['Terpapar', r.korban],
+               ['Skor awal', r.k * r.p], ['Skor sisa', r.sk * r.sp],
+               ['Pengendalian ada', r.kendaliAda], ['Pengendalian tambahan', r.kendaliTambah],
+               ['Hierarki', r.hierarki], ['Penanggung jawab', r.pj], ['Target', r.target], ['Status', r.status]]
+      }));
+    });
+
+    D.induksi.forEach(function (r) {
+      X.push(rekam({
+        id: r.id, judul: 'Induksi K3 — ' + r.nama, modul: 'Induksi K3', rute: 'induksi', badge: r.jenis,
+        nada: r.status === 'Kedaluwarsa' || r.status === 'Tidak Lulus' ? 'critical'
+              : r.status === 'Segera Berakhir' ? 'high' : 'low',
+        detail: 'induksi:' + r.id,
+        teks: [r.nama, r.jenis, r.asal, r.pemandu, r.status],
+        meta: [['Nama', r.nama], ['Jenis', r.jenis], ['Asal', r.asal], ['Tanggal', r.tanggal],
+               ['Pemandu', r.pemandu], ['Nilai', r.nilai], ['Berlaku sampai', r.berlaku],
+               ['Status', r.status]]
+      }));
+    });
+
+    D.induksiMateri.forEach(function (r) {
+      X.push(rekam({
+        id: 'IND-M' + String(r.no).padStart(2, '0'), judul: r.topik, modul: 'Induksi K3', rute: 'induksi',
+        badge: 'Materi induksi',
+        teks: [r.inti, 'materi induksi K3'],
+        meta: [['Topik', r.topik], ['Durasi', r.menit + ' menit'], ['Inti bahasan', r.inti]]
+      }));
+    });
+
+    D.regulasi.forEach(function (r) {
+      X.push(rekam({
+        id: r.id, judul: r.judul, modul: 'Regulasi K3', rute: 'regulasi', badge: r.bidang, iso: true,
+        nada: r.status === 'Tidak Terpenuhi' ? 'critical'
+              : r.status === 'Terpenuhi Sebagian' ? 'high' : 'low',
+        detail: 'regulasi:' + r.id,
+        teks: [r.nomor, r.penerbit, r.bidang, r.pasal, r.penerapan, r.bukti, r.pj, r.status],
+        meta: [['Nomor', r.nomor], ['Penerbit', r.penerbit], ['Bidang', r.bidang],
+               ['Pasal terkait', r.pasal], ['Penerapan di Khong Guan', r.penerapan],
+               ['Bukti', r.bukti], ['Penanggung jawab', r.pj], ['Evaluasi', r.evaluasi],
+               ['Status pemenuhan', r.status]]
+      }));
+    });
+
+    D.observasiAPD.forEach(function (r) {
+      const p = Math.round(r.patuh / r.diamati * 100);
+      X.push(rekam({
+        id: r.id, judul: 'Observasi APD — ' + r.area, modul: 'Observasi Perilaku', rute: 'bbs',
+        badge: p + '% patuh', nada: p === 100 ? 'low' : p >= 90 ? 'medium' : 'critical',
+        detail: 'apd:' + r.id,
+        teks: [r.area, r.pengamat, r.catatan, 'kepatuhan alat pelindung diri']
+          .concat((r.rincian || []).map(function (x) { return x[0]; })),
+        meta: [['Area', r.area], ['Tanggal', r.tanggal], ['Pengamat', r.pengamat],
+               ['Pekerja diamati', r.diamati], ['Memakai dengan benar', r.patuh],
+               ['Kepatuhan', p + '%'], ['Catatan', r.catatan]]
+      }));
+    });
+
     D.pengguna.forEach(function (r) {
       X.push(rekam({
         id: r.email, judul: r.nama, modul: 'User Management', rute: 'users',

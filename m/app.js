@@ -39,7 +39,13 @@
     terang: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
     gelap: '<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5Z"/>',
     sistem: '<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8"/>',
-    orang: '<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c0-4.1 3.4-7.5 7.5-7.5s7.5 3.4 7.5 7.5"/>'
+    orang: '<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c0-4.1 3.4-7.5 7.5-7.5s7.5 3.4 7.5 7.5"/>',
+    apd: '<path d="M4 13a8 8 0 0 1 16 0"/><path d="M3 13h18"/><path d="M6.5 13V9.8"/><path d="M12 13V8.5"/><path d="M17.5 13V9.8"/><path d="M4.5 16.5h15"/>',
+    jsa: '<rect x="3.5" y="3" width="17" height="18" rx="2"/><path d="M7.5 8h9M7.5 12h9M7.5 16h5"/>',
+    hiradc: '<path d="M12 3.5 3 19h18L12 3.5Z"/><path d="M12 10v4"/><path d="M12 17h.01"/>',
+    induksi: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2.2"/><path d="M5.5 16.5c0-1.7 1.6-3 3.5-3s3.5 1.3 3.5 3"/><path d="M15 9.5h4M15 13h3"/>',
+    regulasi: '<path d="M6 3h9l4 4v14H6Z"/><path d="M15 3v4h4"/><path d="M9.5 12h6M9.5 15.5h6"/>',
+    buku: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5Z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v3H6.5A2.5 2.5 0 0 0 4 20.5Z"/>'
   };
   const I = (p, s) => `<svg width="${s || 20}" height="${s || 20}" viewBox="0 0 24 24" fill="none"
     stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
@@ -161,6 +167,9 @@
   const KATEGORI_BAHAYA = ['Kondisi Tidak Aman', 'Tindakan Tidak Aman', 'Lingkungan', 'Housekeeping', 'Peralatan'];
   const JENIS_INSIDEN = ['Nearmiss', 'Incident', 'Accident'];
   const KATEGORI_OBS = D.obsKategori.map(function (o) { return o.nama; });
+  const JENIS_IZIN = ['Panas', 'Ruang Terbatas', 'Ketinggian', 'Listrik', 'Penggalian'];
+  const PRASYARAT_IZIN = ['APAR di lokasi', 'Gas test', 'Penjaga lubang', 'LOTO terpasang',
+                          'Body harness', 'Area dibarikade', 'Ventilasi paksa'];
 
   function isianArea(terpilih) {
     return `
@@ -284,10 +293,92 @@
       <div class="catatan">Pekerja yang diamati tidak pernah dicatat namanya. Observasi yang menamai orang berubah menjadi penilaian kinerja, dan orang berhenti jujur.</div>`;
   }
 
+  /* Observasi APD berbeda dari observasi perilaku: yang dihitung adalah kepatuhan
+     per jenis APD, bukan pola perilaku. Dipisahkan karena angkanya masuk ke KPI
+     yang berbeda, dan mencampurnya membuat keduanya tidak terbaca. */
+  function formApd() {
+    return isianArea() + `
+      <div class="f">
+        <label for="l-diamati">Pekerja yang diamati <span class="wajib">*</span></label>
+        <input id="l-diamati" type="number" inputmode="numeric" min="1" value="12">
+      </div>
+      <div class="f">
+        <label>Jenis APD yang diperiksa</label>
+        <div class="keping keping--banyak" id="k-apd">
+          ${D.apdJenis.map(function (a, i) {
+            return `<button type="button" data-nilai="${a.nama}" data-banyak="1" aria-pressed="${i < 3}">${a.nama}</button>`;
+          }).join('')}
+        </div>
+        <div class="bantu">Ketuk untuk menyalakan atau mematikan. Hanya APD yang benar-benar diamati yang dinyalakan — jenis yang tidak diperiksa lebih baik kosong daripada ditebak.</div>
+      </div>
+      <div class="f">
+        <label for="l-patuh">Memakai dengan benar <span class="wajib">*</span></label>
+        <input id="l-patuh" type="number" inputmode="numeric" min="0" value="12">
+        <div class="bantu">Terpasang tetapi salah pakai dihitung tidak patuh. Helm tanpa tali dagu tidak menahan apa pun saat benda jatuh.</div>
+      </div>
+      <div class="f">
+        <label for="l-isi">Catatan <span class="wajib">*</span></label>
+        <textarea id="l-isi" placeholder="Contoh: Dua operator tanpa pelindung telinga di dekat mesin oven."></textarea>
+      </div>` + isianFoto() + isianLokasi() + `
+      <div class="catatan">Kepatuhan APD adalah indikator leading: angkanya turun lebih dulu, jauh sebelum muncul sebagai cedera. Nama pekerja tidak dicatat.</div>`;
+  }
+
+  /* Pengajuan izin dari lapangan hanya mengajukan — tidak pernah menyetujui.
+     Persetujuan tetap di aplikasi meja, pada orang yang berwenang.
+
+     Karena itu formulir ini tidak dibatasi peran, meski modul Izin Kerja dibatasi:
+     yang meminta izin justru operator yang akan mengerjakan, dan menutup jalur
+     permintaannya berarti pekerjaan berisiko tinggi dimulai tanpa izin sama
+     sekali — persis yang hendak dicegah. Yang dibatasi peran adalah membaca dan
+     menyetujui register izin, bukan mengajukannya. */
+  function formIzin() {
+    return `
+      <div class="f">
+        <label>Jenis izin <span class="wajib">*</span></label>
+        <div class="keping" id="k-jenis">
+          ${JENIS_IZIN.map(function (k, i) {
+            return `<button type="button" data-nilai="${k}" aria-pressed="${i === 0}">${k}</button>`;
+          }).join('')}
+        </div>
+      </div>` + isianArea() + `
+      <div class="f">
+        <label for="l-isi">Pekerjaan yang akan dilakukan <span class="wajib">*</span></label>
+        <textarea id="l-isi" placeholder="Contoh: Pengelasan penyangga pipa uap di atap Boiler 2."></textarea>
+      </div>
+      <div class="f">
+        <label for="l-pengawas">Pengawas pekerjaan <span class="wajib">*</span></label>
+        <input id="l-pengawas" type="text" placeholder="Nama pengawas yang berada di lokasi">
+      </div>
+      <div class="f">
+        <label for="l-mulai">Rencana mulai</label>
+        <input id="l-mulai" type="datetime-local">
+      </div>
+      <div class="f">
+        <label for="l-durasi">Perkiraan lama kerja</label>
+        <select id="l-durasi">
+          <option>Kurang dari 2 jam</option>
+          <option selected>2 sampai 4 jam</option>
+          <option>Satu shift penuh</option>
+          <option>Lebih dari satu shift</option>
+        </select>
+      </div>
+      <div class="f">
+        <label>Prasyarat yang sudah disiapkan</label>
+        <div class="keping keping--banyak" id="k-syarat">
+          ${PRASYARAT_IZIN.map(function (k) {
+            return `<button type="button" data-nilai="${k}" data-banyak="1" aria-pressed="false">${k}</button>`;
+          }).join('')}
+        </div>
+      </div>` + isianFoto() + isianLokasi() + `
+      <div class="catatan">Pengajuan ini belum menjadi izin. Pekerjaan baru boleh dimulai setelah izin disetujui dan prasyaratnya diperiksa di lokasi oleh pengawas.</div>`;
+  }
+
   const FORM = {
     bahaya: { judul: 'Lapor Bahaya', sub: 'Target 30 detik · foto, area, satu kalimat', isi: formBahaya, aksiLabel: 'Kirim Laporan' },
     insiden: { judul: 'Lapor Insiden', sub: 'Kejadian, nyaris celaka, atau kecelakaan', isi: formInsiden, aksiLabel: 'Kirim Laporan' },
-    observasi: { judul: 'Observasi Perilaku', sub: 'Perilaku aman dicatat lebih dulu', isi: formObservasi, aksiLabel: 'Simpan Observasi' }
+    observasi: { judul: 'Observasi Perilaku', sub: 'Perilaku aman dicatat lebih dulu', isi: formObservasi, aksiLabel: 'Simpan Observasi' },
+    apd: { judul: 'Observasi APD', sub: 'Kepatuhan per jenis APD di satu area', isi: formApd, aksiLabel: 'Simpan Observasi' },
+    izin: { judul: 'Ajukan Izin Kerja', sub: 'Pengajuan saja · persetujuan tetap di QHSE', isi: formIzin, aksiLabel: 'Ajukan Izin' }
   };
 
   function bukaForm(jenis) {
@@ -302,6 +393,14 @@
     if (!el) return bawaan;
     const on = el.querySelector('[aria-pressed="true"]');
     return on ? on.dataset.nilai : bawaan;
+  }
+
+  function nilaiKepingBanyak(id) {
+    const el = document.getElementById(id);
+    if (!el) return [];
+    return Array.prototype.map.call(el.querySelectorAll('[aria-pressed="true"]'), function (b) {
+      return b.dataset.nilai;
+    });
   }
 
   function kirimForm(jenis) {
@@ -332,6 +431,28 @@
         kategori: nilaiKeping('k-jenis', 'Nearmiss'),
         keparahan: nilaiKeping('k-parah', 'Ringan'),
         cedera: (document.getElementById('l-cedera') || {}).value || 'Tidak ada cedera'
+      });
+    } else if (jenis === 'apd') {
+      const diamati = parseInt((document.getElementById('l-diamati') || {}).value, 10) || 0;
+      let patuh = parseInt((document.getElementById('l-patuh') || {}).value, 10) || 0;
+      if (!diamati) { roti('Jumlah pekerja yang diamati belum diisi.'); return; }
+      /* Angka patuh tidak boleh melampaui yang diamati: kepatuhan di atas 100%
+         akan merusak rata-rata KPI tanpa ada yang menyadarinya. */
+      if (patuh > diamati) { roti('Jumlah patuh tidak boleh melebihi jumlah yang diamati.'); return; }
+      rec = Object.assign(dasar, {
+        kategori: 'Kepatuhan APD',
+        diamati: diamati, patuh: patuh,
+        apd: nilaiKepingBanyak('k-apd')
+      });
+    } else if (jenis === 'izin') {
+      const pengawas = ((document.getElementById('l-pengawas') || {}).value || '').trim();
+      if (!pengawas) { roti('Nama pengawas pekerjaan belum diisi.'); return; }
+      rec = Object.assign(dasar, {
+        kategori: nilaiKeping('k-jenis', JENIS_IZIN[0]),
+        pengawas: pengawas,
+        mulai: (document.getElementById('l-mulai') || {}).value || '',
+        durasi: (document.getElementById('l-durasi') || {}).value || '',
+        prasyarat: nilaiKepingBanyak('k-syarat')
       });
     } else {
       const aman = parseInt((document.getElementById('l-aman') || {}).value, 10) || 0;
@@ -447,7 +568,8 @@
 
   function barisLaporan(r) {
     const nada = r.status === 'Antre' ? 'medium' : 'low';
-    const label = { bahaya: 'Bahaya', insiden: 'Insiden', observasi: 'Observasi' }[r.jenis] || r.jenis;
+    const label = { bahaya: 'Bahaya', insiden: 'Insiden', observasi: 'Observasi',
+                    apd: 'APD', izin: 'Izin Kerja' }[r.jenis] || r.jenis;
     return `<button type="button" class="baris" data-lapor="${r.id}">
       <span class="baris-ikon">${I(ikon[r.jenis === 'observasi' ? 'mata' : r.jenis] || ikon.bahaya, 17)}</span>
       <span class="baris-isi">
@@ -477,6 +599,12 @@
           </button>
           <button type="button" class="aksi" data-form="observasi">
             ${I(ikon.mata, 24)}<b>Observasi</b><span>Perilaku aman & berisiko</span>
+          </button>
+          <button type="button" class="aksi" data-form="apd">
+            ${I(ikon.apd, 24)}<b>Observasi APD</b><span>Kepatuhan per jenis APD</span>
+          </button>
+          <button type="button" class="aksi" data-form="izin">
+            ${I(ikon.izin, 24)}<b>Izin Kerja</b><span>Ajukan · disetujui QHSE</span>
           </button>
         </div>
       </section>
@@ -550,9 +678,29 @@
       <div class="catatan">Satu butir dijawab Tidak Sesuai mengunci unit dari operasi sampai temuannya ditutup. Ini gerbang operasi, bukan peringatan yang bisa dilewati.</div>`;
   }
 
-  /* ───────── Layar: Cari ───────── */
+  /* ───────── Layar: Panduan ─────────
+     Satu tab untuk segala yang perlu dibaca di lokasi, bukan diisi: pencarian
+     seluruh sistem, ditambah empat rujukan yang paling sering ditanyakan di
+     lantai produksi. Semuanya sudah tersimpan di perangkat, jadi terbaca ketika
+     sinyal mati — justru saat pekerja paling perlu membacanya. */
   let cariQ = '';
-  function layarCari() {
+  let rujukanBuka = null;
+
+  const RUJUKAN = [
+    { id: 'jsa', nama: 'Analisis JSA', ikon: 'jsa', sub: 'Langkah kerja & pengendaliannya' },
+    { id: 'hiradc', nama: 'HIRADC K3', ikon: 'hiradc', sub: 'Bahaya per aktivitas & skornya' },
+    { id: 'induksi', nama: 'Induksi K3', ikon: 'induksi', sub: 'Materi wajib & masa berlaku kartu' },
+    { id: 'regulasi', nama: 'Regulasi K3', ikon: 'regulasi', sub: 'Peraturan & penerapannya di sini' }
+  ];
+
+  function layarPanduan() {
+    /* Rujukan mengikuti peran yang sama dengan aplikasi meja. Petugas Lingkungan
+       tidak membuka JSA dan HIRADC di sana, jadi tidak membukanya di sini juga —
+       dua daftar modul yang berbeda untuk orang yang sama adalah cara tercepat
+       membuat matriks hak akses berhenti dipercaya. */
+    const rujukan = RUJUKAN.filter(function (r) { return boleh(r.id); });
+    if (rujukanBuka && !boleh(rujukanBuka)) rujukanBuka = null;
+    if (rujukanBuka) return layarRujukan(rujukanBuka);
     return `
       <div class="cari-kotak">
         ${I(ikon.cari, 18)}
@@ -564,7 +712,239 @@
           return `<button type="button" data-contoh="${c}">${c}</button>`;
         }).join('')}
       </div>
-      <div id="cari-hasil">${hasilCari()}</div>`;
+      ${cariQ.trim() ? `<div id="cari-hasil">${hasilCari()}</div>` : `
+      ${rujukan.length ? `<section class="bagian">
+        <div class="bagian-kepala"><h2>Rujukan K3</h2>
+          <span class="sub">tersimpan di perangkat</span></div>
+        <div class="aksi-cepat">
+          ${rujukan.map(function (r) {
+            return `<button type="button" class="aksi" data-rujukan="${r.id}">
+              ${I(ikon[r.ikon], 24)}<b>${r.nama}</b><span>${r.sub}</span>
+            </button>`;
+          }).join('')}
+        </div>
+      </section>` : ''}
+      <div id="cari-hasil"></div>
+      <div class="catatan">Kotak di atas mencari seluruh isi sistem — prosedur, izin, insiden, CAPA, temuan audit, sertifikat — dan semuanya terbaca tanpa sinyal.</div>`}`;
+  }
+
+  function kembaliRujukan(judul, sub) {
+    return `<button type="button" class="baris" id="rujukan-kembali" style="margin-bottom:var(--space-4)">
+      <span class="baris-ikon">${I(ikon.cari, 17)}</span>
+      <span class="baris-isi">
+        <span class="baris-judul">${judul}</span>
+        <span class="baris-meta">${sub}</span>
+      </span>
+    </button>`;
+  }
+
+  /* Warna zona dipakai persis seperti di aplikasi meja. Angka yang sama tidak
+     boleh berwarna lain hanya karena layarnya lebih kecil. */
+  function zonaNada(n) {
+    return n >= 15 ? 'critical' : n >= 10 ? 'high' : n >= 5 ? 'medium' : 'low';
+  }
+  function zonaNama(n) {
+    return n >= 15 ? 'Ekstrem' : n >= 10 ? 'Tinggi' : n >= 5 ? 'Sedang' : 'Rendah';
+  }
+
+  function layarRujukan(id) {
+    if (id === 'jsa') return rujukanJsa();
+    if (id === 'hiradc') return rujukanHiradc();
+    if (id === 'induksi') return rujukanInduksi();
+    return rujukanRegulasi();
+  }
+
+  function rujukanJsa() {
+    return kembaliRujukan('Analisis JSA', 'kembali ke Panduan') + `
+      <section class="bagian">
+        <div class="bagian-kepala"><h2>JSA yang berlaku</h2>
+          <span class="sub">${KGAI.L(D.jsa.length + ' pekerjaan', D.jsa.length + ' jobs')}</span></div>
+        ${D.jsa.map(function (j) {
+          const sisa = j.langkah.reduce(function (m, x) { return Math.max(m, x.sk * x.ss); }, 0);
+          return `<button type="button" class="baris" data-jsa="${j.id}">
+            <span class="baris-ikon">${I(ikon.jsa, 17)}</span>
+            <span class="baris-isi">
+              <span class="baris-judul">${esc(j.pekerjaan)}</span>
+              <span class="baris-meta"><span class="mono mono--id">${j.id}</span> · ${esc(j.area)} · ${j.langkah.length} langkah</span>
+            </span>
+            <span class="baris-kanan"><span class="cip cip--${zonaNada(sisa)}">${sisa}</span></span>
+          </button>`;
+        }).join('')}
+      </section>
+      <div class="catatan">Angka di kanan adalah risiko sisa tertinggi setelah pengendalian dipasang — bukan risiko awal. JSA dibaca sebelum pekerjaan dimulai, bukan setelah izin ditandatangani.</div>`;
+  }
+
+  function rujukanHiradc() {
+    const urut = D.hiradc.slice().sort(function (a, b) { return b.sk * b.sp - a.sk * a.sp; });
+    return kembaliRujukan('HIRADC K3', 'kembali ke Panduan') + `
+      <section class="bagian">
+        <div class="bagian-kepala"><h2>Sumber bahaya</h2></div>
+        <div class="keping" style="margin-bottom:var(--space-3)">
+          ${D.hiradcKategori.map(function (k) {
+            const n = D.hiradc.filter(function (h) { return h.kategori === k; }).length;
+            return `<button type="button" disabled aria-pressed="false">${k} · ${n}</button>`;
+          }).join('')}
+        </div>
+      </section>
+      <section class="bagian">
+        <div class="bagian-kepala"><h2>Aktivitas dinilai</h2>
+          <span class="sub">${KGAI.L('risiko sisa tertinggi di atas', 'highest residual first')}</span></div>
+        ${urut.map(function (h) {
+          const sisa = h.sk * h.sp;
+          return `<button type="button" class="baris" data-hiradc="${h.id}">
+            <span class="baris-ikon">${I(ikon.hiradc, 17)}</span>
+            <span class="baris-isi">
+              <span class="baris-judul">${esc(h.bahaya)}</span>
+              <span class="baris-meta"><span class="mono mono--id">${h.id}</span> · ${esc(h.aktivitas)}</span>
+            </span>
+            <span class="baris-kanan"><span class="cip cip--${zonaNada(sisa)}">${sisa}</span></span>
+          </button>`;
+        }).join('')}
+      </section>
+      <div class="catatan">HIRADC menilai aktivitas, bukan orang. Aktivitas non-rutin dan keadaan darurat ikut dinilai karena justru di sanalah pengendalian rutin tidak berlaku.</div>`;
+  }
+
+  function rujukanInduksi() {
+    const menit = D.induksiMateri.reduce(function (a, m) { return a + m.menit; }, 0);
+    const saya = D.induksi.filter(function (r) { return sesi && r.nama === sesi.nama; })[0];
+    return kembaliRujukan('Induksi K3', 'kembali ke Panduan') + `
+      ${saya ? `<section class="bagian">
+        <div class="bagian-kepala"><h2>Kartu induksi Anda</h2></div>
+        <div class="kartu">
+          <dl class="kv">
+            <dt>Nomor</dt><dd class="mono mono--id">${saya.id}</dd>
+            <dt>Jenis</dt><dd>${esc(saya.jenis)}</dd>
+            <dt>Berlaku sampai</dt><dd>${esc(saya.berlaku)}</dd>
+            <dt>Status</dt><dd><span class="cip cip--${saya.status === 'Berlaku' ? 'low' : saya.status === 'Segera Berakhir' ? 'high' : 'critical'}">${saya.status}</span></dd>
+          </dl>
+        </div>
+      </section>` : ''}
+
+      <section class="bagian">
+        <div class="bagian-kepala"><h2>Materi wajib</h2>
+          <span class="sub">${KGAI.L(D.induksiMateri.length + ' topik · ' + menit + ' menit', D.induksiMateri.length + ' topics · ' + menit + ' min')}</span></div>
+        ${D.induksiMateri.map(function (m) {
+          return `<button type="button" class="baris" data-materi="${m.no}">
+            <span class="baris-ikon">${I(ikon.induksi, 17)}</span>
+            <span class="baris-isi">
+              <span class="baris-judul">${esc(m.topik)}</span>
+              <span class="baris-meta">${m.menit} menit · ${esc(m.inti)}</span>
+            </span>
+          </button>`;
+        }).join('')}
+      </section>
+      <div class="catatan">Kartu induksi adalah gerbang masuk area produksi. Kartu yang kedaluwarsa berarti tidak boleh masuk — bukan sekadar catatan administrasi yang tertunda.</div>`;
+  }
+
+  function rujukanRegulasi() {
+    return kembaliRujukan('Regulasi K3', 'kembali ke Panduan') + `
+      <section class="bagian">
+        <div class="bagian-kepala"><h2>Peraturan yang berlaku</h2>
+          <span class="sub">${KGAI.L(D.regulasi.length + ' peraturan', D.regulasi.length + ' regulations')}</span></div>
+        ${D.regulasi.map(function (r) {
+          const nada = r.status === 'Tidak Terpenuhi' ? 'critical' : r.status === 'Terpenuhi Sebagian' ? 'high' : 'low';
+          return `<button type="button" class="baris" data-regulasi="${r.id}">
+            <span class="baris-ikon">${I(ikon.regulasi, 17)}</span>
+            <span class="baris-isi">
+              <span class="baris-judul">${esc(r.judul)}</span>
+              <span class="baris-meta">${esc(r.nomor)} · ${esc(r.bidang)}</span>
+            </span>
+            <span class="baris-kanan"><span class="cip cip--${nada}">${r.status}</span></span>
+          </button>`;
+        }).join('')}
+      </section>
+      <div class="catatan">Peraturan tanpa kolom penerapan dan bukti hanyalah daftar bacaan. Yang diperiksa auditor adalah dua kolom itu, bukan jumlah peraturan yang terdaftar.</div>`;
+  }
+
+  /* ───────── Rincian rujukan ───────── */
+  function rincianJsa(id) {
+    const j = D.jsa.filter(function (x) { return x.id === id; })[0];
+    if (!j) return;
+    bukaLembar({
+      judul: j.pekerjaan, sub: `<span class="mono mono--id">${j.id}</span> · <span>${esc(j.area)}</span>`,
+      isi: `<dl class="kv">
+          <dt>Jenis pekerjaan</dt><dd>${esc(j.jenis)}</dd>
+          <dt>APD wajib</dt><dd>${esc(j.apd.join(', '))}</dd>
+          <dt>Izin kerja terkait</dt><dd>${j.izinTerkait.length ? esc(j.izinTerkait.join(', ')) : 'tidak memerlukan izin khusus'}</dd>
+          <dt>Disahkan</dt><dd>${esc(j.pengesah)} · ${esc(j.disahkan)}</dd>
+          <dt>Tinjau berikutnya</dt><dd>${esc(j.tinjau)}</dd>
+        </dl>
+        <div class="bagian-kepala" style="margin-top:var(--space-5)"><h2>Langkah kerja</h2></div>
+        ${j.langkah.map(function (x) {
+          const awal = x.k * x.s, sisa = x.sk * x.ss;
+          return `<div class="kartu" style="margin-bottom:var(--space-3)">
+            <div class="label-kecil">Langkah ${x.no}</div>
+            <div style="font-size:14.5px;font-weight:600;margin:4px 0 var(--space-2)">${esc(x.kerja)}</div>
+            <div style="font-size:13.5px;line-height:20px;color:var(--ink-700)">${esc(x.bahaya)}</div>
+            <ul style="margin:var(--space-3) 0 0;padding-left:18px;font-size:13px;line-height:20px">
+              ${x.kendali.map(function (k) {
+                return `<li><b>${k[0]}</b> — ${esc(k[1])}</li>`;
+              }).join('')}
+            </ul>
+            <div style="display:flex;gap:var(--space-2);margin-top:var(--space-3)">
+              <span class="cip cip--${zonaNada(awal)}">Awal ${awal}</span>
+              <span class="cip cip--${zonaNada(sisa)}">Sisa ${sisa}</span>
+            </div>
+          </div>`;
+        }).join('')}`
+    });
+  }
+
+  function rincianHiradc(id) {
+    const h = D.hiradc.filter(function (x) { return x.id === id; })[0];
+    if (!h) return;
+    const awal = h.k * h.p, sisa = h.sk * h.sp;
+    bukaLembar({
+      judul: h.bahaya, sub: `<span class="mono mono--id">${h.id}</span> · <span>${esc(h.kategori)}</span>`,
+      isi: `<div style="display:flex;gap:var(--space-2);margin-bottom:var(--space-4)">
+          <span class="cip cip--${zonaNada(awal)}">Awal ${awal} · ${zonaNama(awal)}</span>
+          <span class="cip cip--${zonaNada(sisa)}">Sisa ${sisa} · ${zonaNama(sisa)}</span>
+        </div>
+        <dl class="kv">
+          <dt>Proses</dt><dd>${esc(h.proses)}</dd>
+          <dt>Aktivitas</dt><dd>${esc(h.aktivitas)} · ${esc(h.rutin)}</dd>
+          <dt>Risiko</dt><dd>${esc(h.risiko)}</dd>
+          <dt>Yang terpapar</dt><dd>${esc(h.korban)}</dd>
+          <dt>Penilaian awal</dt><dd>${KGAI.L(
+            `kemungkinan ${h.k} × keparahan ${h.p} = ${awal}`,
+            `likelihood ${h.k} × severity ${h.p} = ${awal}`)}</dd>
+          <dt>Pengendalian yang sudah ada</dt><dd>${esc(h.kendaliAda)}</dd>
+          <dt>Penilaian sisa</dt><dd>${KGAI.L(
+            `kemungkinan ${h.sk} × keparahan ${h.sp} = ${sisa}`,
+            `likelihood ${h.sk} × severity ${h.sp} = ${sisa}`)}</dd>
+          <dt>Pengendalian tambahan</dt><dd>${esc(h.kendaliTambah)}</dd>
+          <dt>Hierarki</dt><dd>${esc(h.hierarki)}</dd>
+          <dt>Penanggung jawab</dt><dd>${esc(h.pj)} · target ${esc(h.target)}</dd>
+          <dt>Status</dt><dd>${esc(h.status)}</dd>
+        </dl>`
+    });
+  }
+
+  function rincianMateri(no) {
+    const m = D.induksiMateri.filter(function (x) { return String(x.no) === String(no); })[0];
+    if (!m) return;
+    bukaLembar({
+      judul: m.topik, sub: `<span>Materi induksi ${m.no}</span> · <span>${m.menit} menit</span>`,
+      isi: `<p style="font-size:14.5px;line-height:22px;margin:0">${esc(m.inti)}</p>`
+    });
+  }
+
+  function rincianRegulasi(id) {
+    const r = D.regulasi.filter(function (x) { return x.id === id; })[0];
+    if (!r) return;
+    bukaLembar({
+      judul: r.judul, sub: `<span class="mono mono--id">${r.id}</span> · <span>${esc(r.bidang)}</span>`,
+      isi: `<dl class="kv">
+          <dt>Nomor</dt><dd>${esc(r.nomor)}</dd>
+          <dt>Penerbit</dt><dd>${esc(r.penerbit)}</dd>
+          <dt>Pasal terkait</dt><dd>${esc(r.pasal)}</dd>
+          <dt>Penerapan di Khong Guan</dt><dd>${esc(r.penerapan)}</dd>
+          <dt>Bukti</dt><dd>${esc(r.bukti)}</dd>
+          <dt>Penanggung jawab</dt><dd>${esc(r.pj)}</dd>
+          <dt>Evaluasi berikutnya</dt><dd>${esc(r.evaluasi)}</dd>
+          <dt>Status pemenuhan</dt><dd>${esc(r.status)}</dd>
+        </dl>`
+    });
   }
 
   function hasilCari() {
@@ -654,7 +1034,7 @@
           <span class="baris-ikon">${I(ikon.dokumen, 17)}</span>
           <span class="baris-isi">
             <span class="baris-judul">Buka KG SafeGuard lengkap</span>
-            <span class="baris-meta">21 modul · laporan Anda sudah ada di sana</span>
+            <span class="baris-meta">25 modul · laporan Anda sudah ada di sana</span>
           </span>
         </a>
       </section>
@@ -670,7 +1050,8 @@
   function rincianLaporan(id) {
     const r = LAP.daftar().filter(function (x) { return x.id === id; })[0];
     if (!r) return;
-    const label = { bahaya: 'Laporan Bahaya', insiden: 'Laporan Insiden', observasi: 'Observasi Perilaku' }[r.jenis] || r.jenis;
+    const label = { bahaya: 'Laporan Bahaya', insiden: 'Laporan Insiden', observasi: 'Observasi Perilaku',
+                    apd: 'Observasi APD', izin: 'Pengajuan Izin Kerja' }[r.jenis] || r.jenis;
     bukaLembar({
       judul: r.id, sub: `<span>${label}</span> · <span>${r.status}</span>`,
       isi: (r.foto ? `<img src="${r.foto}" alt="Foto laporan ${r.id}" style="width:100%;border-radius:var(--radius-md);margin-bottom:var(--space-4)">` : '') + `
@@ -682,6 +1063,11 @@
           ${r.keparahan ? `<dt>Keparahan</dt><dd>${esc(r.keparahan)}</dd>` : ''}
           ${r.cedera ? `<dt>Cedera</dt><dd>${esc(r.cedera)}</dd>` : ''}
           ${r.aman != null ? `<dt>Perilaku aman / berisiko</dt><dd>${r.aman} / ${r.berisiko}</dd>` : ''}
+          ${r.diamati != null ? `<dt>Diamati / patuh</dt><dd>${r.patuh} dari ${r.diamati} · <span class="mono">${Math.round(r.patuh / r.diamati * 100)}%</span></dd>` : ''}
+          ${r.apd && r.apd.length ? `<dt>Jenis APD diperiksa</dt><dd>${esc(r.apd.join(', '))}</dd>` : ''}
+          ${r.pengawas ? `<dt>Pengawas pekerjaan</dt><dd>${esc(r.pengawas)}</dd>` : ''}
+          ${r.durasi ? `<dt>Perkiraan lama kerja</dt><dd>${esc(r.durasi)}</dd>` : ''}
+          ${r.prasyarat ? `<dt>Prasyarat disiapkan</dt><dd>${r.prasyarat.length ? esc(r.prasyarat.join(', ')) : 'belum ada yang ditandai'}</dd>` : ''}
           ${r.koordinat ? `<dt>Titik lokasi</dt><dd class="mono">${r.koordinat.lat.toFixed(5)}, ${r.koordinat.lon.toFixed(5)} · ±${r.koordinat.akurasi} m</dd>` : ''}
           ${r.fotoDilepas ? `<dt>Foto</dt><dd>Dilepas karena penyimpanan perangkat penuh. Laporannya tetap utuh.</dd>` : ''}
           <dt>Pelapor</dt><dd>${esc(r.pelapor)} · ${esc(r.peran)}</dd>
@@ -696,7 +1082,8 @@
   }
 
   function modulUntuk(jenis) {
-    return { bahaya: 'Laporan Bahaya K3L', insiden: 'Incident & Nearmiss', observasi: 'Observasi Perilaku' }[jenis] || 'QHSE';
+    return { bahaya: 'Laporan Bahaya K3L', insiden: 'Incident & Nearmiss', observasi: 'Observasi Perilaku',
+             apd: 'Observasi Perilaku', izin: 'Work Permit & JSEA' }[jenis] || 'QHSE';
   }
 
   function rincianTugas(kind, id) {
@@ -796,13 +1183,16 @@
   }
 
   /* ───────── Penggambaran ───────── */
-  const LAYAR = { beranda: layarBeranda, lapor: layarLapor, tugas: layarTugas, cari: layarCari, saya: layarSaya };
-  const JUDUL = { beranda: 'Beranda', lapor: 'Lapor', tugas: 'Tugas', cari: 'Cari', saya: 'Saya' };
+  const LAYAR = { beranda: layarBeranda, lapor: layarLapor, tugas: layarTugas, panduan: layarPanduan, saya: layarSaya };
+  const JUDUL = { beranda: 'Beranda', lapor: 'Lapor', tugas: 'Tugas', panduan: 'Panduan', saya: 'Saya' };
 
   function gambar() {
     terjemahkanCangkang(document.querySelector('.bawah'));
     document.getElementById('layar').innerHTML = tr(LAYAR[tab]());
-    document.getElementById('layar-judul').textContent = T(JUDUL[tab]);
+    const rj = tab === 'panduan' && rujukanBuka
+      ? (RUJUKAN.filter(function (r) { return r.id === rujukanBuka; })[0] || {}).nama
+      : null;
+    document.getElementById('layar-judul').textContent = T(rj || JUDUL[tab]);
     const tabs = document.querySelectorAll('.tab');
     for (let i = 0; i < tabs.length; i++) {
       const on = tabs[i].dataset.tab === tab;
@@ -925,10 +1315,27 @@
     }
 
     const tabBtn = t.closest('.tab');
-    if (tabBtn) { tab = tabBtn.dataset.tab; gambar(); return; }
+    if (tabBtn) { tab = tabBtn.dataset.tab; if (tab !== 'panduan') rujukanBuka = null; gambar(); return; }
 
     const form = t.closest('[data-form]');
     if (form) { bukaForm(form.dataset.form); return; }
+
+    const rujukan = t.closest('[data-rujukan]');
+    if (rujukan) { rujukanBuka = rujukan.dataset.rujukan; gambar(); return; }
+
+    if (t.closest('#rujukan-kembali')) { rujukanBuka = null; gambar(); return; }
+
+    const bJsa = t.closest('[data-jsa]');
+    if (bJsa) { rincianJsa(bJsa.dataset.jsa); return; }
+
+    const bHir = t.closest('[data-hiradc]');
+    if (bHir) { rincianHiradc(bHir.dataset.hiradc); return; }
+
+    const bMat = t.closest('[data-materi]');
+    if (bMat) { rincianMateri(bMat.dataset.materi); return; }
+
+    const bReg = t.closest('[data-regulasi]');
+    if (bReg) { rincianRegulasi(bReg.dataset.regulasi); return; }
 
     if (t.closest('#foto-kotak')) { document.getElementById('l-foto').click(); return; }
 
@@ -956,9 +1363,16 @@
 
     const keping = t.closest('.keping button[data-nilai]');
     if (keping) {
-      const sib = keping.parentElement.querySelectorAll('button');
-      for (let i = 0; i < sib.length; i++) sib[i].setAttribute('aria-pressed', 'false');
-      keping.setAttribute('aria-pressed', 'true');
+      /* Keping bertanda data-banyak boleh menyala bersamaan — dipakai pada daftar
+         yang memang jamak, seperti jenis APD dan prasyarat izin. Sisanya tetap
+         pilihan tunggal. */
+      if (keping.dataset.banyak) {
+        keping.setAttribute('aria-pressed', keping.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+      } else {
+        const sib = keping.parentElement.querySelectorAll('button');
+        for (let i = 0; i < sib.length; i++) sib[i].setAttribute('aria-pressed', 'false');
+        keping.setAttribute('aria-pressed', 'true');
+      }
       return;
     }
 
@@ -984,9 +1398,7 @@
     const contoh = t.closest('[data-contoh]');
     if (contoh) {
       cariQ = contoh.dataset.contoh;
-      const kotak = document.getElementById('cari-q');
-      if (kotak) kotak.value = cariQ;
-      document.getElementById('cari-hasil').innerHTML = tr(hasilCari());
+      gambar();
       return;
     }
 
@@ -1036,8 +1448,19 @@
 
   document.addEventListener('input', function (e) {
     if (e.target && e.target.id === 'cari-q') {
+      const adaSebelumnya = !!cariQ.trim();
       cariQ = e.target.value;
-      document.getElementById('cari-hasil').innerHTML = tr(hasilCari());
+      /* Kartu rujukan hanya tampil saat kotak pencarian kosong, jadi saat huruf
+         pertama masuk — dan saat huruf terakhir dihapus — layarnya digambar ulang
+         seutuhnya. Fokus dikembalikan supaya papan ketik tidak menutup sendiri. */
+      if (adaSebelumnya !== !!cariQ.trim()) {
+        gambar();
+        const kotak = document.getElementById('cari-q');
+        if (kotak) { kotak.focus(); kotak.setSelectionRange(cariQ.length, cariQ.length); }
+        return;
+      }
+      const hasil = document.getElementById('cari-hasil');
+      if (hasil) hasil.innerHTML = tr(hasilCari());
     }
   });
 

@@ -39,6 +39,10 @@
     notif: '<path d="M18 9a6 6 0 1 0-12 0c0 5-2 6.5-2 6.5h16S18 14 18 9Z"/><path d="M13.7 19.5a2 2 0 0 1-3.4 0"/>',
     ai: '<path d="M12 3.2 13.5 8 18 9.5 13.5 11 12 15.8 10.5 11 6 9.5 10.5 8 12 3.2Z"/><path d="M18.5 15.2l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2Z"/><path d="M5.5 14.5l.5 1.5 1.5.5-1.5.5-.5 1.5-.5-1.5L3.5 16.5l1.5-.5.5-1.5Z"/>',
     search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.7-4.7"/>',
+    jsa: '<rect x="3.5" y="3" width="17" height="18" rx="2"/><path d="M7.5 8h9M7.5 12h9M7.5 16h5"/><path d="M4.5 8h.01M4.5 12h.01M4.5 16h.01"/>',
+    hiradc: '<path d="M12 3.5 3 19h18L12 3.5Z"/><path d="M12 10v4"/><path d="M12 17h.01"/><path d="m6.5 15.5 11 0"/>',
+    induksi: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2.2"/><path d="M5.5 16.5c0-1.7 1.6-3 3.5-3s3.5 1.3 3.5 3"/><path d="M15 9.5h4M15 13h3"/>',
+    regulasi: '<path d="M6 3h9l4 4v14H6Z"/><path d="M15 3v4h4"/><path d="M9.5 12h6M9.5 15.5h6"/><path d="m9 8.6 1 1 2-2.2"/>',
     settings: '<circle cx="12" cy="12" r="3.2"/><path d="M19.4 14.5a1.6 1.6 0 0 0 .32 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.6 1.6 0 0 0-1.77-.32 1.6 1.6 0 0 0-1 1.47V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1.05-1.47 1.6 1.6 0 0 0-1.77.32l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.6 1.6 0 0 0 .32-1.77 1.6 1.6 0 0 0-1.47-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.47-1.05 1.6 1.6 0 0 0-.32-1.77l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.6 1.6 0 0 0 1.77.32H9a1.6 1.6 0 0 0 1-1.47V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.47 1.6 1.6 0 0 0 1.77-.32l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.6 1.6 0 0 0-.32 1.77V9a1.6 1.6 0 0 0 1.47 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/>'
   };
 
@@ -73,6 +77,8 @@
       { id: 'inspection', label: 'Inspection', icon: 'inspection', modul: 2 },
       { id: 'checklist', label: 'Safety Checklist', icon: 'checklist', modul: 15 },
       { id: 'permit', label: 'Work Permit & JSEA', icon: 'permit', modul: 3 },
+      { id: 'jsa', label: 'Analisis JSA', icon: 'jsa', modul: 22 },
+      { id: 'hiradc', label: 'HIRADC K3', icon: 'hiradc', modul: 23 },
       { id: 'risk', label: 'Manajemen Risiko', icon: 'risk', modul: 12 },
       { id: 'capa', label: 'CAPA', icon: 'capa', modul: 10, count: 2 }
     ] },
@@ -80,9 +86,11 @@
       { id: 'audit', label: 'Audit', icon: 'audit', modul: 5 },
       { id: 'environment', label: 'Environment', icon: 'environment', modul: 6 },
       { id: 'docint', label: 'Dokumen Internal', icon: 'docint', modul: 13 },
-      { id: 'docext', label: 'Dokumen Eksternal', icon: 'docext', modul: 14, count: 2 }
+      { id: 'docext', label: 'Dokumen Eksternal', icon: 'docext', modul: 14, count: 2 },
+      { id: 'regulasi', label: 'Regulasi K3', icon: 'regulasi', modul: 25, count: 2 }
     ] },
     { group: 'PENGEMBANGAN', items: [
+      { id: 'induksi', label: 'Induksi K3', icon: 'induksi', modul: 24, count: 1 },
       { id: 'training', label: 'Manajemen Pelatihan', icon: 'training', modul: 11 },
       { id: 'activity', label: 'SHE Activity', icon: 'activity', modul: 9 },
       { id: 'kpi', label: 'SHE KPI & Analytics', icon: 'kpi', modul: 8 }
@@ -167,7 +175,9 @@
   const LAPANGAN_MODUL = {
     bahaya: { judul: 'Laporan Bahaya dari Lapangan', ikon: 'hazard' },
     insiden: { judul: 'Laporan Insiden dari Lapangan', ikon: 'incident' },
-    observasi: { judul: 'Observasi dari Lapangan', ikon: 'bbs' }
+    observasi: { judul: 'Observasi dari Lapangan', ikon: 'bbs' },
+    apd: { judul: 'Observasi APD dari Lapangan', ikon: 'bbs' },
+    izin: { judul: 'Pengajuan Izin Kerja dari Lapangan', ikon: 'permit' }
   };
 
   function lapanganSeksi(jenis) {
@@ -509,6 +519,8 @@
         ${tile({ label: 'PEKERJAAN VENDOR', value: '3', icon: 'people', arah: 'flat', delta: 'dari 4 izin bulan ini', note: 'Induksi K3 & asuransi diverifikasi terpisah' })}
         ${tile({ label: 'DITOLAK ZONA EKSTREM', value: '2', icon: 'incident', arah: 'good', delta: 'tahun berjalan', note: 'Risiko sisa ≥ 15 menutup penerbitan' })}
       </div>
+
+      ${lapanganSeksi('izin')}
 
       <section class="section">
         <div class="section-head"><h2>Izin Kerja</h2><span class="sub">Kartu, bukan baris tabel — izin dibaca sekilas di lapangan</span></div>
@@ -1067,10 +1079,131 @@
 
   /* ───────── Rincian (modal) ───────── */
   function detail(kind, id) {
+    if (kind === 'jsa') {
+      const j = D.jsa.find(x => x.id === id); if (!j) return null;
+      const skorAwal = Math.max.apply(null, j.langkah.map(x => x.k * x.s));
+      const skorSisa = Math.max.apply(null, j.langkah.map(x => x.sk * x.ss));
+      return { title: j.id, sub: `${j.pekerjaan} · ${j.area}`, body:
+        chipRow([
+          chip(j.jenis.toUpperCase(), j.jenis === 'Rutin' ? 'low' : 'medium'),
+          chip(j.status.toUpperCase(), j.status === 'Disahkan' ? 'low' : 'high', true),
+          chip('REVISI ' + j.rev, 'neutral'),
+          chip('RISIKO AWAL ' + skorAwal, zone(skorAwal)),
+          chip('RISIKO SISA ' + skorSisa, zone(skorSisa))
+        ]) +
+        kv([
+          ['Penyusun', j.penyusun], ['Peninjau', j.peninjau], ['Pengesah', j.pengesah],
+          ['Disusun', j.disusun], ['Disahkan', j.disahkan], ['Tinjau ulang', j.tinjau],
+          ['APD wajib', j.apd.join(' · ')],
+          ['Izin kerja yang memakai', j.izinTerkait.length
+            ? j.izinTerkait.map(x => `<span class="mono mono--id">${x}</span>`).join(', ')
+            : 'belum dipakai izin mana pun']
+        ]) +
+        `<div class="label-caps" style="margin:var(--space-6) 0 var(--space-3)">LANGKAH KERJA</div>` +
+        j.langkah.map(st => `
+          <div class="card" style="margin-bottom:var(--space-3)">
+            <div style="display:flex;align-items:baseline;gap:var(--space-3);margin-bottom:var(--space-2)">
+              <span class="mono mono--id">Langkah ${st.no}</span>
+              <span style="font-weight:600;flex:1">${st.kerja}</span>
+              <span class="chip chip--${zone(st.k * st.s)}">${st.k * st.s}</span>
+              <span style="color:var(--ink-500)">→</span>
+              <span class="chip chip--${zone(st.sk * st.ss)}">${st.sk * st.ss}</span>
+            </div>
+            <div style="font-size:13.5px;line-height:20px;color:var(--signal-critical);margin-bottom:var(--space-2)">Bahaya: ${st.bahaya}</div>
+            ${st.kendali.map(k => `<div style="font-size:13px;line-height:20px;display:flex;gap:var(--space-2);margin-bottom:3px">
+              ${chip(k[0].toUpperCase(), k[0] === 'Eliminasi' || k[0] === 'Substitusi' ? 'low' : k[0] === 'Rekayasa' ? 'medium' : k[0] === 'APD' ? 'critical' : 'high')}
+              <span style="flex:1">${k[1]}</span></div>`).join('')}
+          </div>`).join('') +
+        foot('Skor ditulis sebagai kemungkinan × keparahan pada matriks 5×5 yang sama dengan HIRADC dan Manajemen Risiko. JSA yang belum disahkan tidak boleh dilampirkan pada izin kerja.') };
+    }
+    if (kind === 'hiradc') {
+      const r = D.hiradc.find(x => x.id === id); if (!r) return null;
+      const awal = r.k * r.p, sisa = r.sk * r.sp;
+      return { title: r.id, sub: `${r.aktivitas} · ${r.proses}`, body:
+        chipRow([
+          chip(r.rutin.toUpperCase(), r.rutin === 'Rutin' ? 'low' : r.rutin === 'Non-rutin' ? 'medium' : 'critical'),
+          chip(r.kategori.toUpperCase(), 'neutral'),
+          chip('RISIKO AWAL ' + awal, zone(awal)),
+          chip('RISIKO SISA ' + sisa, zone(sisa)),
+          chip(r.status.toUpperCase(), T.status[r.status] || 'info', true)
+        ]) +
+        lead(r.bahaya) +
+        kv([
+          ['Risiko yang timbul', r.risiko],
+          ['Siapa yang terpapar', r.korban],
+          ['Penilaian awal', `kemungkinan ${r.k} × keparahan ${r.p} = ${awal}`],
+          ['Pengendalian yang sudah ada', r.kendaliAda],
+          ['Penilaian sisa', `kemungkinan ${r.sk} × keparahan ${r.sp} = ${sisa}`],
+          ['Pengendalian tambahan', r.kendaliTambah],
+          ['Hierarki pengendalian', r.hierarki],
+          ['Penanggung jawab', r.pj], ['Target', r.target]
+        ]) +
+        foot('Penilaian sisa hanya boleh diturunkan setelah pengendaliannya benar-benar terpasang di lapangan. Menurunkan skor karena pengendalian sudah direncanakan adalah cara paling umum HIRADC kehilangan artinya.') };
+    }
+    if (kind === 'induksi') {
+      const r = D.induksi.find(x => x.id === id); if (!r) return null;
+      return { title: r.id, sub: `${r.nama} · ${r.jenis}`, body:
+        chipRow([
+          chip(r.jenis.toUpperCase(), r.jenis === 'Kontraktor' ? 'medium' : r.jenis === 'Tamu' ? 'info' : 'low'),
+          chip(r.status.toUpperCase(),
+            r.status === 'Berlaku' ? 'low' : r.status === 'Segera Berakhir' ? 'high' : 'critical', true),
+          chip('NILAI ' + r.nilai, r.nilai >= 80 ? 'low' : 'critical')
+        ]) +
+        kv([
+          ['Nama', r.nama], ['Jenis', r.jenis], ['Asal / keperluan', r.asal],
+          ['Tanggal induksi', r.tanggal], ['Pemandu', r.pemandu],
+          ['Nilai uji pemahaman', `<span class="mono">${r.nilai}</span> — ambang lulus 80`],
+          ['Berlaku sampai', r.berlaku],
+          ['Sisa', r.sisa > 0 ? r.sisa + ' hari' : r.sisa < 0 ? 'kedaluwarsa ' + Math.abs(r.sisa) + ' hari' : '—']
+        ]) +
+        foot(r.status === 'Kedaluwarsa'
+          ? 'Kartu ini sudah kedaluwarsa. Pemegangnya tidak boleh berada di area produksi sampai induksi ulang selesai.'
+          : r.nilai < 80
+            ? 'Nilai di bawah ambang lulus. Peserta wajib mengulang induksi — meloloskannya membuat seluruh rekaman induksi kehilangan artinya sebagai bukti.'
+            : 'Kartu induksi adalah gerbang masuk area produksi. Masa berlaku kontraktor lebih pendek karena perputarannya tinggi.') };
+    }
+    if (kind === 'regulasi') {
+      const r = D.regulasi.find(x => x.id === id); if (!r) return null;
+      return { title: r.nomor, sub: r.judul, body:
+        chipRow([
+          chip(r.bidang.toUpperCase(), 'neutral'),
+          chip(r.status.toUpperCase(),
+            r.status === 'Terpenuhi' ? 'low' : r.status === 'Terpenuhi Sebagian' ? 'high' : 'critical', true)
+        ]) +
+        kv([
+          ['Nomor', `<span class="mono">${r.nomor}</span>`],
+          ['Judul', r.judul], ['Penerbit', r.penerbit], ['Bidang', r.bidang],
+          ['Pasal yang relevan', r.pasal],
+          ['Cara Khong Guan memenuhinya', r.penerapan],
+          ['Bukti', r.bukti],
+          ['Penanggung jawab', r.pj],
+          ['Evaluasi penaatan terakhir', r.evaluasi]
+        ]) +
+        foot('Klausul 6.1.3 ISO 45001 tidak meminta daftar peraturan, melainkan bukti bahwa peraturannya sudah diterjemahkan menjadi sesuatu yang dikerjakan. Karena itu baris tanpa kolom bukti dianggap belum terpenuhi.') };
+    }
+    if (kind === 'apd') {
+      const r = D.observasiAPD.find(x => x.id === id); if (!r) return null;
+      const p = Math.round(r.patuh / r.diamati * 100);
+      return { title: r.id, sub: `${r.area} · ${r.tanggal} · ${r.pengamat}`, body:
+        `<div class="info-num">${p}<span class="tile-unit">% patuh</span></div>` +
+        chipRow([
+          chip(r.patuh + ' PATUH', 'low'),
+          chip((r.diamati - r.patuh) + ' TIDAK PATUH', r.patuh === r.diamati ? 'neutral' : 'critical')
+        ]) +
+        bars(r.rincian.map(x => [x[0], x[2], x[1], x[2] === x[1] ? 'low' : 'critical'])) +
+        kv([
+          ['Area', r.area], ['Tanggal', r.tanggal], ['Pengamat', r.pengamat],
+          ['Pekerja diamati', `<span class="mono">${r.diamati}</span>`],
+          ['Patuh lengkap', `<span class="mono">${r.patuh}</span> (${p}%)`],
+          ['Catatan', r.catatan]
+        ]) +
+        foot('Angka ini mengalir ke KPI Kepatuhan APD. Yang dicatat adalah kepatuhan per jenis APD per area, bukan nama pekerja — sama seperti observasi perilaku.') };
+    }
     if (kind === 'lapangan') {
       const r = (window.KGLAP ? KGLAP.daftar() : []).filter(function (x) { return x.id === id; })[0];
       if (!r) return null;
-      const modul = { bahaya: 'Laporan Bahaya K3L', insiden: 'Incident & Nearmiss', observasi: 'Observasi Perilaku' }[r.jenis];
+      const modul = { bahaya: 'Laporan Bahaya K3L', insiden: 'Incident & Nearmiss', observasi: 'Observasi Perilaku',
+                      apd: 'Observasi Perilaku · APD', izin: 'Work Permit & JSEA' }[r.jenis];
       return { title: r.id, sub: `Kiriman lapangan · ${modul} · ${r.waktuTampil || ''}`, body:
         chipRow([
           chip('DARI LAPANGAN', 'info'),
@@ -1087,6 +1220,13 @@
           r.keparahan && ['Keparahan', r.keparahan],
           r.cedera && ['Cedera', r.cedera],
           (r.aman != null) && ['Perilaku aman / berisiko', r.aman + ' / ' + r.berisiko],
+          (r.diamati != null) && ['Diamati / memakai dengan benar',
+            `<span class="mono">${r.patuh}</span> dari <span class="mono">${r.diamati}</span> · ${Math.round(r.patuh / r.diamati * 100)}%`],
+          (r.apd && r.apd.length) && ['Jenis APD diperiksa', KGAI.esc(r.apd.join(', '))],
+          r.pengawas && ['Pengawas pekerjaan', KGAI.esc(r.pengawas)],
+          r.durasi && ['Perkiraan lama kerja', KGAI.esc(r.durasi)],
+          r.prasyarat && ['Prasyarat disiapkan',
+            r.prasyarat.length ? KGAI.esc(r.prasyarat.join(', ')) : 'belum ada yang ditandai pelapor'],
           r.koordinat && ['Titik lokasi', `<span class="mono">${r.koordinat.lat.toFixed(5)}, ${r.koordinat.lon.toFixed(5)}</span> · ±${r.koordinat.akurasi} m`],
           r.fotoDilepas && ['Foto', 'Dilepas karena penyimpanan perangkat penuh; laporannya tetap utuh'],
           ['Pelapor', KGAI.esc(r.pelapor) + ' · ' + KGAI.esc(r.peran)],
@@ -1339,6 +1479,67 @@
         </div>
         <div class="tile-note">Tahap berikutnya adalah evaluasi dan penanganan. Opsi penanganan ditawarkan dalam urutan Hindari → Kurangi → Transfer → Terima.</div>`,
       ok: 'Simpan & Lanjut Evaluasi', toast: 'Risiko RSK-2026-009 tersimpan. Lanjutkan ke evaluasi.' },
+    'jsa-baru': { title: 'Susun JSA Baru', sub: 'Satu JSA per jenis pekerjaan, dipakai berulang',
+      body: `<div class="field"><label for="j-kerja">Pekerjaan yang dianalisis <span class="req">*</span></label>
+        <input id="j-kerja" type="text" placeholder="Contoh: Pembersihan ducting exhaust oven"></div>
+        <div class="row2">
+          <div class="field"><label for="j-area">Area <span class="req">*</span></label>
+            <select id="j-area">${D.lokasi.map(l => `<option>${l}</option>`).join('')}</select></div>
+          <div class="field"><label for="j-sifat">Sifat pekerjaan <span class="req">*</span></label>
+            <select id="j-sifat"><option>Rutin</option><option selected>Non-rutin</option></select></div>
+        </div>
+        <div class="field"><label for="j-penyusun">Penyusun <span class="req">*</span></label>
+          <select id="j-penyusun">${D.orang.map(o => `<option>${o}</option>`).join('')}</select></div>
+        <div class="tile-note" style="margin-top:var(--space-4)">Langkah demi langkah diisi pada layar berikutnya. JSA baru berstatus Draf dan belum dapat dilampirkan pada izin kerja sampai disahkan.</div>`,
+      ok: 'Mulai Menyusun', toast: 'JSA-2026-013 dibuat sebagai draf. Lanjutkan mengisi langkah kerja.' },
+    'hiradc-baru': { title: 'Tambah Aktivitas HIRADC', sub: 'Termasuk aktivitas non-rutin dan keadaan darurat',
+      body: `<div class="field"><label for="h-proses">Proses <span class="req">*</span></label>
+        <input id="h-proses" type="text" placeholder="Contoh: Produksi — Oven"></div>
+        <div class="field"><label for="h-akt">Aktivitas <span class="req">*</span></label>
+        <input id="h-akt" type="text" placeholder="Contoh: Pembersihan ducting exhaust"></div>
+        <div class="row2">
+          <div class="field"><label for="h-sifat">Sifat <span class="req">*</span></label>
+            <select id="h-sifat"><option>Rutin</option><option>Non-rutin</option><option>Darurat</option></select></div>
+          <div class="field"><label for="h-kat">Sumber bahaya <span class="req">*</span></label>
+            <select id="h-kat">${D.hiradcKategori.map(k => `<option>${k}</option>`).join('')}</select></div>
+        </div>
+        <div class="field"><label for="h-bahaya">Bahaya yang teridentifikasi <span class="req">*</span></label>
+        <textarea id="h-bahaya" rows="2" placeholder="Apa yang dapat mencederai, dan bagaimana"></textarea></div>
+        <div class="tile-note" style="margin-top:var(--space-4)">Penilaian sisa hanya boleh diturunkan setelah pengendaliannya benar-benar terpasang di lapangan, bukan setelah direncanakan.</div>`,
+      ok: 'Simpan Aktivitas', toast: 'HRD-013 tersimpan. Lengkapi penilaian dan pengendaliannya.' },
+    'induksi-baru': { title: 'Jadwalkan Induksi K3', sub: 'Kartu induksi adalah gerbang masuk area produksi',
+      body: `<div class="field"><label for="i-nama">Nama atau nama rombongan <span class="req">*</span></label>
+        <input id="i-nama" type="text" placeholder="Contoh: Tim CV Teknik Jaya (6 orang)"></div>
+        <div class="row2">
+          <div class="field"><label for="i-jenis">Jenis peserta <span class="req">*</span></label>
+            <select id="i-jenis"><option>Pekerja Baru</option><option>Kontraktor</option><option>Tamu</option></select></div>
+          <div class="field"><label for="i-tgl">Tanggal induksi <span class="req">*</span></label>
+            <input id="i-tgl" type="text" value="23 Sep 2026"></div>
+        </div>
+        <div class="field"><label for="i-asal">Asal atau keperluan <span class="req">*</span></label>
+        <input id="i-asal" type="text" placeholder="Contoh: Pengelasan pipa uap"></div>
+        <div class="tile-note" style="margin-top:var(--space-4)">Masa berlaku otomatis: pekerja baru 12 bulan, kontraktor 6 bulan, tamu 3 bulan. Nilai uji pemahaman di bawah 80 berarti mengulang, bukan diloloskan.</div>`,
+      ok: 'Jadwalkan', toast: 'Induksi IND-2026-0089 dijadwalkan.' },
+    'regulasi-baru': { title: 'Tambah Peraturan', sub: 'Setiap peraturan wajib punya kolom penerapan dan bukti',
+      body: `<div class="field"><label for="r-nomor">Nomor peraturan <span class="req">*</span></label>
+        <input id="r-nomor" type="text" placeholder="Contoh: Permenaker No. 5 Tahun 2018"></div>
+        <div class="field"><label for="r-judul">Judul <span class="req">*</span></label>
+        <input id="r-judul" type="text" placeholder="Judul lengkap peraturan"></div>
+        <div class="field"><label for="r-pasal">Pasal yang relevan <span class="req">*</span></label>
+        <input id="r-pasal" type="text" placeholder="Contoh: Pasal 5–8, 12, 22"></div>
+        <div class="field"><label for="r-terap">Cara Khong Guan memenuhinya <span class="req">*</span></label>
+        <textarea id="r-terap" rows="3" placeholder="Apa yang benar-benar dikerjakan, bukan kutipan pasalnya"></textarea></div>
+        <div class="tile-note" style="margin-top:var(--space-4)">Baris tanpa kolom bukti dianggap belum terpenuhi. Daftar peraturan yang tidak menunjuk bukti apa pun tidak menjawab klausul 6.1.3.</div>`,
+      ok: 'Simpan', toast: 'REG-013 tersimpan. Lengkapi kolom bukti sebelum evaluasi berikutnya.' },
+    'observasi-apd': { title: 'Catat Observasi APD', sub: 'Kepatuhan per jenis APD per area',
+      body: `<div class="field"><label for="a-area">Area <span class="req">*</span></label>
+        <select id="a-area">${D.lokasi.map(l => `<option>${l}</option>`).join('')}</select></div>
+        <div class="field"><label for="a-jumlah">Jumlah pekerja diamati <span class="req">*</span></label>
+        <input id="a-jumlah" type="number" inputmode="numeric" min="1" value="8"></div>
+        <div class="field"><label>Jenis APD yang diperiksa</label>
+        <div class="picks">${D.apdJenis.map((a2, i) => `<button type="button" class="pick" data-toggle="apd${i}" aria-pressed="${i < 2}">${a2.nama}</button>`).join('')}</div></div>
+        <div class="tile-note" style="margin-top:var(--space-4)">Nama pekerja tidak dicatat. Yang diukur adalah kepatuhan per jenis APD per area, dan angkanya mengalir ke KPI Kepatuhan APD.</div>`,
+      ok: 'Simpan Observasi', toast: 'APD-2026-0143 tersimpan. Angka masuk ke KPI Kepatuhan APD.' },
     'ai-cara': { title: 'Cara Kerja Asisten QHSE', sub: 'Apa yang dikerjakannya, dan apa yang tidak',
       body: `
         <p style="font-size:14px;line-height:22px;color:var(--ink-700);margin:0 0 var(--space-5)">Asisten berjalan sepenuhnya di dalam peramban. Tidak ada server, tidak ada kunci API, dan tidak ada model bahasa di belakangnya. Empat kemampuannya nyata dan dapat diperiksa satu per satu.</p>
@@ -2109,6 +2310,55 @@
       </div>
 
       ${lapanganSeksi('observasi')}
+      ${lapanganSeksi('apd')}
+
+      <section class="section">
+        <div class="section-head">
+          <h2>Observasi APD</h2>
+          <span class="sub">${D.observasiAPD.length} pengamatan · kepatuhan per jenis APD</span>
+          <button class="btn btn--secondary btn--sm" data-act="observasi-apd">${I(icon.plus, 15)}Catat Observasi APD</button>
+        </div>
+        <div class="grid grid--4">
+          ${D.apdJenis.map(a2 => {
+            const baris = D.observasiAPD.map(o => (o.rincian || []).filter(x => x[0] === a2.nama)[0]).filter(Boolean);
+            const total = baris.reduce((x, y) => x + y[1], 0);
+            const patuh = baris.reduce((x, y) => x + y[2], 0);
+            const p = total ? Math.round(patuh / total * 100) : null;
+            return `<div class="card is-clickable" ${infoAttr({
+              title: a2.nama, sub: 'Wajib di: ' + a2.wajib,
+              body: (p === null ? '<div class="info-num">—</div>' : `<div class="info-num">${p}<span class="tile-unit">% patuh</span></div>`) +
+                kv([['Jenis APD', a2.nama], ['Wajib di area', a2.wajib],
+                    ['Pekerja diamati', total ? `<span class="mono">${total}</span>` : 'belum ada pengamatan'],
+                    ['Memakai dengan benar', total ? `<span class="mono">${patuh}</span> (${p}%)` : '—']]) +
+                foot('Kepatuhan APD adalah indikator leading. Angka yang turun lebih dulu terlihat di sini sebelum muncul sebagai cedera di modul Insiden.'),
+              goto: 'kpi', gotoLabel: 'Lihat KPI'
+            })}>
+              <div class="label-caps">${a2.nama}</div>
+              <div style="display:flex;align-items:baseline;gap:var(--space-2);margin-top:var(--space-2)">
+                <span class="mono" style="font-size:20px;font-weight:600;${p !== null && p < 100 ? 'color:var(--signal-high)' : ''}">${p === null ? '—' : p + '%'}</span>
+                <span style="font-size:11.5px;color:var(--ink-500);margin-left:auto">${total || 0} diamati</span>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="table-wrap" style="margin-top:var(--space-4)"><table>
+          <thead><tr><th>Nomor</th><th>Area</th><th>Tanggal</th><th>Pengamat</th><th>Diamati</th><th>Patuh</th><th>Catatan</th></tr></thead>
+          <tbody>${D.observasiAPD.map(o => {
+            const p = Math.round(o.patuh / o.diamati * 100);
+            return `<tr data-detail="apd:${o.id}" tabindex="0" role="button">
+              <td class="mono mono--id">${o.id}</td>
+              <td>${o.area}</td>
+              <td class="mono mono--muted">${o.tanggal}</td>
+              <td>${o.pengamat}</td>
+              <td class="mono">${o.diamati}</td>
+              <td>${chip(p + '%', p === 100 ? 'low' : p >= 90 ? 'medium' : 'critical')}</td>
+              <td>${o.catatan}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>
+        <div class="tile-note" style="margin-top:var(--space-4)">Observasi APD dipisahkan dari observasi perilaku karena yang diukur berbeda: bukan pola perilaku, melainkan kepatuhan pemakaian per jenis APD per area. Nama pekerja tidak pernah dicatat pada keduanya.</div>
+      </section>
+
 
       <section class="section grid grid--2">
         <div class="card">
@@ -2537,6 +2787,321 @@
     </div>`;
   }
 
+  /* ───────── Modul 22 · Analisis JSA ─────────
+     JSEA di dalam modul Work Permit terikat pada satu izin. Modul ini adalah
+     pustakanya: JSA disusun sekali per jenis pekerjaan lalu dipakai berulang. */
+  function viewJsa() {
+    const L = D.jsa;
+    const skorAwal = (j) => Math.max.apply(null, j.langkah.map(s => s.k * s.s));
+    const skorSisa = (j) => Math.max.apply(null, j.langkah.map(s => s.sk * s.ss));
+    const sah = L.filter(j => j.status === 'Disahkan');
+    const tunggu = L.filter(j => j.status !== 'Disahkan');
+    const langkahTotal = L.reduce((a, j) => a + j.langkah.length, 0);
+
+    return hero({
+      eyebrow: 'MODUL 22 · ANALISIS JSA',
+      title: 'Job Safety Analysis',
+      desc: 'Setiap pekerjaan dipecah menjadi langkah, setiap langkah dinilai bahayanya, dan setiap bahaya diberi pengendalian menurut hierarki. JSA disusun sekali lalu dipakai berulang — menyusun ulang tiap kali izin terbit adalah cara tercepat membuat orang menyalin tanpa berpikir.',
+      action: { act: 'jsa-baru', icon: 'jsa', label: 'Susun JSA' }
+    }) + `
+    <div class="page">
+      <div class="grid grid--4">
+        ${tile({ label: 'JSA TERDAFTAR', value: String(L.length), icon: 'jsa', arah: 'flat',
+          delta: langkahTotal + ' langkah kerja seluruhnya', note: 'Pustaka dipakai ulang oleh izin kerja sejenis',
+          rumus: 'Jumlah JSA pada pustaka, apa pun statusnya',
+          sumber: 'Modul Analisis JSA',
+          rincian: bars(L.map(j => [j.pekerjaan, j.langkah.length, langkahTotal, 'info'])),
+          catatan: 'JSA yang tidak pernah dipakai ulang biasanya tanda pekerjaan itu sebenarnya tidak berulang — atau tanda JSA-nya tidak pernah dicari orang.' })}
+        ${tile({ label: 'DISAHKAN', value: String(sah.length), icon: 'capa', arah: 'good',
+          delta: 'siap dipakai izin kerja', note: 'Pengesah: Plant Manager atau QHSE Supervisor',
+          rumus: 'JSA berstatus Disahkan', sumber: 'Modul Analisis JSA',
+          catatan: 'JSA yang belum disahkan tidak boleh dilampirkan pada izin kerja. Izin yang terbit dengan JSA draf adalah temuan audit.' })}
+        ${tile({ label: 'MENUNGGU PENGESAHAN', value: String(tunggu.length), icon: 'clock', arah: tunggu.length ? 'bad' : 'good',
+          delta: tunggu.length ? tunggu.map(j => j.id).join(', ') : 'tidak ada', note: 'Belum dapat dipakai menerbitkan izin',
+          rumus: 'JSA berstatus selain Disahkan', sumber: 'Modul Analisis JSA' })}
+        ${tile({ label: 'RISIKO SISA TERTINGGI', value: String(Math.max.apply(null, L.map(skorSisa))), icon: 'risk',
+          arah: Math.max.apply(null, L.map(skorSisa)) >= 15 ? 'bad' : 'good',
+          delta: 'dari seluruh langkah pada pustaka', note: 'Zona Ekstrem dimulai pada skor 15',
+          rumus: 'Nilai tertinggi kemungkinan × keparahan setelah pengendalian',
+          sumber: 'Seluruh langkah pada seluruh JSA',
+          rincian: bars(L.map(j => [j.id + ' — ' + j.pekerjaan, skorSisa(j), 25, zone(skorSisa(j))])),
+          catatan: 'Selama ada satu langkah di zona Ekstrem, izin kerja untuk pekerjaan itu tidak dapat diterbitkan.' })}
+      </div>
+
+      <section class="section">
+        <div class="section-head"><h2>Pustaka JSA</h2><span class="sub">${L.length} analisis</span></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Nomor</th><th>Pekerjaan</th><th>Area</th><th>Jenis</th><th>Langkah</th><th>Awal → Sisa</th><th>Rev</th><th>Status</th></tr></thead>
+          <tbody>${L.map(j => `<tr data-detail="jsa:${j.id}" tabindex="0" role="button">
+            <td class="mono mono--id">${j.id}</td>
+            <td>${j.pekerjaan}</td>
+            <td>${j.area}</td>
+            <td>${chip(j.jenis.toUpperCase(), j.jenis === 'Rutin' ? 'low' : 'medium')}</td>
+            <td class="mono">${j.langkah.length}</td>
+            <td><span class="mono">${skorAwal(j)}</span> → <span class="mono" style="color:var(--signal-${zone(skorSisa(j))});font-weight:600">${skorSisa(j)}</span></td>
+            <td class="mono">${j.rev}</td>
+            <td>${chip(j.status.toUpperCase(), j.status === 'Disahkan' ? 'low' : 'high', true)}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>
+        <div class="tile-note" style="margin-top:var(--space-4)">Kolom Awal → Sisa memakai skor tertinggi di antara seluruh langkah, bukan rata-rata. Satu langkah berbahaya tidak boleh tersamarkan oleh lima langkah aman.</div>
+      </section>
+
+      <section class="section">
+        <div class="section-head"><h2>Hierarki Pengendalian yang Dipakai</h2>
+          <span class="sub">urutan wajib: yang di atas dicoba lebih dulu</span></div>
+        <div class="grid grid--3">
+          ${[['Eliminasi', 'Menghilangkan bahayanya sama sekali', 'low'],
+             ['Substitusi', 'Mengganti dengan yang kurang berbahaya', 'low'],
+             ['Rekayasa', 'Memisahkan orang dari bahaya secara fisik', 'medium'],
+             ['Administratif', 'Mengubah cara orang bekerja', 'high'],
+             ['APD', 'Pelindung terakhir pada tubuh pekerja', 'critical']].map(h => {
+            const pakai = L.reduce((a, j) => a + j.langkah.reduce((b, s) =>
+              b + s.kendali.filter(k => k[0] === h[0]).length, 0), 0);
+            return `<div class="card is-clickable" ${infoAttr({
+              title: h[0], sub: h[1],
+              body: `<div class="info-num">${pakai}<span class="tile-unit">pengendalian</span></div>` +
+                kv([['Tingkat', h[0]], ['Arti', h[1]],
+                    ['Dipakai pada pustaka', `<span class="mono">${pakai}</span> pengendalian`],
+                    ['Keandalan', h[2] === 'low' ? 'Tertinggi — tidak bergantung pada kepatuhan orang'
+                      : h[2] === 'medium' ? 'Tinggi — tetap bekerja walau orang lupa'
+                      : h[2] === 'high' ? 'Sedang — bergantung pada disiplin dan pengawasan'
+                      : 'Terendah — gagal begitu pekerja melepasnya']]) +
+                foot('APD adalah lapisan terakhir, bukan yang pertama. JSA yang seluruh pengendaliannya berupa APD berarti bahayanya belum benar-benar ditangani.')
+            })}>
+              <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-2)">
+                ${chip(h[0].toUpperCase(), h[2])}
+                <span class="mono" style="margin-left:auto;font-size:18px;font-weight:600">${pakai}</span>
+              </div>
+              <div style="font-size:13px;line-height:19px;color:var(--ink-700)">${h[1]}</div>
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="tile-note">Sebaran yang sehat menumpuk di Rekayasa ke atas. Bila APD paling banyak, bahayanya belum ditangani — hanya dipindahkan ke tubuh pekerja.</div>
+      </section>
+    </div>`;
+  }
+
+  /* ───────── Modul 23 · HIRADC K3 ─────────
+     Register risiko menilai risiko korporat; HIRADC menilai bahaya pada tingkat
+     aktivitas, termasuk yang non-rutin dan keadaan darurat. */
+  function viewHiradc() {
+    const H = D.hiradc;
+    const awal = (r) => r.k * r.p;
+    const sisa = (r) => r.sk * r.sp;
+    const ekstrem = H.filter(r => sisa(r) >= 15);
+    const nonRutin = H.filter(r => r.rutin !== 'Rutin');
+    const terbuka = H.filter(r => r.status === 'Terbuka');
+    const turun = H.reduce((a, r) => a + (awal(r) - sisa(r)), 0);
+
+    return hero({
+      eyebrow: 'MODUL 23 · HIRADC K3',
+      title: 'Identifikasi Bahaya, Penilaian Risiko & Penentuan Pengendalian',
+      desc: 'Menilai bahaya pada tingkat aktivitas — rutin, non-rutin, dan keadaan darurat. Hasilnya yang menjadi masukan bagi JSA, izin kerja, dan program pelatihan. Aktivitas yang tidak pernah masuk HIRADC tidak akan pernah punya pengendalian.',
+      action: { act: 'hiradc-baru', icon: 'hiradc', label: 'Tambah Aktivitas' }
+    }) + `
+    <div class="page">
+      <div class="grid grid--4">
+        ${tile({ label: 'AKTIVITAS DINILAI', value: String(H.length), icon: 'hiradc', arah: 'flat',
+          delta: nonRutin.length + ' non-rutin & darurat', note: 'Seluruh proses produksi dan penunjang',
+          rumus: 'Jumlah baris HIRADC aktif', sumber: 'Modul HIRADC K3',
+          rincian: bars(['Rutin', 'Non-rutin', 'Darurat'].map(j =>
+            [j, H.filter(r => r.rutin === j).length, H.length, j === 'Darurat' ? 'critical' : j === 'Non-rutin' ? 'high' : 'low'])),
+          catatan: 'Aktivitas non-rutin dan keadaan darurat paling sering terlewat, padahal di sanalah kecelakaan besar terjadi.' })}
+        ${tile({ label: 'ZONA EKSTREM SISA', value: String(ekstrem.length), icon: 'risk',
+          arah: ekstrem.length ? 'bad' : 'good',
+          delta: ekstrem.length ? ekstrem.map(r => r.id).join(', ') : 'tidak ada', note: 'Skor sisa ≥ 15 setelah pengendalian',
+          rumus: 'Kemungkinan × Keparahan setelah pengendalian yang ada',
+          sumber: 'Modul HIRADC K3',
+          catatan: 'Aktivitas dengan risiko sisa Ekstrem tidak boleh berjalan sampai pengendalian tambahannya terpasang.' })}
+        ${tile({ label: 'PENURUNAN SKOR', value: String(turun), unit: 'poin', icon: 'kpi', arah: 'good',
+          delta: 'oleh pengendalian yang sudah ada', note: 'Selisih total skor awal dan skor sisa',
+          rumus: 'Σ (awal − sisa) seluruh aktivitas', sumber: 'Modul HIRADC K3',
+          catatan: 'Angka ini hanya berarti bila pengendaliannya benar-benar terpasang di lapangan, bukan baru tertulis di kolom.' })}
+        ${tile({ label: 'BELUM DIKERJAKAN', value: String(terbuka.length), icon: 'clock',
+          arah: terbuka.length ? 'bad' : 'good',
+          delta: 'pengendalian tambahan berstatus Terbuka', note: 'Masing-masing punya penanggung jawab dan tenggat',
+          rumus: 'Baris HIRADC berstatus Terbuka', sumber: 'Modul HIRADC K3' })}
+      </div>
+
+      <section class="section">
+        <div class="section-head"><h2>Sumber Bahaya</h2><span class="sub">tujuh kategori</span></div>
+        <div class="grid grid--4">
+          ${D.hiradcKategori.map(k => {
+            const isi = H.filter(r => r.kategori === k);
+            const tertinggi = isi.length ? Math.max.apply(null, isi.map(sisa)) : 0;
+            return `<div class="card is-clickable" ${infoAttr({
+              title: 'Sumber bahaya ' + k, sub: isi.length + ' aktivitas dinilai',
+              body: `<div class="info-num">${isi.length}<span class="tile-unit">aktivitas</span></div>` +
+                kv([['Kategori', k], ['Aktivitas', `<span class="mono">${isi.length}</span>`],
+                    ['Risiko sisa tertinggi', `<span class="mono">${tertinggi}</span>`]]) +
+                (isi.length ? `<div class="label-caps" style="margin:var(--space-5) 0 var(--space-2)">AKTIVITAS</div>` +
+                  isi.map(r => `<div style="font-size:13px;line-height:20px;margin-bottom:4px"><span class="mono mono--id">${r.id}</span> — ${r.aktivitas}</div>`).join('') : '') +
+                foot('Kategori dipakai supaya tidak ada jenis bahaya yang terlupakan seluruhnya. Psikososial dan ergonomi paling sering kosong pada HIRADC yang disusun terburu-buru.'),
+              goto: 'hiradc', gotoLabel: 'Buka modul'
+            })}>
+              <div class="label-caps">${k}</div>
+              <div style="display:flex;align-items:baseline;gap:var(--space-2);margin-top:var(--space-2)">
+                <span class="mono" style="font-size:22px;font-weight:600">${isi.length}</span>
+                <span style="font-size:12px;color:var(--ink-500)">aktivitas</span>
+                ${tertinggi ? `<span class="chip chip--${zone(tertinggi)}" style="margin-left:auto">SISA ${tertinggi}</span>` : ''}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head"><h2>Register HIRADC</h2><span class="sub">${H.length} aktivitas</span></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Nomor</th><th>Aktivitas</th><th>Sifat</th><th>Kategori</th><th>Bahaya</th><th>Awal</th><th>Sisa</th><th>PJ</th><th>Status</th></tr></thead>
+          <tbody>${H.slice().sort((a, b) => sisa(b) - sisa(a)).map(r => `
+            <tr data-detail="hiradc:${r.id}" tabindex="0" role="button">
+              <td class="mono mono--id">${r.id}</td>
+              <td>${r.aktivitas}<div class="mono mono--muted" style="font-size:11.5px">${r.proses}</div></td>
+              <td>${chip(r.rutin.toUpperCase(), r.rutin === 'Rutin' ? 'low' : r.rutin === 'Non-rutin' ? 'medium' : 'critical')}</td>
+              <td>${r.kategori}</td>
+              <td>${r.bahaya}</td>
+              <td><span class="chip chip--${zone(awal(r))}">${awal(r)}</span></td>
+              <td><span class="chip chip--${zone(sisa(r))}">${sisa(r)}</span></td>
+              <td>${r.pj}</td>
+              <td>${chip(r.status.toUpperCase(), T.status[r.status] || 'info', true)}</td>
+            </tr>`).join('')}</tbody>
+        </table></div>
+        <div class="tile-note" style="margin-top:var(--space-4)">Matriks 5×5 dan kosakata zonanya sama persis dengan yang dipakai JSA dan Manajemen Risiko. Tiga matriks berbeda dalam satu sistem menghasilkan tiga angka yang tidak dapat dibandingkan.</div>
+      </section>
+    </div>`;
+  }
+
+  /* ───────── Modul 24 · Induksi K3 ───────── */
+  function viewInduksi() {
+    const I2 = D.induksi;
+    const berlaku = I2.filter(r => r.status === 'Berlaku');
+    const segera = I2.filter(r => r.status === 'Segera Berakhir');
+    const habis = I2.filter(r => r.status === 'Kedaluwarsa');
+    const gagal = I2.filter(r => r.status === 'Tidak Lulus');
+    const menit = D.induksiMateri.reduce((a, m) => a + m.menit, 0);
+    const jenisHitung = {}; I2.forEach(r => { jenisHitung[r.jenis] = (jenisHitung[r.jenis] || 0) + 1; });
+
+    return hero({
+      eyebrow: 'MODUL 24 · INDUKSI K3',
+      title: 'Induksi Keselamatan Kerja',
+      desc: 'Kartu induksi adalah gerbang masuk area produksi. Tanpa kartu yang masih berlaku, siapa pun tidak boleh berada di lantai produksi — termasuk kontraktor dan tamu. Kontraktor diberi masa berlaku lebih pendek karena perputarannya tinggi.',
+      metric: berlaku.length,
+      metricLabel: 'kartu berlaku',
+      action: { act: 'induksi-baru', icon: 'induksi', label: 'Jadwalkan Induksi' }
+    }) + `
+    <div class="page">
+      <div class="grid grid--4">
+        ${tile({ label: 'KARTU BERLAKU', value: String(berlaku.length), icon: 'induksi', arah: 'good',
+          delta: Object.keys(jenisHitung).map(k => jenisHitung[k] + ' ' + k).join(', '),
+          note: 'Boleh memasuki area produksi', rumus: 'Induksi berstatus Berlaku',
+          sumber: 'Modul Induksi K3',
+          rincian: bars(Object.keys(jenisHitung).map(k => [k, jenisHitung[k], I2.length, 'info'])) })}
+        ${tile({ label: 'SEGERA BERAKHIR', value: String(segera.length), icon: 'clock',
+          arah: segera.length ? 'bad' : 'good',
+          delta: segera.length ? segera.map(r => r.nama.split(' (')[0]).join(', ') : 'tidak ada',
+          note: 'Sisa ≤ 30 hari · induksi ulang perlu dijadwalkan',
+          rumus: 'Induksi dengan sisa masa berlaku ≤ 30 hari', sumber: 'Modul Induksi K3' })}
+        ${tile({ label: 'KEDALUWARSA', value: String(habis.length), icon: 'incident',
+          arah: habis.length ? 'bad' : 'good',
+          delta: habis.length ? 'dilarang memasuki area produksi' : 'tidak ada',
+          note: 'Akses dicabut otomatis pada tanggal berakhir',
+          rumus: 'Induksi yang masa berlakunya sudah lewat', sumber: 'Modul Induksi K3',
+          catatan: 'Kontraktor dengan kartu kedaluwarsa yang tetap bekerja adalah temuan audit sekaligus pelanggaran kewajiban pengendalian kontraktor.' })}
+        ${tile({ label: 'TIDAK LULUS', value: String(gagal.length), icon: 'clock',
+          arah: gagal.length ? 'bad' : 'good',
+          delta: 'nilai di bawah 80', note: 'Wajib mengulang induksi, bukan diloloskan',
+          rumus: 'Peserta dengan nilai uji pemahaman < 80', sumber: 'Modul Induksi K3',
+          catatan: 'Meloloskan peserta yang tidak lulus membuat seluruh rekaman induksi kehilangan artinya sebagai bukti.' })}
+      </div>
+
+      <section class="section">
+        <div class="section-head"><h2>Materi Induksi</h2>
+          <span class="sub">${D.induksiMateri.length} topik · ${menit} menit</span></div>
+        <ol class="ai-outline">${D.induksiMateri.map(m => `<li>
+          <b>${m.topik} · ${m.menit} menit</b>
+          <span>${m.inti}</span>
+        </li>`).join('')}</ol>
+        <div class="tile-note">Materi yang sama diberikan kepada pekerja, kontraktor, dan tamu. Yang berbeda hanya kedalaman bagian 6, karena tamu tidak menerbitkan izin kerja.</div>
+      </section>
+
+      <section class="section">
+        <div class="section-head"><h2>Rekaman Induksi</h2><span class="sub">${I2.length} rekaman</span></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Nomor</th><th>Nama</th><th>Jenis</th><th>Asal / keperluan</th><th>Tanggal</th><th>Nilai</th><th>Berlaku sampai</th><th>Status</th></tr></thead>
+          <tbody>${I2.map(r => `<tr data-detail="induksi:${r.id}" tabindex="0" role="button">
+            <td class="mono mono--id">${r.id}</td>
+            <td>${r.nama}</td>
+            <td>${chip(r.jenis.toUpperCase(), r.jenis === 'Kontraktor' ? 'medium' : r.jenis === 'Tamu' ? 'info' : 'low')}</td>
+            <td>${r.asal}</td>
+            <td class="mono mono--muted">${r.tanggal}</td>
+            <td class="mono" style="${r.nilai < 80 ? 'color:var(--signal-critical);font-weight:600' : ''}">${r.nilai}</td>
+            <td class="mono">${r.berlaku}</td>
+            <td>${chip(r.status.toUpperCase(),
+              r.status === 'Berlaku' ? 'low' : r.status === 'Segera Berakhir' ? 'high' : 'critical', true)}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>
+      </section>
+    </div>`;
+  }
+
+  /* ───────── Modul 25 · Regulasi K3 ───────── */
+  function viewRegulasi() {
+    const R = D.regulasi;
+    const penuh = R.filter(r => r.status === 'Terpenuhi');
+    const sebagian = R.filter(r => r.status === 'Terpenuhi Sebagian');
+    const tidak = R.filter(r => r.status === 'Tidak Terpenuhi');
+    const bidang = {}; R.forEach(r => { bidang[r.bidang] = (bidang[r.bidang] || 0) + 1; });
+    const persen = Math.round(penuh.length / R.length * 100);
+
+    return hero({
+      eyebrow: 'MODUL 25 · REGULASI K3',
+      title: 'Peraturan Perundangan & Pemenuhannya',
+      desc: 'Klausul 6.1.3 ISO 45001 tidak meminta daftar peraturan. Yang diminta adalah bukti bahwa tiap peraturan sudah diterjemahkan menjadi sesuatu yang benar-benar dikerjakan — karena itu setiap baris di sini membawa kolom penerapan dan buktinya.',
+      metric: persen + '%',
+      metricLabel: 'terpenuhi penuh',
+      action: { act: 'regulasi-baru', icon: 'regulasi', label: 'Tambah Peraturan' }
+    }) + `
+    <div class="page">
+      <div class="grid grid--4">
+        ${tile({ label: 'PERATURAN TERDAFTAR', value: String(R.length), icon: 'regulasi', arah: 'flat',
+          delta: Object.keys(bidang).length + ' bidang', note: 'K3, lingkungan, dan kelembagaan',
+          rumus: 'Jumlah peraturan pada register', sumber: 'Modul Regulasi K3',
+          rincian: bars(Object.keys(bidang).map(b => [b, bidang[b], R.length, 'info'])) })}
+        ${tile({ label: 'TERPENUHI', value: String(penuh.length), icon: 'capa', arah: 'good',
+          delta: persen + '% dari seluruh peraturan', note: 'Penerapan dan buktinya lengkap',
+          rumus: 'Peraturan berstatus Terpenuhi ÷ total', sumber: 'Modul Regulasi K3' })}
+        ${tile({ label: 'TERPENUHI SEBAGIAN', value: String(sebagian.length), icon: 'clock',
+          arah: sebagian.length ? 'bad' : 'good',
+          delta: 'bukti belum lengkap atau kedaluwarsa', note: 'Perlu dilengkapi sebelum audit berikutnya',
+          rumus: 'Peraturan berstatus Terpenuhi Sebagian', sumber: 'Modul Regulasi K3' })}
+        ${tile({ label: 'TIDAK TERPENUHI', value: String(tidak.length), icon: 'incident',
+          arah: tidak.length ? 'bad' : 'good',
+          delta: tidak.length ? tidak.map(r => r.nomor).join('; ') : 'tidak ada',
+          note: 'Berakibat hukum, bukan sekadar temuan',
+          rumus: 'Peraturan berstatus Tidak Terpenuhi', sumber: 'Modul Regulasi K3',
+          catatan: 'Ketidakpatuhan pada peraturan perundangan tidak dapat ditutup dengan CAPA internal saja — penyelesaiannya melibatkan instansi penerbit.' })}
+      </div>
+
+      <section class="section">
+        <div class="section-head"><h2>Register Peraturan</h2><span class="sub">${R.length} peraturan</span></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Nomor</th><th>Peraturan</th><th>Bidang</th><th>Penanggung jawab</th><th>Evaluasi</th><th>Status</th></tr></thead>
+          <tbody>${R.map(r => `<tr data-detail="regulasi:${r.id}" tabindex="0" role="button">
+            <td class="mono mono--id">${r.id}</td>
+            <td><span class="mono" style="font-size:12px">${r.nomor}</span><div>${r.judul}</div></td>
+            <td>${r.bidang}</td>
+            <td>${r.pj}</td>
+            <td class="mono mono--muted">${r.evaluasi}</td>
+            <td>${chip(r.status.toUpperCase(),
+              r.status === 'Terpenuhi' ? 'low' : r.status === 'Terpenuhi Sebagian' ? 'high' : 'critical', true)}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>
+        <div class="tile-note" style="margin-top:var(--space-4)">Evaluasi penaatan dilakukan sekurang-kurangnya setahun sekali dan setiap kali ada peraturan baru. Tanggal evaluasi yang tidak pernah berubah adalah tanda register ini hanya disalin, bukan dibaca.</div>
+      </section>
+    </div>`;
+  }
+
   /* ───────── Modul 21 · Asisten QHSE ─────────
      Mesinnya ada di ai.js; di sini hanya tampilannya. Empat mode dipisah tegas
      supaya jelas apa yang sedang dikerjakan asisten, bukan satu kotak serba bisa
@@ -2895,7 +3460,8 @@
     permit: viewPermit, risk: viewRisk, capa: viewCapa, audit: viewAudit,
     environment: viewEnvironment, docint: viewDocInt, docext: viewDocExt,
     training: viewTraining, activity: viewActivity, kpi: viewKpi, notif: viewNotif,
-    settings: viewSettings, users: viewUsers, ai: viewAi };
+    settings: viewSettings, users: viewUsers, ai: viewAi,
+    jsa: viewJsa, hiradc: viewHiradc, induksi: viewInduksi, regulasi: viewRegulasi };
 
   let current = 'dashboard';
   let session = null;

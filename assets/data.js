@@ -676,13 +676,303 @@ window.KG = (function () {
     { peristiwa: 'Checklist shift belum dikerjakan', kanal: 'Aplikasi', penerima: 'Penanggung jawab shift', segera: '2 jam setelah shift mulai' }
   ];
 
+  /* ─── 22. Analisis JSA (Job Safety Analysis) ───
+     JSEA pada modul Work Permit terikat pada satu izin kerja. Register ini adalah
+     pustakanya: JSA disusun sekali per jenis pekerjaan, disahkan, lalu dipakai
+     berulang oleh izin kerja yang sejenis. Menyusun ulang JSA setiap kali izin
+     terbit adalah cara tercepat membuat orang menyalin-tempel tanpa berpikir. */
+  const jsa = [
+    { id: 'JSA-2026-011', pekerjaan: 'Pembersihan tangki minyak goreng', area: 'Line 2 — Moulding',
+      jenis: 'Non-rutin', penyusun: 'Rina Wulandari', peninjau: 'Fadli Saldi', pengesah: 'Hartono Wijaya',
+      disusun: '18 Sep 2026', disahkan: '20 Sep 2026', tinjau: '20 Sep 2027', rev: 2, status: 'Disahkan',
+      izinTerkait: ['WP-2026-0913'], apd: ['Full body harness', 'Sepatu anti-slip', 'Sarung tangan nitril', 'Kacamata goggle', 'Respirator'],
+      langkah: [
+        { no: 1, kerja: 'Pengosongan dan pembilasan tangki', bahaya: 'Terpeleset lantai licin minyak',
+          k: 3, s: 2, kendali: [['Rekayasa', 'Selang pembuangan tertutup ke saluran khusus'], ['APD', 'Sepatu anti-slip']], sk: 2, ss: 1 },
+        { no: 2, kerja: 'Isolasi jalur masuk dan LOTO pompa transfer', bahaya: 'Pompa hidup tak sengaja saat orang di dalam',
+          k: 3, s: 5, kendali: [['Administratif', 'LOTO dengan kunci dipegang pekerja di dalam'], ['Administratif', 'Verifikasi oleh pengawas']], sk: 1, ss: 5 },
+        { no: 3, kerja: 'Ventilasi paksa 15 menit', bahaya: 'Atmosfer kekurangan oksigen',
+          k: 4, s: 4, kendali: [['Rekayasa', 'Blower 2.000 CFM, 15 menit'], ['Administratif', 'Uji gas O₂/LEL/H₂S sebelum masuk']], sk: 2, ss: 4 },
+        { no: 4, kerja: 'Membuka manhole dan masuk tangki', bahaya: 'Terjatuh saat turun; terjebak di dalam',
+          k: 4, s: 4, kendali: [['Rekayasa', 'Tripod dan winch penyelamat'], ['Administratif', 'Penjaga lubang tetap di luar'], ['APD', 'Full body harness']], sk: 2, ss: 4 },
+        { no: 5, kerja: 'Pembersihan dinding dengan deterjen food grade', bahaya: 'Iritasi kulit dan mata',
+          k: 3, s: 2, kendali: [['Substitusi', 'Deterjen food grade pH netral'], ['APD', 'Sarung tangan nitril, kacamata goggle']], sk: 2, ss: 1 },
+        { no: 6, kerja: 'Keluar tangki dan pelepasan LOTO', bahaya: 'LOTO dilepas saat orang masih di dalam',
+          k: 2, s: 5, kendali: [['Administratif', 'Hitung ulang personel masuk dan keluar'], ['Administratif', 'Pelepasan LOTO oleh pemasang']], sk: 1, ss: 5 }
+      ] },
+    { id: 'JSA-2026-010', pekerjaan: 'Pengelasan pipa uap', area: 'Ruang Boiler',
+      jenis: 'Non-rutin', penyusun: 'Bambang Sutrisno', peninjau: 'Fadli Saldi', pengesah: 'Hartono Wijaya',
+      disusun: '02 Sep 2026', disahkan: '05 Sep 2026', tinjau: '05 Sep 2027', rev: 3, status: 'Disahkan',
+      izinTerkait: ['WP-2026-0914'], apd: ['Helm las', 'Apron kulit', 'Sarung tangan las', 'Sepatu safety', 'Respirator asap las'],
+      langkah: [
+        { no: 1, kerja: 'Isolasi dan pendinginan jalur uap', bahaya: 'Uap bertekanan tersembur',
+          k: 3, s: 5, kendali: [['Administratif', 'LOTO katup induk, tunggu tekanan nol'], ['Administratif', 'Verifikasi manometer oleh dua orang']], sk: 1, ss: 5 },
+        { no: 2, kerja: 'Pembersihan area dari bahan mudah terbakar', bahaya: 'Kebakaran dari percikan las',
+          k: 4, s: 4, kendali: [['Eliminasi', 'Bahan mudah terbakar dipindah radius 11 m'], ['Rekayasa', 'Tirai tahan api'], ['Administratif', 'Penjaga kebakaran bersiaga']], sk: 2, ss: 3 },
+        { no: 3, kerja: 'Pengelasan sambungan', bahaya: 'Radiasi busur, asap logam, luka bakar',
+          k: 4, s: 3, kendali: [['Rekayasa', 'Ventilasi hisap lokal'], ['APD', 'Helm las, apron kulit, sarung tangan']], sk: 2, ss: 2 },
+        { no: 4, kerja: 'Pendinginan dan pemeriksaan hasil las', bahaya: 'Kontak permukaan panas',
+          k: 3, s: 2, kendali: [['Administratif', 'Tunggu 30 menit, rambu permukaan panas'], ['APD', 'Sarung tangan tahan panas']], sk: 1, ss: 2 },
+        { no: 5, kerja: 'Pemantauan api 60 menit setelah selesai', bahaya: 'Api tersembunyi menyala kembali',
+          k: 3, s: 4, kendali: [['Administratif', 'Penjaga kebakaran 60 menit setelah pekerjaan'], ['Rekayasa', 'APAR dan selang siap pakai']], sk: 1, ss: 4 }
+      ] },
+    { id: 'JSA-2026-009', pekerjaan: 'Penggantian belt conveyor packing', area: 'Line 4 — Packing',
+      jenis: 'Rutin', penyusun: 'Dewi Kartika', peninjau: 'Rina Wulandari', pengesah: 'Fadli Saldi',
+      disusun: '14 Agu 2026', disahkan: '16 Agu 2026', tinjau: '16 Agu 2027', rev: 1, status: 'Disahkan',
+      izinTerkait: [], apd: ['Sarung tangan anti-potong', 'Sepatu safety', 'Kacamata pengaman'],
+      langkah: [
+        { no: 1, kerja: 'LOTO panel penggerak conveyor', bahaya: 'Conveyor bergerak saat tangan di dalam',
+          k: 3, s: 5, kendali: [['Administratif', 'LOTO panel, kunci dipegang teknisi'], ['Administratif', 'Uji coba tombol start sebelum mulai']], sk: 1, ss: 5 },
+        { no: 2, kerja: 'Pelepasan belt lama', bahaya: 'Terjepit antara belt dan roller',
+          k: 3, s: 3, kendali: [['Rekayasa', 'Pengganjal roller'], ['APD', 'Sarung tangan anti-potong']], sk: 2, ss: 2 },
+        { no: 3, kerja: 'Pemasangan belt baru dan penyetelan', bahaya: 'Postur membungkuk berkepanjangan',
+          k: 4, s: 2, kendali: [['Rekayasa', 'Meja kerja setinggi pinggang'], ['Administratif', 'Rotasi dua orang tiap 20 menit']], sk: 2, ss: 2 },
+        { no: 4, kerja: 'Uji jalan tanpa beban', bahaya: 'Benda terlempar dari conveyor',
+          k: 2, s: 3, kendali: [['Administratif', 'Area dikosongkan 2 m'], ['APD', 'Kacamata pengaman']], sk: 1, ss: 3 }
+      ] },
+    { id: 'JSA-2026-012', pekerjaan: 'Pembersihan ducting exhaust oven', area: 'Line 3 — Oven Biskuit',
+      jenis: 'Non-rutin', penyusun: 'Agus Prasetyo', peninjau: 'Fadli Saldi', pengesah: '—',
+      disusun: '21 Sep 2026', disahkan: '—', tinjau: '—', rev: 0, status: 'Menunggu Pengesahan',
+      izinTerkait: [], apd: ['Full body harness', 'Respirator P3', 'Sarung tangan tahan panas'],
+      langkah: [
+        { no: 1, kerja: 'Pendinginan oven dan isolasi pemanas', bahaya: 'Permukaan bersuhu di atas 200 °C',
+          k: 4, s: 4, kendali: [['Administratif', 'Pendinginan minimal 8 jam, verifikasi termometer inframerah'], ['APD', 'Sarung tangan tahan panas']], sk: 2, ss: 3 },
+        { no: 2, kerja: 'Pemasangan perancah akses ducting', bahaya: 'Jatuh dari ketinggian 3,5 m',
+          k: 3, s: 5, kendali: [['Rekayasa', 'Perancah bersertifikat dengan pagar'], ['APD', 'Full body harness dua tali']], sk: 1, ss: 5 },
+        { no: 3, kerja: 'Pengerokan endapan lemak dalam ducting', bahaya: 'Debu lemak terhirup; ruang sempit',
+          k: 4, s: 3, kendali: [['Rekayasa', 'Blower hisap portabel'], ['Administratif', 'Maksimal 30 menit per orang'], ['APD', 'Respirator P3']], sk: 2, ss: 2 },
+        { no: 4, kerja: 'Pembersihan akhir dan pembuangan limbah lemak', bahaya: 'Limbah lemak masuk saluran air',
+          k: 3, s: 3, kendali: [['Administratif', 'Limbah ditampung drum khusus, serah ke TPS B3']], sk: 1, ss: 3 }
+      ] }
+  ];
+
+  /* ─── 23. HIRADC K3 ───
+     Berbeda dari register risiko korporat: HIRADC menilai bahaya pada tingkat
+     aktivitas, termasuk aktivitas non-rutin dan keadaan darurat, dan hasilnya
+     yang menjadi masukan JSA, izin kerja, serta program pelatihan. */
+  const hiradcKategori = ['Fisik', 'Kimia', 'Mekanik', 'Listrik', 'Ergonomi', 'Biologi', 'Psikososial'];
+
+  const hiradc = [
+    { id: 'HRD-001', proses: 'Penerimaan bahan baku', aktivitas: 'Bongkar sak tepung dari truk',
+      rutin: 'Rutin', kategori: 'Ergonomi', bahaya: 'Pengangkatan manual sak 25 kg berulang',
+      risiko: 'Cedera punggung bawah kumulatif', korban: 'Operator gudang',
+      k: 4, p: 3, kendaliAda: 'Hand pallet, batas dua sak per angkatan',
+      sk: 3, sp: 2, kendaliTambah: 'Konveyor bongkar muat portabel, pelatihan teknik angkat',
+      hierarki: 'Rekayasa', pj: 'Agus Prasetyo', target: '30 Nov 2026', status: 'Dalam Proses' },
+    { id: 'HRD-002', proses: 'Produksi — Mixing', aktivitas: 'Penuangan bahan tambahan pangan',
+      rutin: 'Rutin', kategori: 'Kimia', bahaya: 'Paparan debu bahan tambahan pangan',
+      risiko: 'Iritasi saluran napas', korban: 'Operator mixing',
+      k: 3, p: 3, kendaliAda: 'Ventilasi hisap lokal, masker N95',
+      sk: 2, sp: 2, kendaliTambah: 'Sistem penakaran tertutup',
+      hierarki: 'Rekayasa', pj: 'Dewi Kartika', target: '31 Des 2026', status: 'Terbuka' },
+    { id: 'HRD-003', proses: 'Produksi — Oven', aktivitas: 'Pembuangan kondensat oven tunnel',
+      rutin: 'Rutin', kategori: 'Fisik', bahaya: 'Semburan uap bertekanan dari katup bawah',
+      risiko: 'Luka bakar derajat 2 pada lengan', korban: 'Operator oven',
+      k: 3, p: 4, kendaliAda: 'IK pembuangan kondensat, APD lengan tahan panas',
+      sk: 2, sp: 2, kendaliTambah: 'Waktu tunggu penurunan tekanan dalam IK, pelindung katup',
+      hierarki: 'Administratif', pj: 'Fadli Saldi', target: '02 Okt 2026', status: 'Dalam Proses' },
+    { id: 'HRD-004', proses: 'Utilitas — Boiler', aktivitas: 'Pengoperasian dan pemeliharaan boiler',
+      rutin: 'Rutin', kategori: 'Fisik', bahaya: 'Ledakan pesawat uap akibat katup pengaman gagal',
+      risiko: 'Korban jiwa, kerusakan bangunan', korban: 'Operator boiler, pekerja sekitar',
+      k: 5, p: 2, kendaliAda: 'Uji katup pengaman berkala, operator bersertifikat',
+      sk: 5, sp: 1, kendaliTambah: 'Penggantian katup boiler 2, SKLO diperbarui',
+      hierarki: 'Rekayasa', pj: 'Bambang Sutrisno', target: '30 Okt 2026', status: 'Dalam Proses' },
+    { id: 'HRD-005', proses: 'Logistik — Forklift', aktivitas: 'Pemindahan palet di area produksi',
+      rutin: 'Rutin', kategori: 'Mekanik', bahaya: 'Tabrakan forklift dengan pejalan kaki',
+      risiko: 'Cedera berat sampai fatal', korban: 'Seluruh pekerja area',
+      k: 4, p: 4, kendaliAda: 'Batas kecepatan 8 km/jam, P2H harian, klakson persimpangan',
+      sk: 4, sp: 2, kendaliTambah: 'Marka jalur pejalan kaki terpisah, cermin cembung, blue spot light',
+      hierarki: 'Rekayasa', pj: 'Agus Prasetyo', target: '15 Nov 2026', status: 'Dalam Proses' },
+    { id: 'HRD-006', proses: 'Maintenance', aktivitas: 'Pekerjaan panas pengelasan',
+      rutin: 'Non-rutin', kategori: 'Fisik', bahaya: 'Percikan las mengenai bahan mudah terbakar',
+      risiko: 'Kebakaran gudang', korban: 'Seluruh penghuni pabrik',
+      k: 5, p: 3, kendaliAda: 'Izin kerja panas, penjaga kebakaran, APAR siaga',
+      sk: 5, sp: 1, kendaliTambah: 'Tirai tahan api permanen di bengkel',
+      hierarki: 'Rekayasa', pj: 'Bambang Sutrisno', target: '20 Des 2026', status: 'Terbuka' },
+    { id: 'HRD-007', proses: 'Maintenance — Panel listrik', aktivitas: 'Pemeriksaan dan perbaikan panel',
+      rutin: 'Non-rutin', kategori: 'Listrik', bahaya: 'Sengatan listrik dan busur api',
+      risiko: 'Luka bakar listrik, henti jantung', korban: 'Teknisi listrik',
+      k: 5, p: 2, kendaliAda: 'LOTO, teknisi bersertifikat K3 listrik, APD arc flash',
+      sk: 5, sp: 1, kendaliTambah: 'Sertifikasi ulang teknisi sebelum 08 Okt 2026',
+      hierarki: 'Administratif', pj: 'Fadli Saldi', target: '08 Okt 2026', status: 'Dalam Proses' },
+    { id: 'HRD-008', proses: 'IPAL', aktivitas: 'Pengambilan sampel air limbah',
+      rutin: 'Rutin', kategori: 'Biologi', bahaya: 'Kontak air limbah mengandung mikroorganisme',
+      risiko: 'Infeksi kulit dan saluran cerna', korban: 'Petugas lingkungan',
+      k: 2, p: 3, kendaliAda: 'Sarung tangan, cuci tangan setelah bekerja',
+      sk: 2, sp: 2, kendaliTambah: 'Alat ambil sampel bertangkai panjang',
+      hierarki: 'Rekayasa', pj: 'Yuni Astuti', target: '30 Nov 2026', status: 'Terbuka' },
+    { id: 'HRD-009', proses: 'TPS Limbah B3', aktivitas: 'Penyimpanan dan pemindahan limbah B3',
+      rutin: 'Rutin', kategori: 'Kimia', bahaya: 'Kebocoran kemasan oli bekas',
+      risiko: 'Pencemaran tanah, iritasi kulit', korban: 'Petugas TPS, lingkungan',
+      k: 3, p: 3, kendaliAda: 'Bak penampung sekunder, simbol dan label B3',
+      sk: 2, sp: 2, kendaliTambah: 'Pemeriksaan kondisi kemasan sebelum disimpan',
+      hierarki: 'Administratif', pj: 'Yuni Astuti', target: '25 Sep 2026', status: 'Dalam Proses' },
+    { id: 'HRD-010', proses: 'Seluruh area', aktivitas: 'Keadaan darurat kebakaran',
+      rutin: 'Darurat', kategori: 'Fisik', bahaya: 'Kebakaran meluas dan evakuasi terhambat',
+      risiko: 'Korban jiwa massal', korban: 'Seluruh penghuni pabrik',
+      k: 5, p: 2, kendaliAda: 'APAR dan hydrant, jalur evakuasi bermarka, tim tanggap darurat',
+      sk: 5, sp: 1, kendaliTambah: 'Simulasi evakuasi dua kali setahun, rambu jalur diperbarui',
+      hierarki: 'Administratif', pj: 'Fadli Saldi', target: '15 Nov 2026', status: 'Dalam Proses' },
+    { id: 'HRD-011', proses: 'Packing', aktivitas: 'Pengemasan produk berdiri 8 jam',
+      rutin: 'Rutin', kategori: 'Ergonomi', bahaya: 'Postur berdiri statis sepanjang shift',
+      risiko: 'Nyeri kaki dan punggung', korban: 'Operator packing',
+      k: 3, p: 4, kendaliAda: 'Alas kaki anti-lelah',
+      sk: 2, sp: 3, kendaliTambah: 'Meja dapat disetel, rotasi tugas tiap 2 jam, senam peregangan',
+      hierarki: 'Rekayasa', pj: 'Dewi Kartika', target: '30 Nov 2026', status: 'Terbuka' },
+    { id: 'HRD-012', proses: 'Seluruh area', aktivitas: 'Kerja shift malam berkepanjangan',
+      rutin: 'Rutin', kategori: 'Psikososial', bahaya: 'Kelelahan akibat pola shift',
+      risiko: 'Penurunan kewaspadaan, kesalahan operasi', korban: 'Seluruh pekerja shift',
+      k: 3, p: 3, kendaliAda: 'Rotasi shift maksimal 5 hari berturut-turut',
+      sk: 2, sp: 2, kendaliTambah: 'Ruang istirahat memadai, pemantauan jam lembur',
+      hierarki: 'Administratif', pj: 'Siti Nurhaliza', target: '31 Des 2026', status: 'Terbuka' }
+  ];
+
+  /* ─── 24. Induksi K3 ───
+     Kartu induksi adalah gerbang masuk area produksi. Tanpa kartu yang masih
+     berlaku, seseorang tidak boleh berada di lantai produksi — termasuk kontraktor
+     dan tamu. Kontraktor diberi masa berlaku lebih pendek karena perputarannya tinggi. */
+  const induksiMateri = [
+    { no: 1, topik: 'Kebijakan K3 dan Lingkungan Khong Guan', menit: 10,
+      inti: 'Komitmen manajemen dan hak setiap pekerja menghentikan pekerjaan yang tidak aman.' },
+    { no: 2, topik: 'Bahaya utama di area pabrik', menit: 20,
+      inti: 'Forklift, permukaan panas oven, uap bertekanan boiler, ruang terbatas, panel listrik.' },
+    { no: 3, topik: 'Alat pelindung diri wajib per area', menit: 10,
+      inti: 'Sepatu safety dan helm di seluruh area produksi; tambahan per area sesuai rambu.' },
+    { no: 4, topik: 'Jalur evakuasi dan titik kumpul', menit: 15,
+      inti: 'Tiga jalur keluar, dua titik kumpul, isyarat alarm, larangan menggunakan lift.' },
+    { no: 5, topik: 'Cara melaporkan bahaya dan insiden', menit: 10,
+      inti: 'Aplikasi lapangan, kanal anonim, dan kewajiban melapor sekecil apa pun kejadiannya.' },
+    { no: 6, topik: 'Izin kerja dan pekerjaan berisiko tinggi', menit: 15,
+      inti: 'Jenis pekerjaan yang wajib izin, siapa yang berwenang menerbitkan, larangan melompati langkah.' },
+    { no: 7, topik: 'Higiene pangan dan area produksi', menit: 10,
+      inti: 'Larangan benda longgar, perhiasan, dan makanan di area produksi.' },
+    { no: 8, topik: 'Uji pemahaman', menit: 10,
+      inti: 'Sepuluh pertanyaan, nilai kelulusan 80. Gagal berarti mengulang induksi, bukan diloloskan.' }
+  ];
+
+  const induksi = [
+    { id: 'IND-2026-0087', nama: 'Rahmat Hidayat', jenis: 'Pekerja Baru', asal: 'Produksi — Line 1',
+      tanggal: '21 Sep 2026', pemandu: 'Fadli Saldi', nilai: 90, berlaku: '21 Sep 2027', sisa: 363, status: 'Berlaku' },
+    { id: 'IND-2026-0086', nama: 'Tim CV Teknik Jaya (6 orang)', jenis: 'Kontraktor', asal: 'Pengelasan pipa uap',
+      tanggal: '20 Sep 2026', pemandu: 'Rina Wulandari', nilai: 85, berlaku: '20 Mar 2027', sisa: 178, status: 'Berlaku' },
+    { id: 'IND-2026-0085', nama: 'Auditor TÜV Rheinland (2 orang)', jenis: 'Tamu', asal: 'Surveillance ISO 45001',
+      tanggal: '18 Sep 2026', pemandu: 'Fadli Saldi', nilai: 100, berlaku: '18 Des 2026', sisa: 86, status: 'Berlaku' },
+    { id: 'IND-2026-0084', nama: 'Lilis Suryani', jenis: 'Pekerja Baru', asal: 'QHSE — Semarang',
+      tanggal: '15 Sep 2026', pemandu: 'Siti Nurhaliza', nilai: 95, berlaku: '15 Sep 2027', sisa: 357, status: 'Berlaku' },
+    { id: 'IND-2026-0079', nama: 'Tim PT Sinar Cleaning (4 orang)', jenis: 'Kontraktor', asal: 'Pembersihan tangki',
+      tanggal: '02 Apr 2026', pemandu: 'Rina Wulandari', nilai: 80, berlaku: '02 Okt 2026', sisa: 9, status: 'Segera Berakhir' },
+    { id: 'IND-2026-0071', nama: 'Tim CV Mitra Listrik (3 orang)', jenis: 'Kontraktor', asal: 'Pemeliharaan panel',
+      tanggal: '10 Mar 2026', pemandu: 'Bambang Sutrisno', nilai: 85, berlaku: '10 Sep 2026', sisa: -13, status: 'Kedaluwarsa' },
+    { id: 'IND-2026-0088', nama: 'Hendra Gunawan', jenis: 'Pekerja Baru', asal: 'Maintenance',
+      tanggal: '22 Sep 2026', pemandu: 'Fadli Saldi', nilai: 70, berlaku: '—', sisa: 0, status: 'Tidak Lulus' }
+  ];
+
+  /* ─── 25. Regulasi K3 ───
+     Daftar peraturan perundangan yang berlaku beserta cara Khong Guan memenuhinya.
+     Klausul 6.1.3 ISO 45001 tidak meminta daftar peraturan; yang diminta adalah
+     bukti bahwa tiap peraturan sudah diterjemahkan menjadi sesuatu yang dikerjakan. */
+  const regulasi = [
+    { id: 'REG-001', nomor: 'UU No. 1 Tahun 1970', judul: 'Keselamatan Kerja', penerbit: 'Pemerintah RI',
+      bidang: 'K3 Umum', pasal: 'Pasal 3, 9, 12, 14',
+      penerapan: 'Kewajiban syarat keselamatan kerja, induksi K3 wajib bagi setiap pekerja baru, hak pekerja menolak pekerjaan tidak aman.',
+      bukti: 'Modul Induksi K3, KGK-02 Kebijakan Hak Menghentikan Pekerjaan',
+      pj: 'Fadli Saldi', evaluasi: '15 Sep 2026', status: 'Terpenuhi' },
+    { id: 'REG-002', nomor: 'PP No. 50 Tahun 2012', judul: 'Penerapan Sistem Manajemen Keselamatan dan Kesehatan Kerja', penerbit: 'Pemerintah RI',
+      bidang: 'Sistem Manajemen', pasal: 'Lampiran I dan II — 12 elemen, 166 kriteria',
+      penerapan: 'Penilaian SMK3 tingkat lanjutan, audit eksternal tiga tahunan, laporan P2K3 triwulanan.',
+      bukti: 'Sertifikat SMK3 CMP-003, modul Audit elemen 1–12',
+      pj: 'Fadli Saldi', evaluasi: '15 Sep 2026', status: 'Terpenuhi Sebagian' },
+    { id: 'REG-003', nomor: 'Permenaker No. 5 Tahun 2018', judul: 'Keselamatan dan Kesehatan Kerja Lingkungan Kerja', penerbit: 'Kemnaker RI',
+      bidang: 'Lingkungan Kerja', pasal: 'Pasal 5–8, 12, 22',
+      penerapan: 'Pengukuran iklim kerja, pencahayaan, kebisingan, dan getaran setiap tahun; nilai ambang batas per area.',
+      bukti: 'Hasil uji lingkungan kerja 2026, temuan penerangan lorong rak C',
+      pj: 'Yuni Astuti', evaluasi: '10 Sep 2026', status: 'Terpenuhi Sebagian' },
+    { id: 'REG-004', nomor: 'Permenaker No. 8 Tahun 2020', judul: 'Keselamatan dan Kesehatan Kerja Pesawat Angkat dan Pesawat Angkut', penerbit: 'Kemnaker RI',
+      bidang: 'Pesawat Angkat Angkut', pasal: 'Pasal 5, 140, 174',
+      penerapan: 'Riksa uji forklift berkala, operator berlisensi, pemeriksaan harian P2H sebelum operasi.',
+      bukti: 'Sertifikat operator forklift, checklist P2H harian CHK-2026-1846',
+      pj: 'Agus Prasetyo', evaluasi: '12 Sep 2026', status: 'Terpenuhi' },
+    { id: 'REG-005', nomor: 'Permenaker No. 37 Tahun 2016', judul: 'Keselamatan dan Kesehatan Kerja Bejana Tekanan dan Tangki Timbun', penerbit: 'Kemnaker RI',
+      bidang: 'Pesawat Uap & Bejana Tekan', pasal: 'Pasal 4, 68, 73',
+      penerapan: 'Surat Keterangan Layak Operasi boiler, uji katup pengaman berkala, operator boiler bersertifikat.',
+      bukti: 'SKLO Boiler 1 CMP-006; SKLO Boiler 2 kedaluwarsa sejak 30 Jun 2026',
+      pj: 'Bambang Sutrisno', evaluasi: '20 Sep 2026', status: 'Tidak Terpenuhi' },
+    { id: 'REG-006', nomor: 'Permenaker No. 12 Tahun 2015', judul: 'Keselamatan dan Kesehatan Kerja Listrik di Tempat Kerja', penerbit: 'Kemnaker RI',
+      bidang: 'Listrik', pasal: 'Pasal 6, 9, 10',
+      penerapan: 'Pemeriksaan instalasi listrik berkala, teknisi K3 listrik bersertifikat, penerapan LOTO.',
+      bukti: 'Sertifikat Teknisi K3 Listrik (berakhir 08 Okt 2026), KGI-28 IK Lockout–Tagout',
+      pj: 'Fadli Saldi', evaluasi: '08 Sep 2026', status: 'Terpenuhi Sebagian' },
+    { id: 'REG-007', nomor: 'Permenaker No. 9 Tahun 2016', judul: 'Keselamatan dan Kesehatan Kerja dalam Pekerjaan pada Ketinggian', penerbit: 'Kemnaker RI',
+      bidang: 'Bekerja di Ketinggian', pasal: 'Pasal 5, 9, 31',
+      penerapan: 'Izin kerja ketinggian, perancah bersertifikat, tenaga kerja bersertifikat TKPK.',
+      bukti: 'Modul Work Permit jenis Ketinggian, JSA-2026-012',
+      pj: 'Rina Wulandari', evaluasi: '05 Sep 2026', status: 'Terpenuhi' },
+    { id: 'REG-008', nomor: 'Permenaker No. 15 Tahun 2008', judul: 'Pertolongan Pertama pada Kecelakaan di Tempat Kerja', penerbit: 'Kemnaker RI',
+      bidang: 'P3K', pasal: 'Pasal 2, 3, 8, 9',
+      penerapan: 'Petugas P3K bersertifikat per shift, kotak P3K sesuai jumlah pekerja, pemeriksaan isi berkala.',
+      bukti: 'Sertifikat petugas P3K, inspeksi kotak P3K bulanan',
+      pj: 'Siti Nurhaliza', evaluasi: '01 Sep 2026', status: 'Terpenuhi' },
+    { id: 'REG-009', nomor: 'Permen LHK No. 5 Tahun 2014', judul: 'Baku Mutu Air Limbah', penerbit: 'KLHK RI',
+      bidang: 'Lingkungan — Air', pasal: 'Lampiran — Industri Makanan',
+      penerapan: 'Uji outlet IPAL bulanan oleh lab terakreditasi KAN, pelaporan triwulanan ke DLH.',
+      bukti: 'Hasil uji 15 Sep 2026; minyak & lemak 14 mg/L melewati ambang 10 mg/L',
+      pj: 'Yuni Astuti', evaluasi: '15 Sep 2026', status: 'Tidak Terpenuhi' },
+    { id: 'REG-010', nomor: 'PP No. 22 Tahun 2021', judul: 'Penyelenggaraan Perlindungan dan Pengelolaan Lingkungan Hidup', penerbit: 'Pemerintah RI',
+      bidang: 'Lingkungan — Umum', pasal: 'Pasal 274, 285, 298',
+      penerapan: 'Persetujuan teknis pembuangan air limbah, izin TPS limbah B3, pelaporan kinerja lingkungan.',
+      bukti: 'CMP-004 Persetujuan Teknis, CMP-005 Izin TPS B3',
+      pj: 'Yuni Astuti', evaluasi: '15 Sep 2026', status: 'Terpenuhi' },
+    { id: 'REG-011', nomor: 'Permenaker No. 2 Tahun 1992', judul: 'Tata Cara Penunjukan Kewajiban dan Wewenang Ahli K3', penerbit: 'Kemnaker RI',
+      bidang: 'Kelembagaan K3', pasal: 'Pasal 2, 9',
+      penerapan: 'Ahli K3 Umum ditunjuk dan dilaporkan ke Disnaker, laporan kegiatan tiga bulanan.',
+      bukti: 'SK Penunjukan Ahli K3 Umum; laporan P2K3 triwulan II terlambat 11 hari',
+      pj: 'Fadli Saldi', evaluasi: '10 Sep 2026', status: 'Terpenuhi Sebagian' },
+    { id: 'REG-012', nomor: 'Permenaker No. 4 Tahun 1987', judul: 'Panitia Pembina Keselamatan dan Kesehatan Kerja (P2K3)', penerbit: 'Kemnaker RI',
+      bidang: 'Kelembagaan K3', pasal: 'Pasal 2, 4, 12',
+      penerapan: 'P2K3 dibentuk dan disahkan Disnaker, rapat bulanan, laporan triwulanan.',
+      bukti: 'SK P2K3, notulen rapat bulanan; rapat September belum diunggah',
+      pj: 'Fadli Saldi', evaluasi: '10 Sep 2026', status: 'Terpenuhi Sebagian' }
+  ];
+
+  /* ─── 26. Observasi APD ───
+     Dipisahkan dari observasi perilaku karena yang diukur berbeda: bukan pola
+     perilaku, melainkan kepatuhan pemakaian per jenis APD per area. Angkanya
+     mengalir ke KPI Kepatuhan APD. */
+  const apdJenis = [
+    { nama: 'Helm pengaman', wajib: 'Seluruh area produksi' },
+    { nama: 'Sepatu safety', wajib: 'Seluruh area produksi' },
+    { nama: 'Masker / respirator', wajib: 'Mixing, Packing, TPS B3' },
+    { nama: 'Sarung tangan', wajib: 'Maintenance, Oven, TPS B3' },
+    { nama: 'Kacamata pengaman', wajib: 'Maintenance, Workshop' },
+    { nama: 'Pelindung telinga', wajib: 'Ruang Boiler, Kompresor' },
+    { nama: 'Rompi reflektif', wajib: 'Area Forklift, Gudang' }
+  ];
+
+  const observasiAPD = [
+    { id: 'APD-2026-0142', area: 'Line 4 — Packing', tanggal: '22 Sep 2026', pengamat: 'Agus Prasetyo',
+      diamati: 14, patuh: 12, catatan: 'Dua pekerja menurunkan masker saat menuang tepung dari sak.',
+      rincian: [['Helm pengaman', 14, 14], ['Sepatu safety', 14, 14], ['Masker / respirator', 14, 12], ['Rompi reflektif', 14, 13]] },
+    { id: 'APD-2026-0141', area: 'Ruang Boiler', tanggal: '21 Sep 2026', pengamat: 'Bambang Sutrisno',
+      diamati: 4, patuh: 3, catatan: 'Satu teknisi tidak memakai pelindung telinga saat blowdown.',
+      rincian: [['Helm pengaman', 4, 4], ['Sepatu safety', 4, 4], ['Pelindung telinga', 4, 3], ['Sarung tangan', 4, 4]] },
+    { id: 'APD-2026-0140', area: 'Area Forklift B2', tanggal: '21 Sep 2026', pengamat: 'Rina Wulandari',
+      diamati: 9, patuh: 9, catatan: 'Seluruh pekerja memakai rompi reflektif; operator forklift berhenti penuh di persimpangan.',
+      rincian: [['Helm pengaman', 9, 9], ['Sepatu safety', 9, 9], ['Rompi reflektif', 9, 9]] },
+    { id: 'APD-2026-0139', area: 'Workshop Maintenance', tanggal: '20 Sep 2026', pengamat: 'Fadli Saldi',
+      diamati: 6, patuh: 4, catatan: 'Dua teknisi menggerinda tanpa kacamata pengaman; pekerjaan dihentikan saat itu juga.',
+      rincian: [['Helm pengaman', 6, 6], ['Sepatu safety', 6, 6], ['Kacamata pengaman', 6, 4], ['Sarung tangan', 6, 5]] },
+    { id: 'APD-2026-0138', area: 'TPS Limbah B3', tanggal: '19 Sep 2026', pengamat: 'Yuni Astuti',
+      diamati: 3, patuh: 3, catatan: 'Lengkap. Sarung tangan nitril diganti setiap selesai penanganan.',
+      rincian: [['Helm pengaman', 3, 3], ['Sepatu safety', 3, 3], ['Masker / respirator', 3, 3], ['Sarung tangan', 3, 3]] }
+  ];
+
   /* ─── Pengguna & peran (purwarupa) ─── */
   const peran = {
-    operator:  { nama: 'Operator Produksi',      modul: ['dashboard','ai','incident','hazard','checklist','bbs','activity'] },
-    qhse:      { nama: 'QHSE Supervisor',        modul: ['dashboard','ai','incident','hazard','bbs','inspection','checklist','permit','risk','capa','audit','environment','docint','docext','training','activity','kpi','notif','settings'] },
-    lingkungan:{ nama: 'Petugas Lingkungan',     modul: ['dashboard','ai','environment','docext','capa','notif','settings'] },
-    manajemen: { nama: 'Plant Manager',          modul: ['exec','dashboard','ai','kpi','audit','environment','risk','capa','permit','notif','settings'] },
-    admin:     { nama: 'Administrator Sistem',   modul: ['exec','dashboard','ai','incident','hazard','bbs','inspection','checklist','permit','risk','capa','audit','environment','docint','docext','training','activity','kpi','notif','settings','users'] }
+    operator:  { nama: 'Operator Produksi',      modul: ['dashboard','ai','jsa','induksi','regulasi','incident','hazard','checklist','bbs','activity'] },
+    qhse:      { nama: 'QHSE Supervisor',        modul: ['dashboard','ai','jsa','hiradc','induksi','regulasi','incident','hazard','bbs','inspection','checklist','permit','risk','capa','audit','environment','docint','docext','training','activity','kpi','notif','settings'] },
+    lingkungan:{ nama: 'Petugas Lingkungan',     modul: ['dashboard','ai','hiradc','induksi','regulasi','environment','docext','capa','notif','settings'] },
+    manajemen: { nama: 'Plant Manager',          modul: ['exec','dashboard','ai','jsa','hiradc','induksi','regulasi','kpi','audit','environment','risk','capa','permit','notif','settings'] },
+    admin:     { nama: 'Administrator Sistem',   modul: ['exec','dashboard','ai','jsa','hiradc','induksi','regulasi','incident','hazard','bbs','inspection','checklist','permit','risk','capa','audit','environment','docint','docext','training','activity','kpi','notif','settings','users'] }
   };
 
   const pengguna = [
@@ -709,7 +999,11 @@ window.KG = (function () {
     { modul: 'Environment',          operator: '—',     qhse: 'Isi',        manajemen: 'Baca', admin: 'Kelola' },
     { modul: 'SHE KPI & Analytics',  operator: '—',     qhse: 'Baca',       manajemen: 'Baca', admin: 'Kelola' },
     { modul: 'User Management',      operator: '—',     qhse: '—',          manajemen: '—',    admin: 'Kelola' },
-    { modul: 'Asisten QHSE',         operator: 'Baca',  qhse: 'Baca',       manajemen: 'Baca', admin: 'Kelola' }
+    { modul: 'Asisten QHSE',         operator: 'Baca',  qhse: 'Baca',       manajemen: 'Baca', admin: 'Kelola' },
+    { modul: 'Analisis JSA',         operator: 'Baca',  qhse: 'Isi',        manajemen: 'Verifikasi', admin: 'Kelola' },
+    { modul: 'HIRADC K3',            operator: '—',     qhse: 'Isi',        manajemen: 'Verifikasi', admin: 'Kelola' },
+    { modul: 'Induksi K3',           operator: 'Baca',  qhse: 'Isi',        manajemen: 'Baca', admin: 'Kelola' },
+    { modul: 'Regulasi K3',          operator: 'Baca',  qhse: 'Isi',        manajemen: 'Baca', admin: 'Kelola' }
   ];
 
   return {
@@ -722,6 +1016,7 @@ window.KG = (function () {
     dokInternal, dokEksternal, checklistHarian, checklistP2H,
     obsKategori, observasi, pabrikKinerja, programStrategis, trenTrir,
     notifikasi, aturanNotifikasi,
+    jsa, hiradc, hiradcKategori, induksi, induksiMateri, regulasi, apdJenis, observasiAPD,
     peran, pengguna, hakAkses
   };
 })();
