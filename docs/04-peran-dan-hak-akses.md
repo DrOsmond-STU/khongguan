@@ -40,7 +40,7 @@ memverifikasi catatan yang ia sendiri menjadi penanggung jawabnya.
 | Safety Checklist | Isi | Verifikasi | — | Kelola |
 | Work Permit & JSEA | — | Verifikasi | Verifikasi | Kelola |
 | Manajemen Risiko | — | Isi | Verifikasi | Kelola |
-| CAPA | Baca | Verifikasi | Baca | Kelola |
+| CAPA | — | Verifikasi | Baca | Kelola |
 | Audit | — | Isi | Baca | Kelola |
 | Environment | — | Isi | Baca | Kelola |
 | SHE KPI & Analytics | — | Baca | Baca | Kelola |
@@ -50,6 +50,13 @@ memverifikasi catatan yang ia sendiri menjadi penanggung jawabnya.
 | HIRADC K3 | — | Isi | Verifikasi | Kelola |
 | Induksi K3 | Baca | Isi | Baca | Kelola |
 | Regulasi K3 | Baca | Isi | Baca | Kelola |
+
+> **Koreksi terhadap purwarupa.** Matriks purwarupa menyebut Operator boleh
+> membaca CAPA, sedangkan daftar modul perannya tidak memuat CAPA sama sekali —
+> dua pernyataan yang bertentangan. Daftar modul yang dipakai, karena itulah
+> yang menentukan apa yang benar-benar terlihat. Baris CAPA untuk Operator
+> karena itu berbunyi "—". Bila Khong Guan Group menghendaki Operator melihat
+> CAPA miliknya sendiri, itu penambahan yang diputuskan pada tahap 1.
 
 Petugas Lingkungan tidak tercantum sebagai kolom karena kewenangannya sama
 dengan QHSE Supervisor pada modul Environment, Dokumen Eksternal, CAPA, HIRADC,

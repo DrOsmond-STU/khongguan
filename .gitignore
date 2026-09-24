@@ -7,3 +7,6 @@
 # artifact. Sama alasannya — hasilnya sudah ada di tempat lain, dan gambarnya
 # tidak dipakai aplikasi ini.
 .prop/
+
+# Rahasia sambungan basis data.
+api/config.php

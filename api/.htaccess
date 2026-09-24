@@ -1,0 +1,14 @@
+# Seluruh permintaan diarahkan ke satu pintu masuk.
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [QSA,L]
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "same-origin"
+</IfModule>
+
+# config.php memuat rahasia sambungan basis data dan tidak pernah dilayani.
+<Files "config.php">
+  Require all denied
+</Files>
