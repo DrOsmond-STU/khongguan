@@ -13,7 +13,8 @@ dukungan.
 createdb kg_safeguard
 psql -d kg_safeguard -f api/migrasi/001_skema.sql
 psql -d kg_safeguard -f api/migrasi/002_acuan.sql
-psql -d kg_safeguard -f api/migrasi/003_contoh.sql   # peragaan saja
+psql -d kg_safeguard -f api/migrasi/004_skema_lanjutan.sql
+psql -d kg_safeguard -f api/migrasi/005_contoh.sql   # peragaan saja
 
 # 2 · konfigurasi
 cp api/config.contoh.php api/config.php     # lalu sesuaikan isinya
@@ -31,10 +32,10 @@ window.KG_KONFIG = { api: 'http://127.0.0.1:8150', versi: '3' };
 Dikosongkan berarti mode peragaan dengan data contoh — persis seperti
 purwarupa.
 
-`003_contoh.sql` mengisi basis data peragaan dengan isi yang sama persis
+`005_contoh.sql` mengisi basis data peragaan dengan isi yang sama persis
 seperti purwarupa — dibangkitkan dari `assets/data.js`, bukan diketik ulang.
 Ia menolak berjalan bila basis datanya sudah berisi catatan. Pada produksi,
-jalankan 001 dan 002 saja.
+jalankan 001, 002, dan 004 saja.
 
 ## Menjalankan pengujian
 
@@ -73,6 +74,12 @@ src/Aturan.php         Aturan bisnis yang tidak dapat ditegakkan basis data
 src/Modul/             Satu berkas per modul
 
 migrasi/               Skema, data acuan, dan data contoh
+  001_skema.sql        Modul inti
+  002_acuan.sql        Pabrik, area, peran, dan matriks hak akses
+  004_skema_lanjutan.sql  Inspeksi, checklist, audit, risiko, lingkungan,
+                       dokumen, regulasi, pelatihan, kegiatan, pemberitahuan
+  005_contoh.sql       Data peragaan (dibangkitkan; bukan untuk produksi)
+  buat-contoh.mjs      Pembangkit 005 dari assets/data.js
 uji/                   Pelari uji dan kasusnya
 ```
 
@@ -101,6 +108,14 @@ menulis langsung ke tabel.
 | AB-13 Risiko memakai nilai tertinggi | — | `max(skor)` antar langkah JSA |
 | AB-15 Skor sisa HIRADC | — | Kendali tambahan wajib Selesai |
 | AB-34 Hierarki pengendalian | — | Menandai JSA yang seluruh kendalinya APD |
+| AB-08 Butir Tidak Sesuai mengunci unit | Pemicu `checklist_kunci_unit` | Balasan menyebut unit yang terkunci |
+| AB-18 Temuan wajib punya CAPA | — | Penutupan audit menolak dan menyebut nomornya |
+| AB-20 Dokumen Berlaku punya tinjau | `CHECK (status <> 'Berlaku' OR tinjau IS NOT NULL)` | Pesan dengan kode aturan |
+| AB-21 Yang hampir habis lebih dulu | — | `ORDER BY berlaku` pada dokumen eksternal dan sertifikasi |
+| AB-22 Regulasi butuh bukti | `CHECK (status <> 'Terpenuhi' OR bukti <> '')` | Pesan dengan kode aturan |
+| AB-25 Jam pelatihan dari kegiatan | — | `sum(peserta × durasi_jam)`, tidak ada kolom untuk mengetiknya |
+| AB-30 Tiga sebab pemberitahuan | `CHECK (sebab IN (…))` | Tidak ada nilai untuk "sekadar memberi tahu" |
+| AB-31 Terbaca bukan selesai | Kolom `dibaca_pada` dan `selesai_pada` terpisah | Menandai terbaca tidak menutup |
 | KNF-24 Jejak audit kekal | Pemicu + `REVOKE` | — |
 
 Setiap penolakan membawa kode aturannya:

@@ -41,8 +41,24 @@ window.KGSUMBER = (function () {
     jsa:          { jalur: '/jsa',           modul: 'jsa'      },
     hiradc:       { jalur: '/hiradc',        modul: 'hiradc'   },
     induksi:      { jalur: '/induksi',       modul: 'induksi'  },
-    pengguna:     { jalur: '/pengguna',      modul: 'users'    }
+    pengguna:     { jalur: '/pengguna',      modul: 'users'    },
+    inspeksi:        { jalur: '/inspeksi',            modul: 'inspection'  },
+    checklistHarian: { jalur: '/checklist',           modul: 'checklist'   },
+    audit:           { jalur: '/audit',               modul: 'audit'       },
+    temuanAudit:     { jalur: '/audit/temuan',        modul: 'audit'       },
+    risikoRegister:  { jalur: '/risiko',              modul: 'risk'        },
+    lingkungan:      { jalur: '/lingkungan',          modul: 'environment' },
+    dokInternal:     { jalur: '/dokumen/internal',    modul: 'docint'      },
+    dokEksternal:    { jalur: '/dokumen/eksternal',   modul: 'docext'      },
+    regulasi:        { jalur: '/regulasi',            modul: 'regulasi'    },
+    pelatihan:       { jalur: '/pelatihan',           modul: 'training'    },
+    sertifikasi:     { jalur: '/pelatihan/sertifikasi', modul: 'training'  },
+    kegiatan:        { jalur: '/kegiatan',            modul: 'activity'    },
+    notifikasi:      { jalur: '/notifikasi',          modul: 'notif'       }
   };
+
+  /* Koleksi yang balasannya bukan larik catatan; dipetakan utuh. */
+  var UTUH = { lingkungan: true };
 
   function token() {
     try { return localStorage.getItem(KUNCI_TOKEN); } catch (e) { return null; }
@@ -188,6 +204,109 @@ window.KGSUMBER = (function () {
         status: r.status
       };
     },
+    inspeksi: function (r) {
+      return {
+        id: r.nomor, jenis: r.jenis, area: r.area, petugas: r.petugas || '\u2014',
+        tanggal: tanggalPanjang(r.tanggal), butir: Number(r.butir),
+        selesai: Number(r.selesai), temuan: Number(r.temuan),
+        status: r.status, jadwal: r.jadwal
+      };
+    },
+    checklistHarian: function (r) {
+      return {
+        id: r.nomor, nama: r.nama, frekuensi: r.frekuensi, area: r.area || '\u2014',
+        shift: r.shift || '\u2014', pj: r.pj || '\u2014', butir: Number(r.butir),
+        selesai: Number(r.selesai), temuan: Number(r.temuan),
+        status: r.status, waktu: (r.waktu || '').slice(0, 5)
+      };
+    },
+    audit: function (r) {
+      return {
+        id: r.nomor, standar: r.standar, lingkup: r.lingkup, auditor: r.auditor,
+        tanggal: rentangTanggal(r.mulai, r.selesai), status: r.status,
+        temuan: { major: Number(r.major), minor: Number(r.minor), obs: Number(r.obs) }
+      };
+    },
+    temuanAudit: function (r) {
+      return {
+        id: r.nomor, audit: r.audit, klausul: r.klausul, kategori: r.kategori,
+        isi: r.isi, pj: r.pj || '\u2014', tenggat: tanggalPanjang(r.tenggat), status: r.status
+      };
+    },
+    risikoRegister: function (r) {
+      return {
+        id: r.nomor, proses: r.proses, ancaman: r.ancaman, penyebab: r.penyebab, dampak: r.dampak,
+        L: Number(r.kemungkinan), S: Number(r.keparahan),
+        sisaL: Number(r.kemungkinan_sisa), sisaS: Number(r.keparahan_sisa),
+        opsi: r.opsi, mitigasi: r.mitigasi, pj: r.pj || '\u2014',
+        target: tanggalPanjang(r.target), reviu: tanggalPanjang(r.reviu), status: r.status
+      };
+    },
+    dokInternal: function (r) {
+      return {
+        id: r.kode, level: Number(r.level), jenis: r.jenis, judul: r.judul,
+        rev: Number(r.revisi), terbit: tanggalPanjang(r.terbit), tinjau: tanggalPanjang(r.tinjau),
+        pemilik: r.pemilik, status: r.status
+      };
+    },
+    dokEksternal: function (r) {
+      return {
+        id: r.kode, jenis: r.jenis, judul: r.judul, penerbit: r.penerbit, nomor: r.nomor,
+        terbit: tanggalPanjang(r.terbit), berlaku: tanggalPanjang(r.berlaku), sisa: Number(r.sisa)
+      };
+    },
+    regulasi: function (r) {
+      return {
+        id: r.kode, nomor: r.nomor, judul: r.judul, penerbit: r.penerbit, bidang: r.bidang,
+        pasal: r.pasal, penerapan: r.penerapan, bukti: r.bukti || '\u2014',
+        pj: r.pj || '\u2014', evaluasi: tanggalPanjang(r.evaluasi), status: r.status
+      };
+    },
+    pelatihan: function (r) {
+      return {
+        id: r.nomor, nama: r.nama, jenis: r.jenis, target: Number(r.target),
+        rencanaTgl: r.rencana_tanggal, rencanaPeserta: Number(r.rencana_peserta),
+        aktualTgl: r.aktual_tanggal || '\u2014',
+        aktualPeserta: r.aktual_peserta === null ? '\u2014' : Number(r.aktual_peserta),
+        penyelenggara: r.penyelenggara, status: r.status,
+        /* Purwarupa menulis biaya dengan koma desimal. */
+        biaya: r.biaya_juta === null ? '\u2014' : String(r.biaya_juta).replace('.', ',')
+      };
+    },
+    sertifikasi: function (r) {
+      return {
+        nama: r.nama, pemegang: r.pemegang, nomor: r.nomor,
+        berlaku: tanggalPanjang(r.berlaku), sisa: Number(r.sisa)
+      };
+    },
+    kegiatan: function (r) {
+      return {
+        id: r.nomor, jenis: r.jenis, judul: r.judul, tanggal: tanggalPanjang(r.tanggal),
+        lokasi: r.lokasi || '\u2014', peserta: Number(r.peserta),
+        durasi: Number(r.durasi_jam), foto: r.foto || ''
+      };
+    },
+    notifikasi: function (r) {
+      return {
+        id: r.id, jenis: r.jenis, modul: r.modul, judul: r.judul, isi: r.isi,
+        waktu: sejakJam(r.dibuat_pada), baca: r.baca === true, aksi: r.aksi
+      };
+    },
+    /* Lingkungan bukan larik: empat pemantauan bernama, masing-masing dengan
+       parameternya. Dipetakan utuh, bukan per baris. */
+    lingkungan: function (o) {
+      var keluar = {};
+      Object.keys(o).forEach(function (k) {
+        keluar[k] = {
+          judul: o[k].judul, sub: o[k].sub, acuan: o[k].acuan,
+          param: (o[k].param || []).map(function (v) {
+            return { nama: v.nama, nilai: v.nilai, satuan: v.satuan,
+                     ambang: v.ambang, ok: v.memenuhi === true };
+          })
+        };
+      });
+      return keluar;
+    },
     pengguna: function (r) {
       return {
         email: r.email, nama: r.nama, inisial: r.inisial, peran: r.peran_kode,
@@ -239,6 +358,31 @@ window.KGSUMBER = (function () {
 
   function angka(v) { return v === null || v === undefined ? null : Number(v); }
 
+  /* "12–14 Okt 2026" bila sebulan sama, jika tidak dua tanggal penuh. */
+  function rentangTanggal(mulai, selesai) {
+    var a = tanggal(mulai);
+    var b = tanggal(selesai);
+    if (!a) return '\u2014';
+    if (!b || a.getTime() === b.getTime()) return tanggalPanjang(mulai);
+    if (a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear()) {
+      return String(a.getDate()).padStart(2, '0') + '\u2013' + tanggalPanjang(selesai);
+    }
+    return tanggalPanjang(mulai) + ' \u2013 ' + tanggalPanjang(selesai);
+  }
+
+  /* Bentuk yang dipakai purwarupa pada kotak masuk: "08:12 hari ini",
+     "Kemarin 16:20", lalu "2 hari lalu" untuk yang lebih tua. */
+  function sejakJam(nilai) {
+    var d = tanggal(nilai);
+    if (!d) return '';
+    var jm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    var hariIni = new Date();
+    if (d.toDateString() === hariIni.toDateString()) return jm + ' hari ini';
+    var kemarin = new Date(hariIni.getTime() - 86400000);
+    if (d.toDateString() === kemarin.toDateString()) return 'Kemarin ' + jm;
+    return sejak(nilai);
+  }
+
   /* ─────────────────────────────────────────────────────────────────
      Pemuatan
      ───────────────────────────────────────────────────────────────── */
@@ -265,7 +409,9 @@ window.KGSUMBER = (function () {
         if (saya.modul.indexOf(t.modul) === -1) return;
         janji.push(
           ambil(t.jalur).then(function (r) {
-            window.KG[koleksi] = (r.data || []).map(PETA[koleksi]);
+            window.KG[koleksi] = UTUH[koleksi]
+              ? PETA[koleksi](r.data || {})
+              : (r.data || []).map(PETA[koleksi]);
             hidup.push(koleksi);
           }).catch(function (e) {
             /* Satu modul gagal tidak boleh menggagalkan seluruh aplikasi:

@@ -24,11 +24,16 @@ final class Nomor
         'risiko'        => ['RSK', false, 3],
         'capa'          => ['CAPA', true, 4],
         'audit'         => ['AUD', true,  3],
-        'temuan_audit'  => ['TMN', true,  3],
+        // Purwarupa memakai awalan AF untuk temuan audit, dan nomor itu
+        // dirujuk CAPA sebagai sumbernya. Awalan yang berbeda memutus
+        // rujukan yang sudah dipakai.
+        'temuan_audit'  => ['AF',  true,  3],
         'induksi'       => ['IND', true,  4],
         'regulasi'      => ['REG', false, 3],
         'observasi_apd' => ['APD', true,  4],
         'observasi'     => ['OBS', true,  4],
+        'pelatihan'     => ['TRN', true,  3],
+        'kegiatan'      => ['ACT', true,  3],
     ];
 
     public static function berikut(string $entitas): string

@@ -375,6 +375,204 @@ uji('UJ-07c', 'Observasi tanpa satu pun pengamatan ditolak', function () use ($D
     sama(400, $h['status'], 'ditolak');
 });
 
+uji('UJ-08', 'AB-08 · satu butir Tidak Sesuai mengunci unit dari operasi', function () use ($D, $T) {
+    $unit = (string) Db::nilai(
+        "INSERT INTO unit_periksa (pabrik_id, kode, nama, jenis)
+         VALUES (:p, 'UNIT-UJI-01', 'Forklift uji', 'Kendaraan & alat angkat') RETURNING id",
+        [':p' => $D['pabrik_cbt']]
+    );
+    sama('Layak', Db::nilai('SELECT status FROM unit_periksa WHERE id = :i', [':i' => $unit]),
+        'unit mula-mula layak');
+
+    $h = panggil('POST', '/checklist', [
+        'nama' => 'P2H Forklift uji', 'frekuensi' => 'Setiap shift', 'unit_id' => $unit,
+        'butir' => [
+            ['butir' => 'Rem berfungsi', 'jawab' => 'Sesuai'],
+            ['butir' => 'Rantai angkat dilumasi', 'jawab' => 'Tidak Sesuai',
+             'catatan' => 'Kering dan berkarat ringan'],
+        ],
+    ], $T['operator']);
+    sama(201, $h['status'], 'checklist tersimpan');
+    sama(1, $h['data']['temuan'], 'satu temuan');
+
+    // Gerbang operasi, bukan peringatan: penguncian terjadi seketika dan
+    // terlihat pada unitnya, bukan hanya di dalam checklist.
+    sama('Terkunci', Db::nilai('SELECT status FROM unit_periksa WHERE id = :i', [':i' => $unit]),
+        'unit terkunci');
+    sama('Terkunci', $h['data']['unit']['status'], 'pengisi diberi tahu seketika');
+});
+
+uji('UJ-08b', 'AB-08 · penguncian tetap terjadi walau aplikasi dilewati', function () use ($D) {
+    $unit = (string) Db::nilai(
+        "INSERT INTO unit_periksa (pabrik_id, kode, nama, jenis)
+         VALUES (:p, 'UNIT-UJI-02', 'Panel uji', 'Fasilitas') RETURNING id",
+        [':p' => $D['pabrik_cbt']]
+    );
+    $cl = (string) Db::nilai(
+        "INSERT INTO checklist (nomor, pabrik_id, nama, frekuensi, unit_id, tanggal, status)
+         VALUES ('CHK-UJI-LANGSUNG', :p, 'Langsung ke tabel', 'Harian', :u, current_date, 'Selesai')
+         RETURNING id",
+        [':p' => $D['pabrik_cbt'], ':u' => $unit]
+    );
+    Db::jalankan(
+        "INSERT INTO checklist_butir (checklist_id, urutan, butir, jawab)
+         VALUES (:c, 1, 'Ditulis langsung tanpa lewat API', 'Tidak Sesuai')", [':c' => $cl]
+    );
+    sama('Terkunci', Db::nilai('SELECT status FROM unit_periksa WHERE id = :i', [':i' => $unit]),
+        'pemicu basis data mengunci');
+});
+
+uji('UJ-18', 'AB-18 · audit dengan temuan Major tanpa CAPA tidak dapat ditutup',
+    function () use ($D, $T) {
+        $a = (string) Db::nilai(
+            "INSERT INTO audit (nomor, pabrik_id, standar, lingkup, auditor, mulai, status)
+             VALUES ('AUD-UJI-001', :p, 'ISO 45001:2018', 'Uji', 'Tim Internal', current_date, 'Dalam Proses')
+             RETURNING id", [':p' => $D['pabrik_cbt']]
+        );
+        $t = panggil('POST', "/audit/$a/temuan", [
+            'klausul' => 'Elemen 6.5', 'kategori' => 'Major', 'isi' => 'Temuan uji',
+        ], $T['qhse']);
+        sama(201, $t['status'], 'temuan tercatat');
+
+        $tutup = panggil('POST', "/audit/$a/tutup", [], $T['admin']);
+        sama(409, $tutup['status'], 'penutupan ditolak');
+        sama('AB-18', $tutup['galat']['aturan'] ?? null, 'kode aturan');
+
+        // Temuan Observasi tidak menahan penutupan: ia catatan perbaikan,
+        // bukan ketidaksesuaian.
+        Db::jalankan("UPDATE temuan_audit SET kategori = 'Observasi' WHERE id = :i",
+            [':i' => $t['data']['id']]);
+        sama(200, panggil('POST', "/audit/$a/tutup", [], $T['admin'])['status'],
+            'temuan Observasi tidak menahan');
+    });
+
+uji('UJ-18b', 'Audit yang sudah ditutup tidak menerima temuan baru', function () use ($D, $T) {
+    $a = (string) Db::nilai(
+        "INSERT INTO audit (nomor, pabrik_id, standar, lingkup, auditor, mulai, selesai,
+                            status, ditutup_pada)
+         VALUES ('AUD-UJI-002', :p, 'ISO 14001:2015', 'Uji', 'Tim Internal',
+                 current_date, current_date, 'Selesai', now()) RETURNING id",
+        [':p' => $D['pabrik_cbt']]
+    );
+    $h = panggil('POST', "/audit/$a/temuan",
+        ['klausul' => 'X', 'kategori' => 'Minor', 'isi' => 'Terlambat'], $T['qhse']);
+    sama(400, $h['status'], 'ditolak');
+});
+
+uji('UJ-20c', 'AB-20 · dokumen internal Berlaku tanpa tanggal tinjau ditolak', function () use ($T) {
+    $h = panggil('POST', '/dokumen/internal', [
+        'kode' => 'KGP-UJI-01', 'level' => 3, 'jenis' => 'Prosedur',
+        'judul' => 'Prosedur uji tanpa tinjau', 'status' => 'Berlaku',
+    ], $T['qhse']);
+    sama(409, $h['status'], 'ditolak');
+    sama('AB-20', $h['galat']['aturan'] ?? null, 'kode aturan');
+});
+
+uji('UJ-20d', 'AB-20 · basis data menolak walau aplikasi dilewati', function () use ($D) {
+    try {
+        Db::jalankan(
+            "INSERT INTO dokumen_internal (kode, pabrik_id, level, jenis, judul, terbit,
+                                           tinjau, pemilik, status)
+             VALUES ('KGP-UJI-02', :p, 3, 'Prosedur', 'Langsung ke tabel', current_date,
+                     NULL, 'QHSE', 'Berlaku')", [':p' => $D['pabrik_cbt']]
+        );
+        throw new \RuntimeException('basis data seharusnya menolak');
+    } catch (\PDOException $e) {
+        benar(str_contains($e->getMessage(), 'dokumen_berlaku_punya_tinjau'), 'ditolak basis data');
+    }
+});
+
+uji('UJ-21c', 'AB-21 · dokumen eksternal diurutkan menurut sisa masa berlaku', function () use ($T) {
+    $h = panggil('GET', '/dokumen/eksternal', [], $T['qhse']);
+    sama(200, $h['status'], 'terbaca');
+    $sisa = array_map(static fn (array $d): int => (int) $d['sisa'], $h['data']);
+    $urut = $sisa;
+    sort($urut);
+    sama($urut, $sisa, 'menaik menurut sisa, bukan abjad');
+});
+
+uji('UJ-22d', 'AB-22 · regulasi Terpenuhi tanpa bukti ditolak lewat API', function () use ($T) {
+    $isi = [
+        'kode' => 'REG-UJI-01', 'nomor' => 'UU No. 0 Tahun 2026', 'judul' => 'Peraturan uji',
+        'penerbit' => 'Pemerintah RI', 'bidang' => 'K3 Umum', 'pasal' => 'Pasal 1',
+        'penerapan' => 'Sudah diterapkan seluruhnya, sungguh.', 'status' => 'Terpenuhi',
+    ];
+    $h = panggil('POST', '/regulasi', $isi, $T['qhse']);
+    sama(409, $h['status'], 'ditolak tanpa bukti');
+    sama('AB-22', $h['galat']['aturan'] ?? null, 'kode aturan');
+
+    $isi['bukti'] = 'KGK-02 Kebijakan, notulen rapat P2K3 12 Sep 2026';
+    sama(201, panggil('POST', '/regulasi', $isi, $T['qhse'])['status'], 'diterima dengan bukti');
+});
+
+uji('UJ-25', 'AB-25 · jam pelatihan dihitung dari kegiatan, bukan diisi manual',
+    function () use ($D, $T) {
+        $awal = panggil('GET', '/kegiatan/jam-pelatihan', [], $T['qhse'])['data']['jam_pelatihan'];
+
+        sama(201, panggil('POST', '/kegiatan', [
+            'jenis' => 'Safety Talk', 'judul' => 'Kegiatan uji', 'peserta' => 20,
+            'durasi_jam' => 1.5, 'area_id' => $D['area_cbt'], 'tanggal' => date('Y-m-d'),
+        ], $T['qhse'])['status'], 'kegiatan tercatat');
+
+        $akhir = panggil('GET', '/kegiatan/jam-pelatihan', [], $T['qhse'])['data'];
+        sama(round($awal + 30, 2), round($akhir['jam_pelatihan'], 2), '20 peserta × 1,5 jam = 30 jam');
+        benar(str_contains($akhir['sumber'], 'AB-25'), 'sumbernya disebutkan');
+    });
+
+uji('UJ-30', 'AB-30 · pemberitahuan hanya untuk tiga sebab', function () use ($D) {
+    try {
+        Db::jalankan(
+            "INSERT INTO notifikasi (pabrik_id, jenis, modul, judul, isi, sebab, aksi)
+             VALUES (:p, 'info', 'Uji', 'Status berubah', 'Sekadar memberi tahu',
+                     'perubahan_status', 'incident')", [':p' => $D['pabrik_cbt']]
+        );
+        throw new \RuntimeException('sebab di luar tiga yang diizinkan seharusnya ditolak');
+    } catch (\PDOException $e) {
+        benar(str_contains($e->getMessage(), 'notifikasi_sebab_check')
+              || str_contains($e->getMessage(), 'sebab'), 'ditolak basis data');
+    }
+});
+
+uji('UJ-31b', 'AB-31 · menandai terbaca tidak menutup pengingat', function () use ($D, $T) {
+    $n = (string) Db::nilai(
+        "INSERT INTO notifikasi (pabrik_id, jenis, modul, judul, isi, sebab, aksi)
+         VALUES (:p, 'critical', 'CAPA', 'CAPA-UJI terlambat 3 hari', 'Tenggat terlewat.',
+                 'lewat_tenggat', 'capa') RETURNING id", [':p' => $D['pabrik_cbt']]
+    );
+    $h = panggil('POST', "/notifikasi/$n/terbaca", [], $T['qhse']);
+    sama(200, $h['status'], 'ditandai terbaca');
+    sama(true, $h['data']['baca'], 'terbaca');
+    sama(false, $h['data']['selesai'], 'tidak ikut tertutup');
+
+    benar(Db::nilai('SELECT selesai_pada IS NULL FROM notifikasi WHERE id = :i', [':i' => $n]) === true,
+        'masih akan dikirim ulang sampai ditutup di modulnya');
+
+    // Masih muncul pada kotak masuk: yang menyaring adalah selesai_pada.
+    $daftar = panggil('GET', '/notifikasi', [], $T['qhse'])['data'];
+    benar(in_array($n, array_column($daftar, 'id'), true), 'masih ada di kotak masuk');
+});
+
+uji('UJ-16b', 'Ringkasan inspeksi dihitung dari butirnya, tidak disimpan', function () use ($T) {
+    $h = panggil('POST', '/inspeksi', [
+        'jenis' => 'APAR & Hydrant', 'area' => 'Seluruh area produksi', 'jadwal' => 'Bulanan',
+        'butir' => [
+            ['butir' => 'Tekanan manometer hijau', 'jawab' => 'Sesuai'],
+            ['butir' => 'Segel utuh', 'jawab' => 'Tidak Sesuai'],
+            ['butir' => 'Kartu inspeksi terisi'],
+        ],
+    ], $T['qhse']);
+    sama(201, $h['status'], 'tersimpan');
+
+    $baris = null;
+    foreach (panggil('GET', '/inspeksi', [], $T['qhse'])['data'] as $r) {
+        if ($r['nomor'] === $h['data']['nomor']) $baris = $r;
+    }
+    benar($baris !== null, 'ditemukan pada daftar');
+    sama(3, (int) $baris['butir'], 'tiga butir');
+    sama(2, (int) $baris['selesai'], 'dua terjawab');
+    sama(1, (int) $baris['temuan'], 'satu temuan');
+});
+
 echo "\nHak akses\n";
 
 uji('UJ-21', 'Operator tidak dapat membuka HIRADC', function () use ($T) {

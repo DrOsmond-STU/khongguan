@@ -72,6 +72,53 @@ function rute(): Rute
     // Modul 24 · Pengguna
     $r->get('/pengguna', [Modul\Pengguna::class, 'daftar']);
 
+    // Modul 02 · Inspeksi
+    $r->get('/inspeksi',             [Modul\Inspeksi::class, 'daftar']);
+    $r->post('/inspeksi',            [Modul\Inspeksi::class, 'buat']);
+    $r->get('/inspeksi/{id}/butir',  [Modul\Inspeksi::class, 'butir']);
+
+    // Modul 05 · Safety Checklist
+    $r->get('/checklist',            [Modul\Checklist::class, 'daftar']);
+    $r->post('/checklist',           [Modul\Checklist::class, 'buat']);
+    $r->get('/checklist/unit',       [Modul\Checklist::class, 'unit']);
+    $r->get('/checklist/{id}/butir', [Modul\Checklist::class, 'butir']);
+
+    // Modul 09 · Audit
+    $r->get('/audit',                 [Modul\Audit::class, 'daftar']);
+    $r->get('/audit/temuan',          [Modul\Audit::class, 'temuan']);
+    $r->post('/audit/{id}/temuan',    [Modul\Audit::class, 'buatTemuan']);
+    $r->post('/audit/{id}/tutup',     [Modul\Audit::class, 'tutup']);
+
+    // Modul 11 · Manajemen Risiko
+    $r->get('/risiko',  [Modul\Risiko::class, 'daftar']);
+    $r->post('/risiko', [Modul\Risiko::class, 'buat']);
+
+    // Modul 12 · Lingkungan
+    $r->get('/lingkungan', [Modul\Lingkungan::class, 'tampil']);
+
+    // Modul 13/14 · Dokumen
+    $r->get('/dokumen/internal',  [Modul\Dokumen::class, 'internal']);
+    $r->post('/dokumen/internal', [Modul\Dokumen::class, 'buatInternal']);
+    $r->get('/dokumen/eksternal', [Modul\Dokumen::class, 'eksternal']);
+
+    // Modul 17 · Regulasi K3
+    $r->get('/regulasi',  [Modul\Regulasi::class, 'daftar']);
+    $r->post('/regulasi', [Modul\Regulasi::class, 'buat']);
+
+    // Modul 18 · Pelatihan
+    $r->get('/pelatihan',             [Modul\Pelatihan::class, 'daftar']);
+    $r->post('/pelatihan',            [Modul\Pelatihan::class, 'buat']);
+    $r->get('/pelatihan/sertifikasi', [Modul\Pelatihan::class, 'sertifikasi']);
+
+    // Modul 19 · SHE Activity
+    $r->get('/kegiatan',                [Modul\Kegiatan::class, 'daftar']);
+    $r->post('/kegiatan',               [Modul\Kegiatan::class, 'buat']);
+    $r->get('/kegiatan/jam-pelatihan',  [Modul\Kegiatan::class, 'jamPelatihan']);
+
+    // Modul 25 · Pemberitahuan
+    $r->get('/notifikasi',              [Modul\Notifikasi::class, 'daftar']);
+    $r->post('/notifikasi/{id}/terbaca', [Modul\Notifikasi::class, 'tandaiTerbaca']);
+
     // Aplikasi lapangan
     $r->post('/lapangan/kirim',   [Modul\Lapangan::class, 'kirim']);
     $r->get('/lapangan/rujukan',  [Modul\Lapangan::class, 'rujukan']);

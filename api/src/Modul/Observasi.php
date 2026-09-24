@@ -37,10 +37,11 @@ final class Observasi
     {
         $u = Sesi::pengguna($p);
         $areaId   = $p->wajibTeks('area_id');
-        $kategori = $p->wajibTeks('kategori');
         $catatan  = $p->wajibTeks('catatan');
         $aman     = $p->wajibBulat('aman');
         $berisiko = (int) $p->isi('berisiko', 0);
+        $kategori = $p->isi('kategori');
+        $kategori = is_string($kategori) && $kategori !== '' ? $kategori : null;
 
         if ($aman < 0 || $berisiko < 0) {
             throw Galat::isian('Jumlah pengamatan tidak boleh negatif.',
@@ -49,6 +50,12 @@ final class Observasi
         if ($aman + $berisiko === 0) {
             throw Galat::isian('Observasi tanpa satu pun pengamatan tidak dapat disimpan.',
                 ['kolom' => 'aman']);
+        }
+        // Kategori temuan hanya wajib bila ada yang ditemukan. Observasi yang
+        // seluruh perilakunya aman tidak boleh dipaksa mengarang kategori.
+        if ($berisiko > 0 && $kategori === null) {
+            throw Galat::isian('Observasi dengan perilaku berisiko harus menyebutkan kategorinya.',
+                ['kolom' => 'kategori']);
         }
 
         $area = Db::baris('SELECT id, pabrik_id FROM area WHERE id = :i AND aktif', [':i' => $areaId]);

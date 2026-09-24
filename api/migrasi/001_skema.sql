@@ -250,9 +250,14 @@ CREATE TABLE observasi (
   area_id     uuid NOT NULL REFERENCES area(id),
   pengamat_id uuid NOT NULL REFERENCES pengguna(id),
   tanggal     date NOT NULL,
-  kategori    text NOT NULL,
+  -- Kosong bila tidak ada satu pun perilaku berisiko: observasi yang seluruh
+  -- perilakunya aman tidak punya kategori temuan, dan memaksanya memilih satu
+  -- berarti mengarang temuan yang tidak ada.
+  kategori    text,
   aman        integer NOT NULL CHECK (aman >= 0),
   berisiko    integer NOT NULL DEFAULT 0 CHECK (berisiko >= 0),
+  CONSTRAINT observasi_berisiko_punya_kategori
+    CHECK (berisiko = 0 OR kategori IS NOT NULL),
   catatan     text NOT NULL,
   tindakan    text,
   dibuat_oleh uuid REFERENCES pengguna(id),
