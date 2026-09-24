@@ -8,14 +8,42 @@ Untuk cPanel dengan PHP 8.3 dan PostgreSQL 16 — lingkungan
 | Hal | Keadaan |
 |---|---|
 | Basis data `semestat_kgsafe` | Dibuat |
-| Pengguna `semestat_kgapp` | Dibuat, hak akses diberikan, sambungan diuji |
+| Pengguna `semestat_kgapp` | **Dihapus** — harus dibuat kembali, lihat catatan di bawah |
 | PostgreSQL | 16.15 · `gen_random_uuid()` inti tersedia, `pgcrypto` tidak ada dan tidak diperlukan |
 | PHP CLI (cron) | 8.3.33 · `pdo_pgsql`, `zip`, `fileinfo` tersedia |
-| Klon repositori `/home/semestat/kgrepo` | Ada, menunjuk cabang pengembangan |
-| Tabel `oidc_permintaan` dan `simpanan` | Sudah dibuat |
+| `/home/semestat/kgrepo` | Ada, tetapi **salinan lama** (komit 4f6c132, tanpa `api/`) — bukan klon yang dapat di-`git pull` |
+| Docroot | Berisi purwarupa lama saja: `assets/`, `m/`, `index.html`. **Tidak ada `api/`** |
 | Sisa skema, berkas aplikasi, cron | **Belum** — lihat di bawah |
 
+### Keadaan pengguna basis data · 24 September 2026
+
+Pengguna `semestat_kgapp` **sudah dihapus** dan belum dibuat kembali.
+
+Sandinya tidak tercatat di mana pun — memang tidak boleh — sehingga satu-satunya
+jalan memasang adalah membuat penggunanya kembali dengan sandi baru. Penghapusan
+itu sudah dilakukan; pembuatan kembali belum, karena membangkitkan dan memegang
+sandi produksi ditolak oleh penjaga izin lingkungan tempat sesi ini berjalan.
+
+Basis data `semestat_kgsafe` **masih ada dan tidak tersentuh** (7,86 MB — ukuran
+basis data kosong; migrasi belum pernah dijalankan). Yang hilang hanya
+penggunanya, bukan datanya.
+
+Akibatnya: saat ini tidak ada yang dapat menyambung ke basis data itu. Situs
+tetap hidup seperti biasa karena berjalan pada mode peragaan dan tidak
+memerlukan basis data sama sekali.
+
 ## Langkah yang tersisa
+
+### 0 · Buat kembali pengguna basis data
+
+Di cPanel → **PostgreSQL Databases**:
+
+1. Buat pengguna `semestat_kgapp` dengan sandi baru yang kuat.
+2. Tambahkan pengguna itu ke basis data `semestat_kgsafe` dengan hak **ALL
+   PRIVILEGES**.
+
+Sandi itu hanya masuk ke `config.php` pada langkah berikutnya, dan tidak ke
+tempat lain mana pun — bukan ke repositori, bukan ke catatan sesi, bukan ke log.
 
 ### 1 · Konfigurasi
 
@@ -47,20 +75,28 @@ direktori yang dapat ditebak alamatnya membocorkan semuanya tanpa jejak.
 
 ### 3 · Salin berkas
 
+`/home/semestat/kgrepo` bukan klon git, jadi `git pull` di sana tidak bekerja.
+Klon ulang, atau tarik langsung dari cabangnya:
+
 ```bash
-cd /home/semestat/kgrepo
-git fetch origin claude/affectionate-fermi-s38tfh
-git reset --hard origin/claude/affectionate-fermi-s38tfh
+rm -rf /home/semestat/kgrepo
+git clone --branch claude/affectionate-fermi-s38tfh --depth 1 \
+  https://github.com/DrOsmond-STU/khongguan.git /home/semestat/kgrepo
 
 APP=/home/semestat/khongguan.semestateknologiutama.com
-rsync -a --delete --exclude 'config.php' kgrepo/api/    "$APP/api/"
-rsync -a                                  kgrepo/assets/ "$APP/assets/"
-rsync -a                                  kgrepo/m/      "$APP/m/"
+cd /home/semestat
+rsync -a --delete --exclude 'config.php' --exclude 'uji' kgrepo/api/ "$APP/api/"
+rsync -a --delete kgrepo/assets/ "$APP/assets/"
+rsync -a --delete kgrepo/m/      "$APP/m/"
 cp kgrepo/index.html "$APP/index.html"
 
-rm -rf "$APP/api/uji"      # pengujian membuat ulang skema; tidak boleh ada di produksi
 chmod 600 "$APP/api/config.php"
 ```
+
+`api/uji/` sengaja tidak ikut: pengujian membuat ulang skema dari nol, dan
+berkas itu tidak boleh ada di peladen yang memegang catatan sungguhan.
+`api/.htaccess` ikut tersalin dan itu yang menolak melayani `config.php`;
+pastikan ia benar-benar ada setelah penyalinan.
 
 ### 4 · Migrasi
 
