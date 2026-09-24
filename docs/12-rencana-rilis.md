@@ -67,6 +67,37 @@ jarang, supaya cacat terbanyak ditemukan paling awal:
 4. Pelatihan, Kegiatan, KPI, Dashboard, Eksekutif
 5. Notifikasi, Pengguna, Pengaturan, Asisten
 
+## Keadaan saat ini
+
+Tahap 2 dan sebagian besar tahap 3 sudah dikerjakan, mendahului tahap 1 —
+sebuah pilihan yang perlu disebutkan terus terang, bukan disembunyikan di
+catatan kaki.
+
+| Sudah | Belum |
+|---|---|
+| Skema, migrasi, dan jejak audit yang tidak dapat diubah | Tahap 1: analisis bersama Khong Guan Group |
+| API seluruh modul rekaman, KPI, dan Dashboard Eksekutif | Penyimpanan objek untuk berkas dan foto |
+| Masuk lewat direktori perusahaan (OIDC + PKCE) | Pengiriman pemberitahuan surel, pesan, dan dorong |
+| Sinkronisasi antrean aplikasi lapangan | Ekspor PDF dan Excel |
+| Asisten QHSE bekerja di atas catatan sungguhan | Kompilasi APK Android |
+| 84 kasus uji, seluruhnya lulus | |
+
+**Risiko yang ditanggung.** Skema, kosakata, dan matriks peran bersandar pada
+asumsi yang tertulis di `docs/`, bukan pada keputusan Khong Guan Group. Yang
+biasanya berubah setelah analisis adalah nama kolom dan nilai acuan, bukan
+bentuk sistemnya — tetapi itu tetap risiko, dan menerimanya adalah keputusan
+CV. Semesta Teknologi Utama, bukan kesimpulan yang boleh diambil diam-diam.
+
+**Pertentangan di dalam purwarupa yang sudah ditemukan** dan menunggu keputusan
+tahap 1:
+
+| Hal | Tercatat di |
+|---|---|
+| Operator: matriks hak akses menyebut boleh membaca CAPA, daftar modulnya tidak | [docs/04](04-peran-dan-hak-akses.md) |
+| Pengesah JSA: kartu layar menyebut QHSE Supervisor, matriksnya tidak | [docs/04](04-peran-dan-hak-akses.md) |
+| Dua kosakata kategori bahaya dan jenis izin antara aplikasi meja dan lapangan | [docs/08](08-aplikasi-lapangan.md) |
+| Angka ringkasan audit tidak cocok dengan daftar temuannya | [docs/05](05-model-data.md) |
+
 ## Tahap 4 · Uji coba di satu pabrik
 
 Satu pabrik dipilih bersama; Cibitung menjadi calon utama karena dipakai sebagai

@@ -115,10 +115,13 @@ assets/i18n.js      Kamus Indonesia–Inggris dan penerjemah simpul teks
 assets/data.js      Data contoh seluruh modul, pengguna, peran, dan matriks hak akses
 assets/app.js       Sesi, tema, bahasa, perutean hash, 25 tampilan modul, modal, grafik SVG
 assets/ai.js        Indeks pencarian seluruh sistem dan Asisten QHSE
-assets/lapangan.js  Antrean laporan lapangan; titik temu aplikasi meja dan aplikasi lapangan
+assets/lapangan.js  Antrean laporan lapangan; mengirim ke peladen bila dikonfigurasi
+assets/konfigurasi.js  Alamat API; dikosongkan berarti mode peragaan
+assets/sumber.js    Mengambil data dari peladen dan memetakannya ke bentuk yang dibaca app.js
 assets/img/         Lambang aplikasi dan ikon modul
 m/                  Aplikasi lapangan: PWA yang dapat dipasang dan bekerja tanpa sinyal
 android/            Kerangka pembungkus Android (Trusted Web Activity), belum dikompilasi
+api/                Peladen: PHP + PostgreSQL, skema, dan pengujiannya
 docs/               Paket dokumen sebelum pengembangan
 ```
 
@@ -126,9 +129,35 @@ docs/               Paket dokumen sebelum pengembangan
 
 Token, komponen, dan panduan pemakaian dipelihara sebagai design system terpisah berjudul **Khong Guan QHSE**, berisi 12 komponen dengan pratinjau langsung, ikon modul, serta bagian *Modul* dan *Status, Keparahan, dan Risiko* yang menjadi acuan kosakata di aplikasi ini. Berkas `assets/tokens.css` di repo ini merupakan turunan dari `tokens.json` sistem tersebut.
 
+## Dua mode
+
+Aplikasi yang sama berjalan pada dua mode, dan yang menentukan hanya satu baris
+di `assets/konfigurasi.js`:
+
+| Mode | `KG_KONFIG.api` | Sumber data |
+|---|---|---|
+| **Peragaan** | kosong | `assets/data.js` — persis purwarupa yang selama ini diperagakan |
+| **Tersambung** | alamat peladen | PostgreSQL lewat API pada `api/` |
+
+Tampilannya sama persis pada kedua mode. `app.js`, `app.css`, dan `tokens.css`
+tidak tahu-menahu soal peladen: `sumber.js` mengisi `window.KG` dengan bentuk
+yang sama sebelum `app.js` dimuat. Kesamaan itu diuji dengan membandingkan 12
+layar piksel demi piksel sebelum dan sesudah setiap perubahan.
+
+Cara menyiapkan peladen ada di **[`api/README.md`](api/README.md)**.
+
 ## Yang belum ada
 
 - **Lambang korporat Khong Guan.** Berkas resminya harus diminta ke tim Corporate Communication. Purwarupa memakai lambang aplikasi KG SafeGuard (perisai dengan centang) dan teks biasa; lambang korporat sengaja tidak digambar ulang atau didekati bentuknya.
-- **Autentikasi sungguhan.** Login purwarupa ini berjalan di peramban tanpa server: kata sandi dibandingkan di sisi klien dan sesi disimpan di `localStorage`. Cukup untuk memperagakan alur dan hak akses per peran, tetapi bukan pengamanan. Jangan memakai kata sandi sungguhan di layar ini.
-- Backend dan basis data. Seluruh data bersifat statis di berkas JavaScript.
-- Unggahan berkas sungguhan, ekspor PDF/Excel, dan pengiriman notifikasi ke email/WhatsApp. Modul 18 menampilkan antrean dan aturan kirimnya, tetapi tidak benar-benar mengirim apa pun.
+- Unggahan berkas sungguhan, ekspor PDF/Excel, dan pengiriman notifikasi ke email/WhatsApp. Modul 18 menampilkan antrean dan aturan kirimnya; penerima pemberitahuan sudah ditentukan peladen (AB-02), tetapi pengirimannya belum.
+- **Tahap 1 belum dijalankan.** Skema, kosakata, dan matriks peran bersandar pada asumsi yang tertulis di `docs/`, bukan pada analisis bersama Khong Guan Group. Pertentangan yang ditemukan di dalam purwarupa dicatat pada dokumennya masing-masing, bukan ditambal diam-diam.
+
+### Pada mode peragaan
+
+Login berjalan di peramban tanpa server: kata sandi dibandingkan di sisi klien
+dan sesi disimpan di `localStorage`. Cukup untuk memperagakan alur dan hak
+akses per peran, tetapi bukan pengamanan. **Jangan memakai kata sandi sungguhan
+di layar ini.**
+
+Pada mode tersambung, masuk memakai OpenID Connect ke direktori perusahaan;
+sistem tidak pernah menerima, menyimpan, atau memeriksa kata sandi.

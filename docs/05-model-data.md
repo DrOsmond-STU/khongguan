@@ -172,6 +172,21 @@ pasal ✓, penerapan ✓, bukti ✓, penanggung_jawab ✓, evaluasi ✓, status 
 Status dihitung sebagian: baris tanpa `bukti` tidak dapat berstatus Terpenuhi
 (AB-22).
 
+### Angka ringkasan tidak disimpan
+
+Jumlah butir, butir terjawab, dan temuan pada `inspeksi` dan `checklist`
+dihitung dari tabel butirnya. Jumlah temuan Major, Minor, dan Observasi pada
+`audit` dihitung dari `temuan_audit`. Tidak satu pun disimpan sebagai kolom.
+
+Angka ringkasan yang disimpan selalu berakhir menyimpang dari rinciannya, dan
+yang dipercaya orang justru angka ringkasannya.
+
+> **Pertentangan purwarupa.** Kepala audit AUD-2026-003 pada purwarupa menyebut
+> 1 Major, 6 Minor, dan 9 Observasi, sedangkan daftar temuannya hanya memuat
+> empat baris. Angka yang dihitung sistem karena itu berbeda dari angka yang
+> tertulis di purwarupa. Yang benar adalah memasukkan temuan yang sungguhan;
+> angkanya akan menyesuaikan sendiri.
+
 ### Entitas lain
 
 `inspeksi`, `checklist_harian`, `audit`, `temuan_audit`, `risiko`,

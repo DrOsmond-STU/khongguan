@@ -4,8 +4,12 @@
    dalam peramban. Tidak ada server, tidak ada kunci API, dan tidak ada model
    bahasa di belakangnya. Yang dikerjakannya nyata — indeks pencarian penuh,
    penomoran dokumen, pemetaan klausul standar, dan perhitungan ringkasan — tetapi
-   semuanya berasal dari aturan yang tertulis di berkas ini, dijalankan atas data
-   pada data.js.
+   semuanya berasal dari aturan yang tertulis di berkas ini.
+
+   Data yang dibacanya adalah window.KG apa adanya. Pada mode peragaan itu berarti
+   data contoh dari data.js; begitu tersambung ke peladen, sumber.js sudah mengisi
+   window.KG dengan catatan sungguhan sebelum berkas ini dipakai, dan asisten
+   bekerja di atas catatan itu tanpa perubahan apa pun di sini.
 
    Konsekuensinya disengaja: asisten tidak pernah mengarang. Setiap angka yang
    ditampilkan dapat ditelusuri kembali ke catatan asalnya, dan setiap klausul yang
@@ -22,9 +26,16 @@ window.KGAI = (function () {
 
   const D = window.KG;
 
-  /* Purwarupa ini berjalan pada tanggal tetap supaya seluruh perhitungan
-     umur dan sisa masa berlaku selalu konsisten dengan data contohnya. */
-  const HARI_INI = { d: 22, m: 8, y: 2026 };
+  /* Mode peragaan berjalan pada tanggal tetap supaya seluruh perhitungan umur
+     dan sisa masa berlaku selalu konsisten dengan data contohnya. Begitu
+     tersambung ke peladen, tanggalnya harus tanggal sungguhan: dokumen yang
+     dinomori dengan tanggal beku akan terbit dengan tanggal yang salah, dan
+     itu jenis kesalahan yang baru ketahuan saat audit. */
+  const HARI_INI = (function () {
+    if (!((window.KG_KONFIG || {}).api)) return { d: 22, m: 8, y: 2026 };
+    const n = new Date();
+    return { d: n.getDate(), m: n.getMonth(), y: n.getFullYear() };
+  })();
   const BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
   function tanggalId(o) { return String(o.d).padStart(2, '0') + ' ' + BULAN[o.m] + ' ' + o.y; }
@@ -53,7 +64,8 @@ window.KGAI = (function () {
 
   /* ══════════════════════ 1 · Indeks pencarian ══════════════════════
      Seluruh isi sistem diratakan menjadi satu larik catatan. Dibangun sekali
-     lalu disimpan, karena data purwarupa tidak berubah saat aplikasi berjalan. */
+     lalu disimpan. Indeks dibangun saat pertama dipakai, bukan saat berkas ini
+     dimuat, supaya ia ikut memuat data yang baru diambil dari peladen. */
 
   let IDX = null;
 
@@ -479,6 +491,19 @@ window.KGAI = (function () {
   }
 
   function indeks() { if (!IDX) IDX = bangunIndeks(); return IDX; }
+
+  /* Kalimat "batas yang perlu diketahui" pada layar asisten menyebut sumber
+     datanya. Ia harus ikut berubah saat aplikasi tersambung ke peladen:
+     menyebut data purwarupa padahal angkanya berasal dari catatan sungguhan
+     adalah keterangan yang salah pada tempat yang justru dimaksudkan untuk
+     jujur. */
+  function sumberData() {
+    return ((window.KG_KONFIG || {}).api) ? 'data sistem' : 'data purwarupa';
+  }
+
+  function sumberDataEn() {
+    return ((window.KG_KONFIG || {}).api) ? 'the system data' : 'the prototype data';
+  }
 
   /* ══════════════════════ 2 · Pencarian ══════════════════════ */
 
@@ -1422,6 +1447,8 @@ window.KGAI = (function () {
     jenisDokumen: Object.keys(SERI),
     contoh: CONTOH,
     esc: esc,
+    sumberData: sumberData,
+    sumberDataEn: sumberDataEn,
     jumlahIndeks: function () { return indeks().length; },
     jumlahIso: function () { return indeks().filter(function (r) { return r.iso; }).length; }
   };
