@@ -94,6 +94,31 @@ Setiap angka, chip, dan baris tabel dapat dibuka dan menjelaskan dirinya:
 rumusnya, sumber datanya, dan tautan ke modul asalnya. Ini bukan hiasan — ini
 yang membedakan papan angka dari alat kerja.
 
+### Tombol persetujuan dan ekspor
+
+Dua kelompok tombol hanya ada saat aplikasi tersambung ke peladen, dan tidak
+muncul sama sekali pada mode peragaan:
+
+| Tombol | Letak | Muncul bila |
+|---|---|---|
+| Ekspor | Kepala layar, di sebelah tombol utama | Modul layar itu punya ekspor dan pengguna berhak membacanya |
+| Verifikasi · Terbitkan · Sahkan · Tutup | Kaki modal rincian | Status catatan memang menunggu tindakan itu **dan** peran pengguna berwenang |
+
+Tombol yang muncul lalu ditolak setiap kali ditekan mengajari orang untuk
+mengabaikan penolakan, jadi larangan yang sudah dapat diketahui lebih awal
+dipakai untuk menyembunyikan tombolnya: penyusun JSA tidak ditawari mengesahkan
+JSA-nya sendiri, dan penanggung jawab CAPA tidak ditawari memverifikasi CAPA-nya
+sendiri (AB-17).
+
+Penolakan yang baru diketahui peladen tetap muncul sebagai kalimat lengkap
+beserta kode aturannya — misalnya *Izin tidak dapat diterbitkan: prasyarat
+"Induksi K3 vendor" belum terpenuhi. (AB-09)* — supaya "tidak boleh" tidak
+pernah tertukar dengan "sedang rusak".
+
+Unduhan ditarik lewat `fetch` dan bukan tautan biasa, karena tautan tidak dapat
+membawa token sesi. Akibat sampingannya berguna: penolakan hak akses muncul
+sebagai pesan, bukan sebagai berkas rusak yang terlanjur terunduh.
+
 ## Pola aplikasi lapangan
 
 | Pola | Aturan |

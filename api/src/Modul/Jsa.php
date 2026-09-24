@@ -23,7 +23,7 @@ final class Jsa
 
         $baris = Db::semua(
             "SELECT j.id, j.nomor, j.pekerjaan, j.jenis, j.apd_wajib, j.disusun, j.disahkan,
-                    j.tinjau, j.revisi, j.status,
+                    j.tinjau, j.revisi, j.status, j.penyusun_id,
                     a.nama AS area,
                     ps.nama AS penyusun, pt.nama AS peninjau, pg.nama AS pengesah
                FROM jsa j

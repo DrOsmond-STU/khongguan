@@ -149,14 +149,14 @@ window.KGSUMBER = (function () {
   var PETA = {
     bahaya: function (r) {
       return {
-        id: r.nomor, kategori: r.kategori, lokasi: r.area, isi: r.isi,
+        id: r.nomor, uuid: r.id, kategori: r.kategori, lokasi: r.area, isi: r.isi,
         pelapor: r.pelapor || 'Anonim', waktu: sejak(r.dibuat_pada),
         status: r.status, risiko: r.risiko
       };
     },
     insiden: function (r) {
       return {
-        id: r.nomor, jenis: r.jenis, keparahan: r.keparahan, lokasi: r.area,
+        id: r.nomor, uuid: r.id, jenis: r.jenis, keparahan: r.keparahan, lokasi: r.area,
         tanggal: r.tanggal, waktu: (r.waktu || '').slice(0, 5),
         pelapor: r.pelapor || 'Anonim', status: r.status,
         terlambat: false, ringkas: r.ringkas,
@@ -166,15 +166,15 @@ window.KGSUMBER = (function () {
     },
     capa: function (r) {
       return {
-        id: r.nomor, judul: r.judul, sumber: r.sumber_nomor, sumberJenis: r.sumber_jenis,
-        pj: r.pj, terbit: tanggalPanjang(r.terbit), tenggat: tanggalPanjang(r.tenggat),
+        id: r.nomor, uuid: r.id, judul: r.judul, sumber: r.sumber_nomor, sumberJenis: r.sumber_jenis,
+        pj: r.pj, pjId: r.pj_id, adaBukti: r.ada_bukti === true, terbit: tanggalPanjang(r.terbit), tenggat: tanggalPanjang(r.tenggat),
         umur: Number(r.umur),
         status: r.status, prioritas: r.prioritas, terlambat: r.terlambat === true
       };
     },
     izin: function (r) {
       return {
-        id: r.nomor, jenis: r.jenis_nama, ikon: ikonIzin(r.jenis), judul: r.judul,
+        id: r.nomor, uuid: r.id, jenis: r.jenis_nama, ikon: ikonIzin(r.jenis), judul: r.judul,
         pelaksana: r.pelaksana, vendor: r.vendor === true, pekerja: Number(r.pekerja),
         pengawas: r.pengawas,
         mulai: [tanggalPanjang(r.mulai), r.durasi].filter(Boolean).join(' \u00b7 '),
@@ -207,7 +207,8 @@ window.KGSUMBER = (function () {
     },
     jsa: function (r) {
       return {
-        id: r.nomor, pekerjaan: r.pekerjaan, area: r.area, jenis: r.jenis,
+        id: r.nomor, uuid: r.id, penyusunId: r.penyusun_id,
+        pekerjaan: r.pekerjaan, area: r.area, jenis: r.jenis,
         penyusun: r.penyusun || '\u2014', peninjau: r.peninjau || '\u2014',
         pengesah: r.pengesah || '\u2014',
         disusun: tanggalPanjang(r.disusun), disahkan: tanggalPanjang(r.disahkan),
@@ -261,7 +262,7 @@ window.KGSUMBER = (function () {
     },
     audit: function (r) {
       return {
-        id: r.nomor, standar: r.standar, lingkup: r.lingkup, auditor: r.auditor,
+        id: r.nomor, uuid: r.id, standar: r.standar, lingkup: r.lingkup, auditor: r.auditor,
         tanggal: rentangTanggal(r.mulai, r.selesai), status: r.status,
         temuan: { major: Number(r.major), minor: Number(r.minor), obs: Number(r.obs) }
       };
@@ -498,6 +499,195 @@ window.KGSUMBER = (function () {
     var kemarin = new Date(hariIni.getTime() - 86400000);
     if (d.toDateString() === kemarin.toDateString()) return 'Kemarin ' + jm;
     return sejak(nilai);
+  }
+
+  /* ─────────────────────────────────────────────────────────────────
+     Aksi pada rincian catatan
+
+     Di sinilah aturan bisnis benar-benar menggigit: penerbitan izin (AB-09,
+     AB-10, AB-11), penutupan kejadian (AB-03), verifikasi CAPA (AB-17), dan
+     penutupan audit (AB-18). Purwarupa tidak punya tombolnya karena tidak ada
+     yang dapat ditolaknya.
+
+     Tombol hanya muncul bila TIGA hal terpenuhi: aplikasi tersambung ke
+     peladen, peran pengguna berwenang, dan status catatannya memang menunggu
+     tindakan itu. Tombol yang muncul lalu ditolak setiap kali ditekan
+     mengajari orang untuk mengabaikan penolakan.
+     ───────────────────────────────────────────────────────────────── */
+
+  var AKSI = {
+    bahaya: [{
+      kunci: 'verifikasi', label: 'Verifikasi Laporan', modul: 'hazard', wewenang: 'verifikasi',
+      bila: function (r) { return r.status === 'Terbuka'; },
+      jalur: function (r) { return '/bahaya/' + r.uuid + '/verifikasi'; },
+      koleksi: ['bahaya']
+    }],
+    insiden: [{
+      kunci: 'tutup', label: 'Tutup Kejadian', modul: 'incident', wewenang: 'verifikasi',
+      bila: function (r) { return r.status !== 'Selesai'; },
+      jalur: function (r) { return '/insiden/' + r.uuid + '/tutup'; },
+      koleksi: ['insiden', 'capa']
+    }],
+    capa: [{
+      kunci: 'verifikasi', label: 'Verifikasi CAPA', modul: 'capa', wewenang: 'verifikasi',
+      bila: function (r) { return r.status !== 'Selesai'; },
+      jalur: function (r) { return '/capa/' + r.uuid + '/verifikasi'; },
+      /* Penanggung jawab tidak boleh menutup CAPA-nya sendiri (AB-17).
+         Tombolnya tidak ditawarkan kepadanya, bukan ditawarkan lalu ditolak. */
+      kecuali: function (r) {
+        var saya = window.KG_SAYA ? window.KG_SAYA.id : null;
+        return !!saya && r.pjId === saya;
+      },
+      /* Bukti wajib ada sebelum CAPA ditutup. Bila catatannya belum punya,
+         ia diminta di sini — bukan dibiarkan ditolak peladen tanpa
+         penjelasan. */
+      tanya: function (r) {
+        return r.adaBukti ? null : { kunci: 'bukti', label: 'Bukti penyelesaian' };
+      },
+      koleksi: ['capa', 'insiden']
+    }],
+    izin: [{
+      kunci: 'terbitkan', label: 'Terbitkan Izin', modul: 'permit', wewenang: 'verifikasi',
+      bila: function (r) { return r.status !== 'Aktif' && r.status !== 'Selesai' && r.status !== 'Ditolak'; },
+      jalur: function (r) { return '/izin/' + r.uuid + '/terbitkan'; },
+      koleksi: ['izin']
+    }],
+    jsa: [{
+      kunci: 'sahkan', label: 'Sahkan JSA', modul: 'jsa', wewenang: 'verifikasi',
+      bila: function (r) { return r.status !== 'Disahkan'; },
+      /* Penyusun tidak mengesahkan JSA-nya sendiri (AB-17), dan izin kerja
+         bersandar pada pengesahan itu (AB-09). */
+      kecuali: function (r) {
+        var saya = window.KG_SAYA ? window.KG_SAYA.id : null;
+        return !!saya && r.penyusunId === saya;
+      },
+      jalur: function (r) { return '/jsa/' + r.uuid + '/sahkan'; },
+      koleksi: ['jsa', 'izin']
+    }],
+    audit: [{
+      kunci: 'tutup', label: 'Tutup Audit', modul: 'audit', wewenang: 'verifikasi',
+      bila: function (r) { return r.status !== 'Selesai'; },
+      jalur: function (r) { return '/audit/' + r.uuid + '/tutup'; },
+      koleksi: ['audit', 'temuanAudit']
+    }]
+  };
+
+  /* Koleksi window.KG tempat mencari catatan menurut jenis rincian. */
+  var KOLEKSI_RINCIAN = {
+    bahaya: 'bahaya', insiden: 'insiden', capa: 'capa',
+    izin: 'izin', jsa: 'jsa', audit: 'audit'
+  };
+
+  function catatan(jenis, id) {
+    var nama = KOLEKSI_RINCIAN[jenis];
+    var arr = nama ? (window.KG[nama] || []) : [];
+    for (var i = 0; i < arr.length; i++) if (arr[i].id === id) return arr[i];
+    return null;
+  }
+
+  function berwenang(modul, minimal) {
+    var urut = { baca: 1, isi: 2, verifikasi: 3, kelola: 4 };
+    var punya = window.KG_SAYA && window.KG_SAYA.kewenangan
+      ? window.KG_SAYA.kewenangan[modul] : null;
+    return !!punya && urut[punya] >= urut[minimal];
+  }
+
+  /**
+   * Aksi yang boleh dilakukan atas satu catatan.
+   *
+   * @return array<{kunci,label,tanya}> — kosong bila tidak ada
+   */
+  function aksiRincian(jenis, id) {
+    if (!API || !AKSI[jenis]) return [];
+    var r = catatan(jenis, id);
+    if (!r || !r.uuid) return [];
+
+    return AKSI[jenis].filter(function (a) {
+      if (!berwenang(a.modul, a.wewenang) || !a.bila(r)) return false;
+      return !a.kecuali || !a.kecuali(r);
+    }).map(function (a) {
+      return { kunci: a.kunci, label: a.label, tanya: a.tanya ? a.tanya(r) : null };
+    });
+  }
+
+  /** Menjalankan satu aksi. Mengembalikan janji berisi pesan siap tampil. */
+  function jalankanAksi(jenis, id, kunci, isi) {
+    var r = catatan(jenis, id);
+    var def = (AKSI[jenis] || []).filter(function (a) { return a.kunci === kunci; })[0];
+    if (!r || !def) return Promise.resolve('Aksi tidak dikenal.');
+
+    return kirim(def.jalur(r), isi || {})
+      .then(function (j) {
+        var ikut = def.koleksi.slice();
+        var modul = (window.KG_SAYA && window.KG_SAYA.modul) || [];
+        if (modul.indexOf('kpi') !== -1) ikut = ikut.concat(['tren', 'kpi']);
+        if (modul.indexOf('exec') !== -1) ikut = ikut.concat(['eksekutif']);
+        if (modul.indexOf('notif') !== -1) ikut = ikut.concat(['notifikasi']);
+        return segarkan(ikut).then(function () {
+          var st = j.data && j.data.status ? ' ' + j.data.status + '.' : '.';
+          return id + st;
+        });
+      })
+      .catch(function (e) {
+        /* Penolakan aturan membawa kodenya. Itu yang membedakan "tidak boleh"
+           dari "sedang rusak". */
+        return e.aturan ? e.message + ' (' + e.aturan + ')' : 'Gagal: ' + e.message;
+      });
+  }
+
+  /* ─────────────────────────────────────────────────────────────────
+     Ekspor
+     ───────────────────────────────────────────────────────────────── */
+
+  /* Modul → kode ekspor pada peladen. */
+  var EKSPOR = {
+    hazard: 'bahaya', incident: 'insiden', capa: 'capa', permit: 'izin',
+    hiradc: 'hiradc', bbs: 'observasi-apd', regulasi: 'regulasi',
+    docext: 'dokumen-eksternal', induksi: 'induksi'
+  };
+
+  function ekspor(modul) {
+    if (!API || !EKSPOR[modul]) return null;
+    return berwenang(modul, 'baca') ? EKSPOR[modul] : null;
+  }
+
+  /**
+   * Mengunduh berkas ekspor.
+   *
+   * Lewat fetch, bukan tautan biasa: unduhan membawa token sesi, dan tautan
+   * <a> tidak dapat menyertakannya. Sekaligus membuat penolakan hak akses
+   * terlihat sebagai pesan, bukan sebagai berkas rusak yang terunduh.
+   */
+  function unduh(kode, bentuk) {
+    if (!API || !kode) return Promise.resolve('Ekspor tidak tersedia.');
+    var t = token();
+    return fetch(API + '/api/v1/ekspor/' + kode + '/' + bentuk, {
+      headers: t ? { 'Authorization': 'Bearer ' + t } : {}
+    }).then(function (r) {
+      if (r.status === 401) { sesiPutus(); throw new Error('sesi berakhir'); }
+      if (!r.ok) {
+        return r.json().then(function (j) {
+          throw new Error((j.galat && j.galat.pesan) || ('HTTP ' + r.status));
+        });
+      }
+      var nama = 'KG-' + kode + '-' + hariIni() + (bentuk === 'xlsx' ? '.xlsx' : '.html');
+      return r.blob().then(function (b) {
+        var url = URL.createObjectURL(b);
+        if (bentuk === 'cetak') {
+          window.open(url, '_blank');
+        } else {
+          var a = document.createElement('a');
+          a.href = url; a.download = nama;
+          document.body.appendChild(a); a.click(); a.remove();
+        }
+        /* Alamat objek dilepas setelah peramban sempat memakainya; tanpa ini
+           setiap unduhan menyisakan berkasnya di memori tab. */
+        setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+        return bentuk === 'xlsx' ? 'Berkas Excel terunduh.' : 'Halaman cetak dibuka di tab baru.';
+      });
+    }).catch(function (e) {
+      return 'Ekspor gagal: ' + e.message;
+    });
   }
 
   /* ─────────────────────────────────────────────────────────────────
@@ -983,6 +1173,8 @@ window.KGSUMBER = (function () {
 
   return {
     ambil: ambil, kirim: kirim, token: token, simpanToken: simpanToken, api: API,
-    masuk: masuk, simpan: simpan, tersambung: function () { return !!API; }
+    masuk: masuk, simpan: simpan, tersambung: function () { return !!API; },
+    aksiRincian: aksiRincian, jalankanAksi: jalankanAksi,
+    ekspor: ekspor, unduh: unduh
   };
 })();

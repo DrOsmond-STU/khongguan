@@ -250,9 +250,19 @@
         </div>
         ${o.metric ? `<div class="hero-metric"><div class="num">${o.metric}</div>
           <div class="lbl">${o.metricLabel}</div></div>` : ''}
+        ${eksporHero()}
         ${o.action ? `<div><button class="btn btn--hero" data-act="${o.action.act}">${I(icon[o.action.icon], 18)}${o.action.label}</button></div>` : ''}
       </div>
     </header>`;
+
+  /* Tombol ekspor hanya muncul saat aplikasi tersambung ke peladen dan modul
+     layar ini memang punya ekspor. Purwarupa tidak mengunduh apa pun, dan
+     tombol yang tidak menghasilkan berkas lebih buruk daripada tanpa tombol. */
+  const eksporHero = () => {
+    const kode = window.KGSUMBER && window.KGSUMBER.ekspor ? window.KGSUMBER.ekspor(current) : null;
+    return kode ? `<div><button class="btn btn--onhero" data-ekspor="${kode}">${
+      I(icon.download, 18)}Ekspor</button></div>` : '';
+  };
 
   const filters = (list, active) => list.map((f, i) =>
     `<button class="pill" data-filter="${f}" aria-pressed="${f === active}">${f}</button>`).join('');
@@ -3672,6 +3682,38 @@
 
   /* ───────── Modal ───────── */
 
+  /*
+   * Tombol persetujuan pada rincian catatan.
+   *
+   * Di sinilah aturan bisnis bekerja: penerbitan izin, penutupan kejadian,
+   * verifikasi CAPA, pengesahan JSA. Daftar tombolnya disusun di sumber.js
+   * berdasarkan status catatan dan kewenangan pengguna, jadi yang tampil di
+   * sini sudah pasti boleh ditekan. Saat aplikasi memakai data purwarupa,
+   * daftarnya kosong dan kaki modal tetap seperti semula.
+   */
+  function tombolTindakan(o) {
+    if (!o.tindakan || !o.tindakan.length) return '';
+    return o.tindakan.map(function (a) {
+      return '<button class="btn btn--primary" data-jalankan="' + a.kunci
+        + '" data-jenis="' + o.jenis + '" data-catatan="' + o.idCatatan + '"'
+        + (a.tanya ? ' data-tanya="f-' + a.tanya.kunci + '" data-isi="' + a.tanya.kunci + '"' : '')
+        + '>' + a.label + '</button>';
+    }).join('');
+  }
+
+  /* Isian yang harus dilengkapi sebelum aksinya dijalankan — bukti
+     penyelesaian CAPA, misalnya. */
+  function bidangTanya(tindakan) {
+    if (!tindakan || !tindakan.length) return '';
+    return tindakan.filter(function (a) { return a.tanya; }).map(function (a) {
+      return '<div class="field" style="margin-top:var(--space-5)">'
+        + '<label for="f-' + a.tanya.kunci + '">' + a.tanya.label
+        + ' <span class="req">*</span></label>'
+        + '<input id="f-' + a.tanya.kunci + '" type="text"'
+        + ' placeholder="Apa yang diperiksa dan apa hasilnya"></div>';
+    }).join('');
+  }
+
   function openModal(o) {
     const host = document.getElementById('modal-host');
     host.innerHTML = KGI18N.tr([
@@ -3684,10 +3726,15 @@
       '      </div>',
       '      <button class="icon-btn" data-close aria-label="Tutup">' + I(icon.close, 18) + '</button>',
       '    </div>',
-      '    <div class="modal-body">' + o.body + '</div>',
+      '    <div class="modal-body">' + o.body + bidangTanya(o.tindakan) + '</div>',
       '    <div class="modal-foot">',
       (o.autosave ? '<span class="autosave">Draf tersimpan 08:42</span>' : ''),
       '      <button class="btn btn--ghost" data-close>' + (o.ok ? 'Batal' : 'Tutup') + '</button>',
+      tombolTindakan(o),
+      (o.unduh ? '<button class="btn btn--secondary" data-unduh="' + o.unduh + '" data-bentuk="cetak">'
+        + 'Halaman cetak</button>'
+        + '<button class="btn btn--primary" data-unduh="' + o.unduh + '" data-bentuk="xlsx">'
+        + 'Berkas Excel</button>' : ''),
       (o.goto ? '<button class="btn btn--primary" data-goto="' + o.goto + '">' + (o.gotoLabel || 'Buka modul') + '</button>' : ''),
       (o.ok ? '<button class="btn btn--primary" data-submit="' + (o.toast || '') + '"'
         + ' data-aksi="' + (o.aksi || '') + '">' + o.ok + '</button>' : ''),
@@ -3795,6 +3842,49 @@
       return;
     }
 
+    const jalankan = e.target.closest('[data-jalankan]');
+    if (jalankan) {
+      /* Isian dibaca sebelum modal ditutup, dan dicek di sini supaya
+         kekurangannya terlihat sebagai kalimat, bukan sebagai penolakan
+         peladen setelah modal hilang. */
+      const isi = {};
+      if (jalankan.dataset.tanya) {
+        const bidang = document.getElementById(jalankan.dataset.tanya);
+        const teks = bidang ? bidang.value.trim() : '';
+        if (!teks) { toast('Bukti penyelesaian harus diisi lebih dulu.'); return; }
+        isi[jalankan.dataset.isi] = teks;
+      }
+      const d = jalankan.dataset;
+      closeModal();
+      if (window.KGSUMBER && window.KGSUMBER.jalankanAksi) {
+        window.KGSUMBER.jalankanAksi(d.jenis, d.catatan, d.jalankan, isi).then(toast);
+      }
+      return;
+    }
+
+    const ekspor = e.target.closest('[data-ekspor]');
+    if (ekspor) {
+      const kode = ekspor.dataset.ekspor;
+      openModal({
+        title: 'Ekspor data', sub: 'Berkas dibuat dari data yang sedang Anda lihat',
+        body: lead('Pilih bentuk berkasnya')
+          + '<div class="field"><span class="hint">Berkas Excel untuk diolah lebih lanjut; '
+          + 'halaman cetak untuk ditandatangani dan diarsipkan. Keduanya berisi data sesuai '
+          + 'cakupan pabrik Anda.</span></div>',
+        tindakan: [], jenis: '', idCatatan: '',
+        unduh: kode
+      });
+      return;
+    }
+
+    const unduh = e.target.closest('[data-unduh]');
+    if (unduh) {
+      const d = unduh.dataset;
+      closeModal();
+      if (window.KGSUMBER && window.KGSUMBER.unduh) window.KGSUMBER.unduh(d.unduh, d.bentuk).then(toast);
+      return;
+    }
+
     const pick = e.target.closest('[data-pick]');
     if (pick) {
       const sibs = pick.parentElement.querySelectorAll('[data-pick]');
@@ -3817,7 +3907,11 @@
     if (row) {
       const parts = row.dataset.detail.split(':');
       const d = detail(parts[0], parts[1]);
-      if (d) openModal(d);
+      if (d) openModal(Object.assign({
+        jenis: parts[0], idCatatan: parts[1],
+        tindakan: window.KGSUMBER && window.KGSUMBER.aksiRincian
+          ? window.KGSUMBER.aksiRincian(parts[0], parts[1]) : []
+      }, d));
       return;
     }
 

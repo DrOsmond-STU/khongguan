@@ -149,6 +149,77 @@ const tok = await token();
   await ctx.close();
 }
 
+/* ── Persetujuan dan ekspor lewat antarmuka ─────────────────────────── */
+{
+  rute = 'tindakan/verifikasi+ekspor';
+  const ctx = await peramban.newContext({ viewport: { width: 1440, height: 1000 }, acceptDownloads: true });
+  await ctx.addInitScript(([a, e, t]) => {
+    window.KG_KONFIG = { api: a, versi: '4' };
+    try {
+      localStorage.setItem('kg-session', e);
+      localStorage.setItem('kg-token', t);
+    } catch (x) {}
+  }, [ALAMAT, AKUN, tok]);
+  const p = await ctx.newPage();
+  p.on('pageerror', (e) => catat('tindakan', e.message));
+  p.on('console', (m) => { if (m.type() === 'error') catat('tindakan konsol', m.text()); });
+
+  await p.goto(`${ALAMAT}/#/hazard`, { waitUntil: 'domcontentloaded' });
+  await p.reload({ waitUntil: 'domcontentloaded' });
+  await p.waitForTimeout(1200);
+
+  // Satu laporan yang memang masih menunggu verifikasi.
+  const nomor = await p.evaluate(() => {
+    const b = (window.KG.bahaya || []).filter((x) => x.status === 'Terbuka')[0];
+    return b ? b.id : null;
+  });
+
+  if (!nomor) {
+    catat('tindakan', 'tidak ada laporan bahaya berstatus Terbuka untuk diverifikasi');
+  } else {
+    const baris = await p.$(`[data-detail="bahaya:${nomor}"]`);
+    if (!baris) {
+      catat('tindakan', `baris rincian untuk ${nomor} tidak ditemukan`);
+    } else {
+      await baris.click();
+      await p.waitForTimeout(400);
+      const tombol = await p.$('[data-jalankan="verifikasi"]');
+      if (!tombol) {
+        catat('tindakan', `modal ${nomor} tidak menawarkan tombol verifikasi`);
+      } else {
+        await tombol.click();
+        await p.waitForTimeout(2200);
+        const status = await p.evaluate((n) => {
+          const b = (window.KG.bahaya || []).filter((x) => x.id === n)[0];
+          return b ? b.status : null;
+        }, nomor);
+        if (status !== 'Diverifikasi') {
+          catat('tindakan', `${nomor} tidak berubah menjadi Diverifikasi (sekarang: ${status})`);
+        }
+      }
+    }
+  }
+
+  // Ekspor: tombolnya ada, dan berkasnya benar-benar turun.
+  const ekspor = await p.$('[data-ekspor]');
+  if (!ekspor) {
+    catat('tindakan', 'layar Laporan Bahaya tidak punya tombol ekspor saat tersambung');
+  } else {
+    await ekspor.click();
+    await p.waitForTimeout(400);
+    const [unduhan] = await Promise.all([
+      p.waitForEvent('download', { timeout: 15000 }).catch(() => null),
+      p.click('[data-unduh][data-bentuk="xlsx"]'),
+    ]);
+    if (!unduhan) {
+      catat('tindakan', 'menekan Berkas Excel tidak menghasilkan unduhan');
+    } else if (!/\.xlsx$/.test(unduhan.suggestedFilename())) {
+      catat('tindakan', `nama berkas unduhan tidak berakhiran .xlsx: ${unduhan.suggestedFilename()}`);
+    }
+  }
+  await ctx.close();
+}
+
 /* ── Aplikasi lapangan ──────────────────────────────────────────────── */
 {
   rute = '/m/';
@@ -180,5 +251,5 @@ if (galat.length) {
   galat.forEach((g) => console.error('  · ' + g));
   process.exit(1);
 }
-console.log(`\u001b[32m${RUTE.length + 5} layar dibuka dengan data sungguhan, dan satu laporan`
-  + ` ditulis lewat formulir — tanpa galat.\u001b[0m`);
+console.log(`\u001b[32m${RUTE.length + 6} layar dibuka dengan data sungguhan; satu laporan ditulis`
+  + ` lewat formulir, satu diverifikasi, dan satu berkas ekspor diunduh — tanpa galat.\u001b[0m`);

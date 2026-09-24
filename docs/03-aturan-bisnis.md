@@ -62,7 +62,16 @@ sebagai bukti audit.
 berstatus Disahkan. JSA berstatus Draf atau Menunggu Pengesahan tidak dapat
 dilampirkan.
 
-**Alasan.** Izin yang terbit dengan JSA draf adalah temuan audit.
+Prasyarat izin yang sudah ditandai **belum terpenuhi** juga menutup
+penerbitan, dan pesannya menyebut prasyarat mana. Prasyarat yang belum
+diperiksa sama sekali tidak menahan: itu pemeriksaan yang dilakukan di lokasi
+saat pekerjaan dimulai (APAR terpasang, blower menyala), bukan di meja saat
+penerbitan.
+
+**Alasan.** Izin yang terbit dengan JSA draf adalah temuan audit. Dan kartu
+izin yang memasang tanda silang pada "Uji gas belum ada" lalu tetap dapat
+diterbitkan mengajari pengawas untuk mengabaikan tanda merahnya — persis pada
+prasyarat yang paling mahal bila diabaikan.
 
 ### AB-10 · Zona Ekstrem menutup penerbitan
 

@@ -26,7 +26,8 @@ final class Capa
 
         $baris = Db::semua(
             "SELECT c.id, c.nomor, c.judul, c.sumber_jenis, c.sumber_nomor, c.terbit, c.tenggat,
-                    c.prioritas, c.status, pj.nama AS pj,
+                    c.prioritas, c.status, pj.nama AS pj, c.pj_id,
+                    (c.bukti IS NOT NULL) AS ada_bukti,
                     (current_date - c.terbit) AS umur,
                     (c.tenggat < current_date AND c.status <> 'Selesai') AS terlambat
                FROM capa c JOIN pengguna pj ON pj.id = c.pj_id

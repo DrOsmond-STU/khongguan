@@ -108,6 +108,42 @@ uji('UJ-06', 'AB-11 · izin bagi pemegang kartu induksi kedaluwarsa ditolak', fu
     sama('AB-11', $t['galat']['aturan'] ?? null, 'kode aturan');
 });
 
+uji('UJ-06c', 'AB-09 · prasyarat yang ditandai merah di layar menutup penerbitan',
+    function () use ($D, $T) {
+    // Kartu izin memasang tanda silang pada prasyarat yang belum terpenuhi.
+    // Bila penerbitan tetap lolos, tanda merah itu kehilangan artinya, dan
+    // pengawas belajar mengabaikannya — termasuk saat yang merah adalah uji
+    // gas sebelum masuk ruang terbatas.
+    $z = panggil('POST', '/izin', [
+        'area_id' => $D['area_cbt'], 'jenis' => 'ruang-terbatas', 'judul' => 'Pembersihan tangki',
+        'pengawas' => 'Budi Santoso', 'jsa_id' => $D['jsa_aman'],
+        'pelaksana' => 'Agus Prasetyo', 'pelaksana_id' => $D['operator'],
+        'prasyarat' => [
+            ['t' => 'JSEA lengkap', 'ok' => true],
+            ['t' => 'Uji gas O2/LEL/H2S', 'ok' => false],
+            ['t' => 'Blower 15 menit sebelum masuk', 'ok' => null],
+        ],
+    ], $T['qhse']);
+    $t = panggil('POST', '/izin/' . $z['data']['id'] . '/terbitkan', [], $T['qhse']);
+    sama(409, $t['status'], 'status');
+    sama('AB-09', $t['galat']['aturan'] ?? null, 'kode aturan');
+    benar(str_contains($t['galat']['pesan'], 'Uji gas'), 'pesan menyebut prasyarat yang menahan');
+
+    // Prasyarat yang diperiksa di lokasi (null) tidak boleh ikut menahan:
+    // kalau ikut, tidak ada satu izin pun yang dapat terbit dari meja.
+    $z2 = panggil('POST', '/izin', [
+        'area_id' => $D['area_cbt'], 'jenis' => 'ruang-terbatas', 'judul' => 'Pembersihan tangki lanjutan',
+        'pengawas' => 'Budi Santoso', 'jsa_id' => $D['jsa_aman'],
+        'pelaksana' => 'Agus Prasetyo', 'pelaksana_id' => $D['operator'],
+        'prasyarat' => [
+            ['t' => 'JSEA lengkap', 'ok' => true],
+            ['t' => 'Blower 15 menit sebelum masuk', 'ok' => null],
+        ],
+    ], $T['qhse']);
+    $t2 = panggil('POST', '/izin/' . $z2['data']['id'] . '/terbitkan', [], $T['qhse']);
+    sama(200, $t2['status'], 'izin dengan prasyarat lokasi tetap terbit');
+});
+
 uji('UJ-06b', 'AB-09/10/11 · izin yang memenuhi ketiganya terbit', function () use ($D, $T) {
     $z = panggil('POST', '/izin', [
         'area_id' => $D['area_cbt'], 'jenis' => 'panas', 'judul' => 'Pekerjaan panas terkendali',
@@ -1204,6 +1240,28 @@ uji('UJ-64b', 'Aksara kendali tidak merusak berkas xlsx', function () {
     $zip->close();
     @unlink($berkas);
     benar(simplexml_load_string($lembar) !== false, 'XML tetap sah');
+});
+
+uji('UJ-65', 'Daftar membawa bekal yang dibutuhkan tombol persetujuan', function () use ($T) {
+    // Tombol verifikasi di layar dibangun dari kolom-kolom ini: tanpa id,
+    // alamat tindakannya tidak dapat disusun; tanpa penyusun_id dan pj_id,
+    // larangan menyetujui pekerjaan sendiri (AB-17) tidak dapat ditegakkan
+    // lebih awal dan orang menekan tombol yang pasti ditolak.
+    $wajib = [
+        '/bahaya'  => ['id'],
+        '/insiden' => ['id'],
+        '/izin'    => ['id'],
+        '/audit'   => ['id'],
+        '/jsa'     => ['id', 'penyusun_id'],
+        '/capa'    => ['id', 'pj_id', 'ada_bukti'],
+    ];
+    foreach ($wajib as $jalur => $kolom) {
+        $d = panggil('GET', $jalur, [], $T['qhse'])['data'];
+        benar(count($d) > 0, "$jalur berisi data");
+        foreach ($kolom as $k) {
+            benar(array_key_exists($k, $d[0]), "$jalur membawa $k");
+        }
+    }
 });
 
 uji('UJ-54', 'Bentuk nomor mengikuti purwarupa', function () {

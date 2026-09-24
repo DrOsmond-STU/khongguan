@@ -50,6 +50,28 @@ final class Aturan
                 ['izin' => $izin['nomor'], 'jsa' => $jsa['nomor'] ?? null, 'status_jsa' => $jsa['status'] ?? null]);
         }
 
+        // Prasyarat yang layarnya sudah tandai merah tidak boleh lolos di sini.
+        //
+        // Sebelum ada tombol penerbitan, celah ini tidak terlihat: tidak ada
+        // yang dapat menerbitkan izin dari antarmuka. Begitu tombolnya ada,
+        // kartu izin memasang tanda silang pada "Induksi K3 vendor" atau "Uji
+        // gas belum ada", lalu sistem menerbitkannya juga — persis bentuk
+        // kegagalan yang membuat orang berhenti mempercayai tanda merahnya.
+        //
+        // Yang bernilai null sengaja dibiarkan lewat: itu prasyarat yang
+        // diperiksa di lokasi pada saat pekerjaan dimulai (APAR terpasang,
+        // blower menyala), bukan di meja saat penerbitan.
+        $prasyarat = json_decode(
+            (string) Db::nilai('SELECT prasyarat FROM izin WHERE id = :i', [':i' => $izinId]), true
+        ) ?: [];
+        foreach ($prasyarat as $syarat) {
+            if (($syarat['ok'] ?? null) === false) {
+                throw Galat::aturan('AB-09',
+                    'Izin tidak dapat diterbitkan: prasyarat "' . $syarat['t'] . '" belum terpenuhi.',
+                    ['izin' => $izin['nomor'], 'prasyarat' => $syarat['t']]);
+            }
+        }
+
         // Satu langkah di zona Ekstrem sudah cukup untuk menutup penerbitan.
         // Pesan menyebutkan langkah mana, supaya penyusun JSA tahu apa yang
         // harus diperbaiki, bukan sekadar tahu ditolak.
