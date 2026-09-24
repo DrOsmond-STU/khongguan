@@ -175,7 +175,11 @@ window.KGSUMBER = (function () {
     observasi: function (r) {
       return {
         id: r.nomor, observer: r.pengamat, area: r.area, tanggal: tanggalPanjang(r.tanggal),
-        aman: Number(r.aman), berisiko: Number(r.berisiko), kategori: r.kategori,
+        aman: Number(r.aman), berisiko: Number(r.berisiko),
+        /* Observasi yang seluruh perilakunya aman tidak punya kategori temuan;
+           purwarupa menulisnya "\u2014". Dibiarkan null, app.js memanggil
+           toUpperCase() padanya dan layarnya berhenti tergambar. */
+        kategori: r.kategori || '\u2014',
         catatan: r.catatan, tindakan: r.tindakan || ''
       };
     },

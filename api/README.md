@@ -54,6 +54,23 @@ konfigurasinya sendiri alih-alih membaca `config.php`. Dua penjagaan itu ada
 karena sebabnya pernah terjadi: `config.php` mengalahkan peubah lingkungan,
 sehingga menjalankan uji menyiapkan ulang skema pada basis data pengembangan.
 
+### Uji asap antarmuka
+
+```bash
+node uji/layar.mjs                   # peladen harus sudah berjalan
+```
+
+Membuka 30 layar — seluruh rute aplikasi meja dan kelima tab aplikasi
+lapangan — terhadap data sungguhan, dan gagal bila ada satu saja galat
+JavaScript atau layar yang tergambar nyaris kosong.
+
+Ia ada karena satu kejadian: kolom `observasi.kategori` dibuat boleh kosong,
+keputusan yang benar karena observasi yang seluruh perilakunya aman memang
+tidak punya kategori temuan. Tetapi `app.js` memanggil `toUpperCase()`
+padanya, dan layar Observasi Perilaku berhenti tergambar. Ke-84 uji peladen
+tetap lulus, dan perbandingan piksel tetap identik — keduanya menguji mode
+peragaan. Hanya membuka layarnya dengan data sungguhan yang menemukannya.
+
 ## Susunan
 
 ```
