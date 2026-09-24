@@ -13,7 +13,18 @@
 
 BEGIN;
 
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+-- gen_random_uuid() adalah bagian inti PostgreSQL sejak versi 13, jadi
+-- pgcrypto tidak diperlukan. Sebelumnya berkas ini memasangnya, dan itu
+-- membuat pemasangan gagal pada hosting bersama yang tidak menyediakan
+-- ekstensi tambahan sama sekali — ketergantungan yang tidak pernah dipakai,
+-- tetapi cukup untuk menghentikan seluruh pemasangan.
+DO $syarat$
+BEGIN
+  IF current_setting('server_version_num')::int < 130000 THEN
+    RAISE EXCEPTION 'Perlu PostgreSQL 13 atau lebih baru; gen_random_uuid() belum ada di versi ini.';
+  END IF;
+END
+$syarat$;
 
 -- ═══════════════════════════════════════════════════════════════════
 -- Acuan
