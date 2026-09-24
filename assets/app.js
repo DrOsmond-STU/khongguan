@@ -3614,6 +3614,10 @@
     loginError(null);
     session = u;
     saveSession(u.email, remember);
+    /* Sesi peladen dibuka di belakang layar. Kegagalannya tidak menahan
+       siapa pun masuk: layar masuk yang menolak karena peladen sedang
+       bermasalah menghentikan pekerjaan seluruh pabrik. */
+    if (window.KGSUMBER && window.KGSUMBER.masuk) window.KGSUMBER.masuk(u.email);
     showApp();
     const start = firstAllowed();
     if (location.hash === '#/' + start) route(); else location.hash = '#/' + start;
@@ -3685,7 +3689,8 @@
       (o.autosave ? '<span class="autosave">Draf tersimpan 08:42</span>' : ''),
       '      <button class="btn btn--ghost" data-close>' + (o.ok ? 'Batal' : 'Tutup') + '</button>',
       (o.goto ? '<button class="btn btn--primary" data-goto="' + o.goto + '">' + (o.gotoLabel || 'Buka modul') + '</button>' : ''),
-      (o.ok ? '<button class="btn btn--primary" data-submit="' + (o.toast || '') + '">' + o.ok + '</button>' : ''),
+      (o.ok ? '<button class="btn btn--primary" data-submit="' + (o.toast || '') + '"'
+        + ' data-aksi="' + (o.aksi || '') + '">' + o.ok + '</button>' : ''),
       '    </div>',
       '  </div>',
       '</div>'
@@ -3772,7 +3777,17 @@
     if (closeBtn && (e.target === closeBtn || closeBtn.tagName === 'BUTTON')) { closeModal(); return; }
 
     const submit = e.target.closest('[data-submit]');
-    if (submit) { closeModal(); if (submit.dataset.submit) toast(submit.dataset.submit); return; }
+    if (submit) {
+      /* Isian dibaca SEBELUM modal ditutup; setelah ditutup isinya hilang.
+         Pada mode peragaan simpan() mengembalikan null dan perilakunya persis
+         seperti semula: pesan bernomor tetap, tanpa peladen di belakangnya. */
+      const tersimpan = window.KGSUMBER && window.KGSUMBER.simpan
+        ? window.KGSUMBER.simpan(submit.dataset.aksi || '') : null;
+      closeModal();
+      if (tersimpan) { tersimpan.then(toast); return; }
+      if (submit.dataset.submit) toast(submit.dataset.submit);
+      return;
+    }
 
     const pick = e.target.closest('[data-pick]');
     if (pick) {
@@ -3783,7 +3798,7 @@
     }
 
     const act = e.target.closest('[data-act]');
-    if (act) { const a = ACTIONS[act.dataset.act]; if (a) openModal(Object.assign({ autosave: true }, a)); return; }
+    if (act) { const a = ACTIONS[act.dataset.act]; if (a) openModal(Object.assign({ autosave: true, aksi: act.dataset.act }, a)); return; }
 
     const goto = e.target.closest('[data-goto]');
     if (goto && VIEWS[goto.dataset.goto]) {

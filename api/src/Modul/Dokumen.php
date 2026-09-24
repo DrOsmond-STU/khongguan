@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace KG\Modul;
 
-use KG\{Aturan, Db, Galat, Jawab, Jejak, Permintaan, Sesi, Wewenang};
+use KG\{Aturan, Db, Galat, Jawab, Jejak, Nomor, Permintaan, Sesi, Wewenang};
 
 /** Modul 13/14 · Dokumen internal dan eksternal. */
 final class Dokumen
@@ -60,13 +60,15 @@ final class Dokumen
         Wewenang::wajibCakupan($u, $pabrik);
 
         $hasil = Db::transaksi(function () use ($p, $u, $pabrik, $status, $tinjau) {
-            $kode = $p->wajibTeks('kode');
+            $jenis = (string) $p->isi('jenis', 'Prosedur');
+            $kode  = (string) $p->isi('kode', '');
+            if ($kode === '') $kode = Nomor::dokumenInternal($jenis);
             $id = (string) Db::nilai(
                 'INSERT INTO dokumen_internal (kode, pabrik_id, level, jenis, judul, revisi,
                                                terbit, tinjau, pemilik, status, dibuat_oleh, diubah_oleh)
                  VALUES (:k, :pb, :lv, :j, :jd, :rv, :tb, :tj, :pm, :st, :o, :o) RETURNING id',
                 [':k' => $kode, ':pb' => $pabrik, ':lv' => (int) $p->isi('level', 3),
-                 ':j' => (string) $p->isi('jenis', 'Prosedur'), ':jd' => $p->wajibTeks('judul'),
+                 ':j' => $jenis, ':jd' => $p->wajibTeks('judul'),
                  ':rv' => (int) $p->isi('revisi', 0),
                  ':tb' => (string) $p->isi('terbit', date('Y-m-d')), ':tj' => $tinjau,
                  ':pm' => (string) $p->isi('pemilik', $u['nama']), ':st' => $status, ':o' => $u['id']]

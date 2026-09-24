@@ -258,6 +258,35 @@ mengambil apa keluar dari sistem.
 > pun. Menambahkannya mengubah tampilan, jadi ia menunggu keputusan. Alamat di
 > atas sudah berjalan hari ini.
 
+## Formulir benar-benar menulis
+
+Purwarupa menampilkan pesan bernomor tetap saat formulir dikirim — tidak ada
+yang tersimpan, karena tidak ada peladen di belakangnya. Lima belas formulir
+kini menulis sungguhan dan menampilkan nomor dari peladen:
+
+| Formulir | Endpoint | Formulir | Endpoint |
+|---|---|---|---|
+| Lapor Bahaya | `POST /bahaya` | Susun JSA | `POST /jsa` |
+| Lapor Insiden | `POST /insiden` | Jadwalkan Induksi | `POST /induksi` |
+| Observasi APD | `POST /observasi-apd` | Tambah Regulasi | `POST /regulasi` |
+| Observasi Perilaku | `POST /observasi` | Mulai Inspeksi | `POST /inspeksi` |
+| Aktivitas HIRADC | `POST /hiradc` | Mulai Checklist | `POST /checklist` |
+| Risiko Baru | `POST /risiko` | Ajukan Izin Kerja | `POST /izin` |
+| Unggah Kegiatan | `POST /kegiatan` | Jadwal Pelatihan | `POST /pelatihan` |
+| Terbitkan Dokumen | `POST /dokumen/internal` | | |
+
+Pembacaan formulir ada di `assets/sumber.js`, bukan di `app.js`: itulah lapisan
+yang tahu bentuk yang diminta peladen, dan `app.js` tetap tidak tahu-menahu
+soal peladen. Pada mode peragaan jalurnya mengembalikan null dan perilakunya
+persis seperti purwarupa.
+
+Setelah menyimpan, koleksi yang berubah dimuat ulang beserta tren, KPI, dan
+dashboard eksekutif — papan yang menunjukkan sembilan sementara grafiknya masih
+delapan membuat orang ragu simpanannya berhasil.
+
+Penolakan aturan sampai ke pengisi lengkap dengan kode aturannya, bukan sekadar
+"gagal menyimpan".
+
 ## Kosakata mengikuti purwarupa
 
 Nilai status, kategori, dan jenis ditulis **persis** seperti purwarupa —

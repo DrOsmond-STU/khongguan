@@ -542,11 +542,17 @@ SELECT awalan, tahun, nilai FROM (VALUES
   ('APD', 2026, ${Math.max(...K.observasiAPD.map(x => +x.id.slice(-4)))}),
   ('OBS', 2026, ${Math.max(...K.observasi.map(x => +x.id.slice(-4)))}),
   ('CAPA',2026, ${Math.max(...K.capa.map(x => +x.id.slice(-4)))}),
+  ('REG', 0,    ${Math.max(...K.regulasi.map(x => +x.id.slice(-3)))}),
+  ('KGM', 0,    ${Math.max(...K.dokInternal.filter(d => d.id.startsWith('KGM')).map(x => +x.id.slice(-2)), 0)}),
+  ('KGK', 0,    ${Math.max(...K.dokInternal.filter(d => d.id.startsWith('KGK')).map(x => +x.id.slice(-2)), 0)}),
+  ('KGP', 0,    ${Math.max(...K.dokInternal.filter(d => d.id.startsWith('KGP')).map(x => +x.id.slice(-2)), 0)}),
+  ('KGI', 0,    ${Math.max(...K.dokInternal.filter(d => d.id.startsWith('KGI')).map(x => +x.id.slice(-2)), 0)}),
+  ('KGF', 0,    ${Math.max(...K.dokInternal.filter(d => d.id.startsWith('KGF')).map(x => +x.id.slice(-2)), 0)}),
   ('INS', 2026, ${Math.max(...K.inspeksi.map(x => +x.id.slice(-4)))}),
   ('CHK', 2026, ${Math.max(...K.checklistHarian.map(x => +x.id.slice(-4)))}),
   ('AUD', 2026, ${Math.max(...K.audit.map(x => +x.id.slice(-3)))}),
   ('AF',  2026, ${Math.max(...K.temuanAudit.map(x => +x.id.slice(-3)))}),
-  ('RSK', 0,    ${Math.max(...K.risikoRegister.map(x => +x.id.slice(-3)))}),
+  ('RSK', 2026, ${Math.max(...K.risikoRegister.map(x => +x.id.slice(-3)))}),
   ('TRN', 2026, ${Math.max(...K.pelatihan.map(x => +x.id.slice(-3)))}),
   ('ACT', 2026, ${Math.max(...K.kegiatan.map(x => +x.id.slice(-3)))})
 ) AS v(awalan, tahun, nilai)

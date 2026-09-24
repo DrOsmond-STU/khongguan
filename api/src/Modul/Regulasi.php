@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace KG\Modul;
 
-use KG\{Aturan, Db, Jawab, Jejak, Permintaan, Sesi, Wewenang};
+use KG\{Aturan, Db, Jawab, Jejak, Nomor, Permintaan, Sesi, Wewenang};
 
 /**
  * Modul 17 · Regulasi K3.
@@ -45,7 +45,11 @@ final class Regulasi
         Wewenang::wajibCakupan($u, $pabrik);
 
         $hasil = Db::transaksi(function () use ($p, $u, $pabrik, $status, $bukti) {
-            $kode = $p->wajibTeks('kode');
+            // Kode dibangkitkan peladen bila klien tidak menyebutnya. Kode
+            // yang dibuat klien tidak dapat dijamin unik maupun berurutan,
+            // dan daftar peraturan dibaca menurut kodenya.
+            $kode = (string) $p->isi('kode', '');
+            if ($kode === '') $kode = Nomor::berikut('regulasi');
             $id = (string) Db::nilai(
                 'INSERT INTO regulasi (kode, pabrik_id, nomor, judul, penerbit, bidang, pasal,
                                        penerapan, bukti, pj_id, evaluasi, status,

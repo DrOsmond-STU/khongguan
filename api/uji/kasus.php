@@ -1206,6 +1206,65 @@ uji('UJ-64b', 'Aksara kendali tidak merusak berkas xlsx', function () {
     benar(simplexml_load_string($lembar) !== false, 'XML tetap sah');
 });
 
+uji('UJ-54', 'Bentuk nomor mengikuti purwarupa', function () {
+    // Nomor tampil dibaca dan diucapkan orang; bentuk yang berubah memutus
+    // rujukan pada laporan, surel, dan berkas lama.
+    $bentuk = [
+        'insiden'       => '/^INC-\d{4}-\d{4}$/',
+        'bahaya'        => '/^HZ-\d{4}-\d{4}$/',
+        'izin'          => '/^WP-\d{4}-\d{4}$/',
+        'jsa'           => '/^JSA-\d{4}-\d{3}$/',
+        'hiradc'        => '/^HRD-\d{3}$/',
+        'risiko'        => '/^RSK-\d{4}-\d{3}$/',
+        'capa'          => '/^CAPA-\d{4}-\d{4}$/',
+        'audit'         => '/^AUD-\d{4}-\d{3}$/',
+        'temuan_audit'  => '/^AF-\d{4}-\d{3}$/',
+        'induksi'       => '/^IND-\d{4}-\d{4}$/',
+        'regulasi'      => '/^REG-\d{3}$/',
+        'observasi_apd' => '/^APD-\d{4}-\d{4}$/',
+        'observasi'     => '/^OBS-\d{4}-\d{4}$/',
+        'inspeksi'      => '/^INS-\d{4}-\d{4}$/',
+        'checklist'     => '/^CHK-\d{4}-\d{4}$/',
+        'pelatihan'     => '/^TRN-\d{4}-\d{3}$/',
+        'kegiatan'      => '/^ACT-\d{4}-\d{3}$/',
+    ];
+    foreach ($bentuk as $entitas => $pola) {
+        $n = \KG\Nomor::berikut($entitas);
+        benar(preg_match($pola, $n) === 1, "$entitas menghasilkan '$n' sesuai $pola");
+    }
+});
+
+uji('UJ-54b', 'Kode dokumen internal mengikuti jenisnya', function () {
+    // Awalan yang memberi tahu jenis dokumen sebelum judulnya dibaca.
+    foreach (['Manual' => 'KGM', 'Kebijakan' => 'KGK', 'Prosedur' => 'KGP',
+              'Instruksi Kerja' => 'KGI', 'Formulir' => 'KGF'] as $jenis => $awalan) {
+        $k = \KG\Nomor::dokumenInternal($jenis);
+        benar(str_starts_with($k, $awalan . '-'), "$jenis menghasilkan '$k'");
+        benar(preg_match('/^[A-Z]{3}-\d{2}$/', $k) === 1, "bentuk '$k' dua angka");
+    }
+});
+
+uji('UJ-55', 'Kode regulasi dan dokumen dibangkitkan peladen bila tidak disebut',
+    function () use ($T) {
+        // Kode yang dibuat klien tidak dapat dijamin unik maupun berurutan,
+        // dan kedua daftar dibaca menurut kodenya.
+        $r = panggil('POST', '/regulasi', [
+            'nomor' => 'PP No. 0 Tahun 2026', 'judul' => 'Peraturan uji',
+            'penerbit' => 'Pemerintah RI', 'bidang' => 'K3 Umum', 'pasal' => 'Pasal 1',
+            'penerapan' => 'Uji penerapan.',
+        ], $T['qhse']);
+        sama(201, $r['status'], 'regulasi tersimpan');
+        benar(preg_match('/^REG-\d{3}$/', $r['data']['kode']) === 1,
+            'kode regulasi ' . $r['data']['kode']);
+
+        $d = panggil('POST', '/dokumen/internal', [
+            'level' => 3, 'jenis' => 'Instruksi Kerja', 'judul' => 'Instruksi uji',
+            'pemilik' => 'QHSE',
+        ], $T['qhse']);
+        sama(201, $d['status'], 'dokumen tersimpan');
+        benar(str_starts_with($d['data']['kode'], 'KGI-'), 'kode dokumen ' . $d['data']['kode']);
+    });
+
 echo "\nJejak audit dan penomoran\n";
 
 uji('UJ-51', 'Setiap perubahan meninggalkan jejak', function () use ($D, $T) {

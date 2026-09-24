@@ -11,6 +11,11 @@
  * mode peragaan. Hanya membuka layarnya dengan data sungguhan yang menemukan
  * itu.
  *
+ * Ia juga menulis satu laporan bahaya lewat formulir yang sungguhan, lalu
+ * memastikan nomor yang muncul berasal dari peladen — bukan pesan bernomor
+ * tetap yang dipakai mode peragaan. Membaca saja tidak membuktikan aplikasi
+ * dapat dipakai bekerja.
+ *
  * Jalankan:
  *   node uji/layar.mjs [alamat]          bawaan http://127.0.0.1:8150
  *
@@ -90,6 +95,60 @@ const tok = await token();
   await ctx.close();
 }
 
+/* ── Menulis lewat formulir aplikasi meja ───────────────────────────── */
+{
+  rute = 'tulis/lapor-bahaya';
+  const ctx = await peramban.newContext({ viewport: { width: 1440, height: 1000 } });
+  await ctx.addInitScript(([a]) => { window.KG_KONFIG = { api: a, versi: '4' }; }, [ALAMAT]);
+  const p = await ctx.newPage();
+  p.on('pageerror', (e) => catat('tulis', e.message));
+
+  await p.goto(`${ALAMAT}/`, { waitUntil: 'domcontentloaded' });
+  await p.waitForTimeout(600);
+  await p.fill('#login-email', AKUN);
+  await p.fill('#login-pass', process.env.KG_UJI_SANDI || 'demo1234');
+  await p.click('#login-form button[type=submit]');
+  await p.waitForTimeout(2200);
+
+  if (!(await p.evaluate(() => !!localStorage.getItem('kg-token')))) {
+    catat('tulis', 'masuk tidak menghasilkan token peladen');
+  }
+
+  await p.goto(`${ALAMAT}/#/hazard`, { waitUntil: 'domcontentloaded' });
+  await p.waitForTimeout(1000);
+  const sebelum = await p.evaluate(() => (window.KG.bahaya || []).length);
+
+  await p.click('[data-act="lapor-bahaya"]');
+  await p.waitForTimeout(500);
+  await p.selectOption('#b-lokasi', { index: 1 });
+  await p.fill('#b-isi', 'Uji asap: laporan ditulis dari formulir aplikasi meja.');
+  await p.click('[data-submit]');
+  await p.waitForTimeout(2500);
+
+  const pesan = await p.evaluate(() => {
+    const t = document.querySelector('.toast');
+    return t ? t.textContent : '';
+  });
+  const sesudah = await p.evaluate(() => (window.KG.bahaya || []).length);
+  const tren = await p.evaluate(() => {
+    const t = window.KG.trenBahaya || [];
+    return t.length ? t[t.length - 1].v : null;
+  });
+
+  if (!/Tersimpan\. Nomor HZ-/.test(pesan)) {
+    catat('tulis', `pesan simpan tidak menyebut nomor peladen: "${pesan}"`);
+  }
+  if (sesudah !== sebelum + 1) {
+    catat('tulis', `daftar tidak bertambah setelah menyimpan (${sebelum} -> ${sesudah})`);
+  }
+  // Papan dan grafik harus sepakat; pernah tidak, karena penyegaran tidak
+  // memecah koleksi gabungan.
+  if (tren !== null && tren !== sesudah) {
+    catat('tulis', `grafik tren (${tren}) tidak sepakat dengan daftar (${sesudah})`);
+  }
+  await ctx.close();
+}
+
 /* ── Aplikasi lapangan ──────────────────────────────────────────────── */
 {
   rute = '/m/';
@@ -121,4 +180,5 @@ if (galat.length) {
   galat.forEach((g) => console.error('  · ' + g));
   process.exit(1);
 }
-console.log(`\u001b[32m${RUTE.length + 5} layar dibuka dengan data sungguhan, tanpa galat.\u001b[0m`);
+console.log(`\u001b[32m${RUTE.length + 5} layar dibuka dengan data sungguhan, dan satu laporan`
+  + ` ditulis lewat formulir — tanpa galat.\u001b[0m`);

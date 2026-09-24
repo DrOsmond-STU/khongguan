@@ -30,6 +30,10 @@ window.KGSUMBER = (function () {
   var API = (KONFIG.api || '').replace(/\/$/, '');
   var KUNCI_TOKEN = 'kg-token';
 
+  /* Data acuan, diambil sekali saat tersambung. Formulir memakai nama area
+     ("Line 3 — Oven Biskuit"); peladen memakai id-nya. */
+  var ACUAN = null;
+
   /* Koleksi yang endpoint-nya sudah ada. Ditambah seiring modul disambungkan. */
   var TERSAMBUNG = {
     bahaya:       { jalur: '/bahaya',        modul: 'hazard'   },
@@ -482,6 +486,384 @@ window.KGSUMBER = (function () {
      Pemuatan
      ───────────────────────────────────────────────────────────────── */
 
+  /* ─────────────────────────────────────────────────────────────────
+     Menyimpan dari formulir
+
+     Purwarupa hanya menampilkan pesan bernomor tetap saat formulir dikirim —
+     tidak ada yang tersimpan, karena memang tidak ada peladen di belakangnya.
+     Bagian di bawah yang membuat formulir yang sama benar-benar menulis, dan
+     menampilkan nomor yang sungguhan dari peladen alih-alih nomor rekaan.
+
+     Pembacaan formulir ada di sini, bukan di app.js, karena inilah lapisan
+     yang tahu bentuk yang diminta peladen. app.js tetap tidak tahu-menahu
+     soal peladen.
+     ───────────────────────────────────────────────────────────────── */
+
+  function nilai(id) {
+    var el = document.getElementById(id);
+    return el ? String(el.value || '').trim() : '';
+  }
+
+  function angkaDari(id, bawaan) {
+    var n = parseInt(nilai(id), 10);
+    return isNaN(n) ? (bawaan === undefined ? 0 : bawaan) : n;
+  }
+
+  function dicentang(id) {
+    var el = document.getElementById(id);
+    return !!(el && el.checked);
+  }
+
+  /* Keping pilihan (chip) menyimpan pilihannya pada aria-pressed. */
+  function keping(nama, bawaan) {
+    var p = document.querySelectorAll('[data-pick="' + nama + '"][aria-pressed="true"]');
+    if (!p.length) return bawaan;
+    var t = p[0].querySelector('.pt');
+    return t ? t.textContent.trim() : bawaan;
+  }
+
+  /* Jenis dokumen mengikuti levelnya, seperti pada purwarupa: level 1 manual
+     dan kebijakan, 2 prosedur, 3 instruksi kerja, 4 formulir. Kodenya
+     dibangkitkan peladen menurut jenis itu. */
+  function jenisDokumen(level) {
+    return { 1: 'Kebijakan', 2: 'Prosedur', 3: 'Instruksi Kerja', 4: 'Formulir' }[level] || 'Prosedur';
+  }
+
+  /**
+   * Id area dari namanya.
+   *
+   * Nama area berulang di setiap pabrik — "Line 2 — Moulding" ada di keempatnya.
+   * Bagi Administrator yang cakupannya seluruh pabrik, mencocokkan nama saja
+   * menyimpan laporan ke pabrik yang kebetulan lebih dulu pada daftar. Sempat
+   * terjadi: dua laporan bahaya Cibitung tercatat di Bekasi, dan tidak ada yang
+   * kelihatan salah di layar mana pun.
+   *
+   * Karena itu pabrik pengguna diutamakan. Formulir purwarupa memang tidak
+   * punya pemilih pabrik, dan menambahkannya adalah keputusan rancangan;
+   * sampai itu diputuskan, pabrik sendiri adalah satu-satunya jawaban yang
+   * tidak menebak.
+   */
+  function areaId(nama) {
+    if (!ACUAN || !ACUAN.area) return null;
+    var pabrikSaya = window.KG_SAYA && window.KG_SAYA.pabrik ? window.KG_SAYA.pabrik.id : null;
+
+    var cadangan = null;
+    for (var i = 0; i < ACUAN.area.length; i++) {
+      var a = ACUAN.area[i];
+      if (a.nama !== nama) continue;
+      if (a.pabrik_id === pabrikSaya) return a.id;
+      if (cadangan === null) cadangan = a.id;
+    }
+    return cadangan;
+  }
+
+  function jenisIzinKode(nama) {
+    if (!ACUAN || !ACUAN.jenis_izin) return null;
+    for (var i = 0; i < ACUAN.jenis_izin.length; i++) {
+      if (ACUAN.jenis_izin[i].nama === nama) return ACUAN.jenis_izin[i].kode;
+    }
+    return null;
+  }
+
+  /* Tanggal "21 Sep 2026" atau "21 Sep 2026, 08:40 WIB" → "2026-09-21". */
+  var BULAN_KE = { Jan: 1, Feb: 2, Mar: 3, Apr: 4, Mei: 5, Jun: 6, Jul: 7, Agu: 8,
+                   Sep: 9, Okt: 10, Nov: 11, Des: 12 };
+
+  function keIso(teks) {
+    var m = String(teks || '').match(/(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/);
+    if (!m || !BULAN_KE[m[2]]) return null;
+    return m[3] + '-' + String(BULAN_KE[m[2]]).padStart(2, '0')
+      + '-' + String(m[1]).padStart(2, '0');
+  }
+
+  function hariIni() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')
+      + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  /* Satu aksi = satu endpoint, satu pembaca formulir, dan koleksi yang perlu
+     dimuat ulang setelahnya. Aksi yang belum punya endpoint tidak dicantumkan;
+     bagi aksi itu app.js tetap memakai perilaku purwarupa. */
+  var SIMPAN = {
+    'lapor-bahaya': {
+      jalur: '/bahaya', segarkan: ['bahaya'],
+      isi: function () {
+        return {
+          area_id: areaId(nilai('b-lokasi')),
+          kategori: keping('kat', 'Unsafe Condition'),
+          isi: nilai('b-isi'),
+          anonim: dicentang('b-anon')
+        };
+      }
+    },
+    'lapor-insiden': {
+      jalur: '/insiden', segarkan: ['insiden'],
+      isi: function () {
+        return {
+          area_id: areaId(nilai('f-lokasi')),
+          jenis: keping('jenis', 'Incident'),
+          keparahan: keping('parah', 'Sedang'),
+          tanggal: keIso(nilai('f-waktu')) || hariIni(),
+          ringkas: nilai('f-kronologi').slice(0, 200),
+          kronologi: nilai('f-kronologi')
+        };
+      }
+    },
+    'observasi-apd': {
+      jalur: '/observasi-apd', segarkan: ['observasiAPD'],
+      isi: function () {
+        var diamati = angkaDari('a-jumlah', 0);
+        return {
+          area_id: areaId(nilai('a-area')),
+          diamati: diamati,
+          patuh: diamati,
+          catatan: 'Observasi APD dari aplikasi meja.'
+        };
+      }
+    },
+    'observasi-baru': {
+      jalur: '/observasi', segarkan: ['observasi'],
+      isi: function () {
+        return {
+          area_id: areaId(nilai('o-area')),
+          aman: angkaDari('o-aman', 0),
+          berisiko: angkaDari('o-risk', 0),
+          kategori: nilai('o-kat'),
+          catatan: nilai('o-tindak') || 'Observasi perilaku dari aplikasi meja.',
+          tindakan: nilai('o-tindak')
+        };
+      }
+    },
+    'hiradc-baru': {
+      jalur: '/hiradc', segarkan: ['hiradc'],
+      isi: function () {
+        return {
+          proses: nilai('h-proses'), aktivitas: nilai('h-akt'),
+          sifat: nilai('h-sifat') || 'Rutin', kategori: nilai('h-kat') || 'Fisik',
+          bahaya: nilai('h-bahaya'), risiko: nilai('h-bahaya'),
+          korban: 'Belum ditentukan',
+          kemungkinan: 3, keparahan: 3, kemungkinan_sisa: 3, keparahan_sisa: 3
+        };
+      }
+    },
+    'risiko-baru': {
+      jalur: '/risiko', segarkan: ['risikoRegister'],
+      isi: function () {
+        var l = angkaDari('r-l', 3);
+        var s = angkaDari('r-s', 3);
+        return {
+          proses: nilai('r-proses'), ancaman: nilai('r-ancaman'),
+          penyebab: nilai('r-sebab'), dampak: nilai('r-ancaman'),
+          kemungkinan: l, keparahan: s, kemungkinan_sisa: l, keparahan_sisa: s,
+          mitigasi: 'Belum ditentukan'
+        };
+      }
+    },
+    'jsa-baru': {
+      jalur: '/jsa', segarkan: ['jsa'],
+      isi: function () {
+        return {
+          area_id: areaId(nilai('j-area')),
+          pekerjaan: nilai('j-kerja'),
+          jenis: nilai('j-sifat') || 'Non-rutin',
+          /* JSA tanpa langkah ditolak peladen, jadi satu langkah pertama
+             dibuatkan di sini untuk dilengkapi. */
+          langkah: [{ kerja: 'Langkah pertama', bahaya: 'Belum diisi',
+                      kemungkinan: 1, keparahan: 1,
+                      kemungkinan_sisa: 1, keparahan_sisa: 1 }]
+        };
+      }
+    },
+    'induksi-baru': {
+      jalur: '/induksi', segarkan: ['induksi'],
+      isi: function () {
+        return {
+          nama: nilai('i-nama'), jenis: keping('ind', 'Pekerja Baru'),
+          asal: nilai('i-asal'), tanggal: keIso(nilai('i-tgl')) || hariIni()
+        };
+      }
+    },
+    'regulasi-baru': {
+      jalur: '/regulasi', segarkan: ['regulasi'],
+      isi: function () {
+        return {
+          nomor: nilai('r-nomor'), judul: nilai('r-judul'),
+          penerbit: 'Pemerintah RI', bidang: 'K3 Umum',
+          pasal: nilai('r-pasal'), penerapan: nilai('r-terap')
+        };
+      }
+    },
+    'inspeksi-baru': {
+      jalur: '/inspeksi', segarkan: ['inspeksi'],
+      isi: function () {
+        return {
+          jenis: nilai('i-jenis'), area: nilai('i-area'), jadwal: 'Bulanan',
+          butir: [{ butir: nilai('i-jenis') + ' — butir 1' }]
+        };
+      }
+    },
+    'checklist-mulai': {
+      jalur: '/checklist', segarkan: ['checklistHarian'],
+      isi: function () {
+        return {
+          nama: nilai('k-jenis'), frekuensi: 'Harian',
+          lokasi: nilai('k-unit'), shift: nilai('k-shift'),
+          butir: [{ butir: nilai('k-jenis') + ' — butir 1' }]
+        };
+      }
+    },
+    'izin-baru': {
+      jalur: '/izin', segarkan: ['izin'],
+      isi: function () {
+        return {
+          jenis: jenisIzinKode(nilai('p-jenis')) || 'panas',
+          judul: nilai('p-judul'),
+          area_id: areaId(D.lokasi ? D.lokasi[0] : ''),
+          pengawas: window.KG_SAYA ? window.KG_SAYA.nama : 'Belum ditentukan',
+          durasi: nilai('p-mulai') + ' – ' + nilai('p-selesai')
+        };
+      }
+    },
+    'unggah-kegiatan': {
+      jalur: '/kegiatan', segarkan: ['kegiatan'],
+      isi: function () {
+        return {
+          jenis: nilai('a-jenis'), judul: nilai('a-judul'),
+          peserta: angkaDari('a-peserta', 0),
+          durasi_jam: parseFloat(nilai('a-durasi').replace(',', '.')) || 1
+        };
+      }
+    },
+    'pelatihan-baru': {
+      jalur: '/pelatihan', segarkan: ['pelatihan'],
+      isi: function () {
+        return {
+          nama: nilai('t-nama'), jenis: nilai('t-jenis') || 'Internal',
+          target: angkaDari('t-peserta', 0),
+          rencana_tanggal: nilai('t-tgl'),
+          rencana_peserta: angkaDari('t-peserta', 0),
+          penyelenggara: nilai('t-pjk3') || 'Internal'
+        };
+      }
+    },
+    'dokumen-baru': {
+      jalur: '/dokumen/internal', segarkan: ['dokInternal'],
+      isi: function () {
+        return {
+          level: angkaDari('d-level', 3),
+          jenis: jenisDokumen(angkaDari('d-level', 3)),
+          judul: nilai('d-judul'), pemilik: nilai('d-pemilik'),
+          tinjau: keIso(nilai('d-tinjau')), status: 'Dalam Revisi'
+        };
+      }
+    }
+  };
+
+  var D = window.KG || {};
+
+  /**
+   * Menyimpan isi formulir yang sedang terbuka.
+   *
+   * Mengembalikan null bila aplikasi berjalan pada mode peragaan atau aksinya
+   * belum punya endpoint — pemanggil lalu memakai perilaku purwarupa apa
+   * adanya. Bila tersambung, mengembalikan janji berisi pesan yang siap
+   * ditampilkan.
+   */
+  function simpan(aksi) {
+    if (!API || !SIMPAN[aksi]) return null;
+
+    var def = SIMPAN[aksi];
+    var isi;
+    try {
+      isi = def.isi();
+    } catch (e) {
+      return Promise.resolve('Formulir belum dapat dibaca: ' + e.message);
+    }
+
+    return kirim(def.jalur, isi)
+      .then(function (j) {
+        var nomor = (j.data && (j.data.nomor || j.data.kode)) || '';
+        /* Tren dan KPI ikut disegarkan: hampir setiap catatan masuk ke
+           keduanya, dan papan yang menunjukkan delapan sementara grafiknya
+           masih tujuh membuat orang ragu simpanannya berhasil. */
+        var ikut = def.segarkan.slice();
+        var modul = (window.KG_SAYA && window.KG_SAYA.modul) || [];
+        if (modul.indexOf('kpi') !== -1) ikut = ikut.concat(['tren', 'kpi']);
+        if (modul.indexOf('exec') !== -1) ikut = ikut.concat(['eksekutif']);
+        return segarkan(ikut).then(function () {
+          return nomor ? 'Tersimpan. Nomor ' + nomor + '.' : 'Tersimpan.';
+        });
+      })
+      .catch(function (e) {
+        /* Penolakan aturan membawa kodenya, supaya pengisi tahu apa yang harus
+           diperbaiki — bukan sekadar "gagal menyimpan". */
+        return e.aturan ? e.message + ' (' + e.aturan + ')' : 'Gagal menyimpan: ' + e.message;
+      });
+  }
+
+  /* Memuat ulang koleksi yang berubah, lalu menggambar ulang layar yang
+     sedang terbuka. Tanpa ini catatan baru tidak muncul sampai halaman
+     dimuat ulang, dan orang mengira simpanannya gagal. */
+  function segarkan(koleksi) {
+    var janji = (koleksi || []).map(function (nama) {
+      var t = TERSAMBUNG[nama];
+      if (!t) return Promise.resolve();
+      return ambil(t.jalur).then(function (r) {
+        /* Sama persis dengan jalur pemuatan awal, termasuk pemecahan koleksi
+           gabungan. Sempat tidak: /kpi/tren disimpan utuh ke window.KG.tren
+           sedangkan layar membaca trenBahaya, sehingga grafik tidak pernah
+           ikut terbarui setelah menyimpan — papan menunjukkan sembilan,
+           grafiknya masih delapan. */
+        var hasil = UTUH[nama]
+          ? PETA[nama](r.data || {})
+          : (PECAH[nama] ? PETA[nama](r.data || []) : (r.data || []).map(PETA[nama]));
+        if (PECAH[nama]) {
+          PECAH[nama].forEach(function (k) { window.KG[k] = hasil[k]; });
+        } else {
+          window.KG[nama] = hasil;
+        }
+      }).catch(function () {});
+    });
+    return Promise.all(janji).then(function () {
+      try {
+        window.dispatchEvent(new HashChangeEvent('hashchange'));
+      } catch (e) {
+        /* HashChangeEvent tidak ada di peramban lama; peristiwa biasa cukup. */
+        var ev = document.createEvent('Event');
+        ev.initEvent('hashchange', true, true);
+        window.dispatchEvent(ev);
+      }
+    });
+  }
+
+  /**
+   * Membuka sesi peladen setelah pengguna masuk di aplikasi meja.
+   *
+   * Kegagalannya tidak menahan siapa pun masuk: aplikasi tetap berjalan
+   * dengan data yang sudah ada, dan pesannya muncul di konsol. Layar masuk
+   * yang menolak karena peladen sedang bermasalah menghentikan pekerjaan
+   * seluruh pabrik.
+   */
+  function masuk(email) {
+    if (!API) return Promise.resolve(false);
+    return kirim('/sesi/masuk-demo', { email: email, klien: 'meja' })
+      .then(function (j) {
+        if (!j.data || !j.data.token) return false;
+        simpanToken(j.data.token);
+        return tersambung().then(function () {
+          try {
+            window.dispatchEvent(new HashChangeEvent('hashchange'));
+          } catch (e) {}
+          return true;
+        });
+      })
+      .catch(function (e) {
+        console.warn('[KG] sesi peladen tidak terbuka: ' + e.message);
+        return false;
+      });
+  }
+
   function muatApp(selesai) {
     var s = document.createElement('script');
     s.src = (KONFIG.appJs || 'assets/app.js') + (KONFIG.versi ? '?v=' + KONFIG.versi : '');
@@ -499,6 +881,10 @@ window.KGSUMBER = (function () {
 
       var janji = [];
       var hidup = [];
+
+      /* Data acuan diambil sekali: formulir memakai nama area, peladen
+         memakai id-nya. */
+      janji.push(ambil('/acuan').then(function (a) { ACUAN = a.data; }).catch(function () {}));
       Object.keys(TERSAMBUNG).forEach(function (koleksi) {
         var t = TERSAMBUNG[koleksi];
         if (saya.modul.indexOf(t.modul) === -1) return;
@@ -558,5 +944,8 @@ window.KGSUMBER = (function () {
     mula();
   }
 
-  return { ambil: ambil, kirim: kirim, token: token, simpanToken: simpanToken, api: API };
+  return {
+    ambil: ambil, kirim: kirim, token: token, simpanToken: simpanToken, api: API,
+    masuk: masuk, simpan: simpan, tersambung: function () { return !!API; }
+  };
 })();

@@ -1788,11 +1788,17 @@ SELECT awalan, tahun, nilai FROM (VALUES
   ('APD', 2026, 142),
   ('OBS', 2026, 612),
   ('CAPA',2026, 142),
+  ('REG', 0,    12),
+  ('KGM', 0,    1),
+  ('KGK', 0,    2),
+  ('KGP', 0,    15),
+  ('KGI', 0,    31),
+  ('KGF', 0,    18),
   ('INS', 2026, 914),
   ('CHK', 2026, 1846),
   ('AUD', 2026, 4),
   ('AF',  2026, 21),
-  ('RSK', 0,    8),
+  ('RSK', 2026, 8),
   ('TRN', 2026, 28),
   ('ACT', 2026, 91)
 ) AS v(awalan, tahun, nilai)

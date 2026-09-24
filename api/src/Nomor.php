@@ -21,7 +21,7 @@ final class Nomor
         'izin'          => ['WP',  true,  4],
         'jsa'           => ['JSA', true,  3],
         'hiradc'        => ['HRD', false, 3],
-        'risiko'        => ['RSK', false, 3],
+        'risiko'        => ['RSK', true,  3],
         'capa'          => ['CAPA', true, 4],
         'audit'         => ['AUD', true,  3],
         // Purwarupa memakai awalan AF untuk temuan audit, dan nomor itu
@@ -57,6 +57,35 @@ final class Nomor
 
         $urut = str_pad((string) $nilai, $lebar, '0', STR_PAD_LEFT);
         return $pakaiTahun ? "$awalan-$tahun-$urut" : "$awalan-$urut";
+    }
+
+    /**
+     * Kode dokumen internal mengikuti pola purwarupa: awalan menurut jenisnya,
+     * lalu nomor urut dua angka. KGM manual, KGK kebijakan, KGP prosedur,
+     * KGI instruksi kerja, KGF formulir.
+     *
+     * Bukan satu deret untuk semua: kode dokumen dibaca orang, dan awalannya
+     * yang memberi tahu jenisnya sebelum judulnya dibaca.
+     */
+    public static function dokumenInternal(string $jenis): string
+    {
+        $awalan = [
+            'Manual'          => 'KGM',
+            'Kebijakan'       => 'KGK',
+            'Prosedur'        => 'KGP',
+            'Instruksi Kerja' => 'KGI',
+            'Formulir'        => 'KGF',
+        ][$jenis] ?? 'KGD';
+
+        Db::jalankan(
+            'INSERT INTO pencacah_nomor (awalan, tahun, nilai) VALUES (:a, 0, 0)
+             ON CONFLICT (awalan, tahun) DO NOTHING', [':a' => $awalan]
+        );
+        $nilai = (int) Db::nilai(
+            'UPDATE pencacah_nomor SET nilai = nilai + 1 WHERE awalan = :a AND tahun = 0 RETURNING nilai',
+            [':a' => $awalan]
+        );
+        return $awalan . '-' . str_pad((string) $nilai, 2, '0', STR_PAD_LEFT);
     }
 
     /** Awalan sementara untuk kiriman lapangan yang belum diverifikasi (AB-05). */
