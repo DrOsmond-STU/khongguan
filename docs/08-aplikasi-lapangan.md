@@ -157,3 +157,49 @@ sebelum pengguna tahu gunanya adalah cara tercepat mendapat penolakan permanen.
 Perangkat iOS dapat membuka aplikasi lewat Safari, tetapi pemasangan dan
 perilaku luringnya tidak dijamin setara dan berada di luar lingkup
 ([01](01-ikhtisar-produk.md)).
+
+
+## Pengiriman antrean ke peladen
+
+Antrean di perangkat dikirim ke `POST /api/v1/lapangan/kirim` sebagai satu
+permintaan berisi seluruh butir yang menunggu. Peladen menjawab per butir,
+bukan satu jawaban untuk seluruh antrean.
+
+| Jawaban | Yang terjadi di perangkat |
+|---|---|
+| `diterima` | Status menjadi Terkirim, dan nomor resmi dari peladen disimpan berdampingan dengan nomor sementara |
+| `ditolak` | Status menjadi Ditolak, beserta kode aturan dan alasannya. Laporan **tidak** dihapus |
+| Tidak ada jawaban | Antrean tetap utuh dan dicoba lagi nanti |
+
+Laporan yang ditolak tetap tersimpan dan berwarna merah pada daftar. Laporan
+yang hilang diam-diam lebih buruk daripada laporan yang ditolak dengan alasan:
+petugas perlu tahu apa yang harus diperbaiki, dan kode aturannya menyebutkannya.
+
+### Keidempotenan
+
+Kunci di peladen adalah pasangan `(perangkat_id, id_lokal)`. `perangkat_id`
+dibuat sekali pada perangkat dan **tidak pernah berubah**, termasuk saat
+petugas keluar dari aplikasi — penanda baru membuat antrean lama terkirim ulang
+sebagai catatan kedua. `id_lokal` adalah nomor sementara yang sudah tertera di
+layar petugas, dan peladen menyimpannya sebagai `nomor_asal` supaya laporan
+tetap dapat dilacak ke perangkat asalnya.
+
+Antrean yang terkirim dua kali karena sinyal putus di tengah jalan menerima
+jawaban yang sama persis, ditandai `diulang`.
+
+### Dua kosakata, satu sistem
+
+Layar lapangan menulis "Kondisi Tidak Aman"; basis data menyimpan "Unsafe
+Condition". Layar lapangan menulis "Panas"; tabel jenis izin memakai kode
+`panas`. Penerjemahan dilakukan di `assets/lapangan.js` saat mengirim, bukan
+dengan mengubah salah satu layar.
+
+Dua kategori lapangan — **Housekeeping** dan **Peralatan** — tidak punya
+padanan di aplikasi meja. Keduanya dikirim apa adanya dan ditambahkan ke tabel
+acuan `kategori_bahaya`, bukan dipaksa masuk ke kategori lain. Memaksakannya
+berarti membuang keterangan yang sengaja dikumpulkan petugas.
+
+> **Untuk tahap 1.** Dua kosakata untuk hal yang sama adalah pertentangan di
+> dalam purwarupa, bukan keputusan rancangan. Yang benar adalah menyepakati
+> satu kosakata bersama Khong Guan Group, lalu mengubah kedua layar sekaligus.
+> Sampai itu terjadi, penerjemahan di atas menahan dampaknya.

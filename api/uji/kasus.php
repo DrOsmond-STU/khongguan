@@ -10,7 +10,7 @@ declare(strict_types=1);
 
 namespace KG\Uji;
 
-use KG\Db;
+use KG\{Db, Konfigurasi};
 
 /** @var array<string,mixed> $D */
 /** @var array<string,string> $T */
@@ -758,6 +758,186 @@ uji('UJ-27', 'Akun nonaktif kehilangan akses', function () use ($D, $T) {
 uji('UJ-27b', 'Tanpa token ditolak 401', function () {
     $h = panggil('GET', '/saya');
     sama(401, $h['status'], 'status');
+});
+
+echo "\nMasuk lewat direktori perusahaan\n";
+
+/**
+ * Penerbit tiruan: sepasang kunci RSA yang dibuat saat uji berjalan, dipakai
+ * untuk menandatangani id_token dan disajikan sebagai JWKS. Dengan begitu
+ * seluruh pemeriksaan dapat diuji tanpa memanggil penerbit sungguhan —
+ * pemeriksaan yang hanya dapat diuji dengan memanggil pihak ketiga adalah
+ * pemeriksaan yang tidak pernah diuji.
+ */
+final class Penerbit
+{
+    public \OpenSSLAsymmetricKey $rahasia;
+    /** @var array<string,mixed> */
+    public array $jwks;
+
+    public function __construct(public string $kid = 'uji-1')
+    {
+        $this->rahasia = openssl_pkey_new([
+            'private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA,
+        ]);
+        $rincian = openssl_pkey_get_details($this->rahasia);
+        $this->jwks = ['keys' => [[
+            'kty' => 'RSA', 'kid' => $kid, 'alg' => 'RS256', 'use' => 'sig',
+            'n' => self::b64($rincian['rsa']['n']), 'e' => self::b64($rincian['rsa']['e']),
+        ]]];
+    }
+
+    /** @param array<string,mixed> $klaim */
+    public function token(array $klaim, string $alg = 'RS256', bool $tandaSah = true): string
+    {
+        $kepala = self::b64(json_encode(['alg' => $alg, 'typ' => 'JWT', 'kid' => $this->kid]));
+        $isi    = self::b64(json_encode($klaim));
+        if ($alg === 'none') return "$kepala.$isi.";
+        openssl_sign("$kepala.$isi", $tanda, $this->rahasia, OPENSSL_ALGO_SHA256);
+        if (!$tandaSah) $tanda = strrev($tanda);
+        return "$kepala.$isi." . self::b64($tanda);
+    }
+
+    public static function b64(string $s): string
+    {
+        return rtrim(strtr(base64_encode($s), '+/', '-_'), '=');
+    }
+}
+
+/** @return array<string,mixed> */
+function klaimSah(): array
+{
+    return [
+        'iss' => 'https://direktori.khongguan.test', 'aud' => 'kg-safeguard',
+        'sub' => 'abc-123', 'email' => 'fadli.saldi@khongguan.co.id', 'email_verified' => true,
+        'name' => 'Fadli Saldi', 'nonce' => 'nonce-uji',
+        'iat' => time(), 'exp' => time() + 300,
+    ];
+}
+
+function periksa(array $klaim, ?Penerbit $pn = null, string $alg = 'RS256', bool $tandaSah = true): array
+{
+    $pn = $pn ?? new Penerbit();
+    return \KG\Oidc::periksaToken($pn->token($klaim, $alg, $tandaSah), $pn->jwks,
+        'https://direktori.khongguan.test', 'kg-safeguard', 'nonce-uji');
+}
+
+/** Memastikan pemeriksaan menolak, dan menyebut sebabnya. */
+function ditolak(callable $fn, string $sebutkan, string $pesan): void
+{
+    try {
+        $fn();
+        throw new \RuntimeException("$pesan — seharusnya ditolak");
+    } catch (\KG\Galat $g) {
+        benar(stripos($g->getMessage(), $sebutkan) !== false,
+            "$pesan (pesan menyebut '$sebutkan', didapat: " . $g->getMessage() . ')');
+    }
+}
+
+uji('UJ-40', 'id_token yang sah diterima', function () {
+    $k = periksa(klaimSah());
+    sama('fadli.saldi@khongguan.co.id', $k['email'], 'surel terbaca');
+});
+
+uji('UJ-41', 'Tanda tangan palsu ditolak', function () {
+    ditolak(fn () => periksa(klaimSah(), null, 'RS256', false), 'tanda tangan', 'tanda tangan rusak');
+});
+
+uji('UJ-42', 'Kunci penerbit lain ditolak', function () {
+    $asli = new Penerbit();
+    $lain = new Penerbit();          // kid sama, kunci berbeda
+    ditolak(function () use ($asli, $lain) {
+        \KG\Oidc::periksaToken($lain->token(klaimSah()), $asli->jwks,
+            'https://direktori.khongguan.test', 'kg-safeguard', 'nonce-uji');
+    }, 'tanda tangan', 'ditandatangani kunci lain');
+});
+
+uji('UJ-43', "Algoritma 'none' ditolak", function () {
+    ditolak(fn () => periksa(klaimSah(), null, 'none'), 'algoritma', "alg 'none'");
+});
+
+uji('UJ-43b', 'Algoritma HMAC ditolak', function () {
+    ditolak(fn () => periksa(klaimSah(), null, 'HS256'), 'algoritma', 'alg HS256');
+});
+
+uji('UJ-44', 'Penerbit yang tidak cocok ditolak', function () {
+    ditolak(fn () => periksa(['iss' => 'https://penerbit.lain'] + klaimSah()),
+        'penerbit', 'iss berbeda');
+});
+
+uji('UJ-45', 'Audiens yang tidak cocok ditolak', function () {
+    ditolak(fn () => periksa(['aud' => 'aplikasi-lain'] + klaimSah()),
+        'ditujukan', 'aud berbeda');
+});
+
+uji('UJ-45b', 'Audiens ganda tanpa azp yang benar ditolak', function () {
+    ditolak(fn () => periksa(['aud' => ['kg-safeguard', 'lain'], 'azp' => 'lain'] + klaimSah()),
+        'aplikasi lain', 'azp menunjuk aplikasi lain');
+    // Dengan azp yang benar, audiens ganda tetap diterima.
+    $k = periksa(['aud' => ['kg-safeguard', 'lain'], 'azp' => 'kg-safeguard'] + klaimSah());
+    sama('abc-123', $k['sub'], 'azp benar diterima');
+});
+
+uji('UJ-46', 'Token kedaluwarsa ditolak', function () {
+    ditolak(fn () => periksa(['exp' => time() - 600] + klaimSah()), 'kedaluwarsa', 'exp lewat');
+});
+
+uji('UJ-47', 'Nonce yang tidak cocok ditolak', function () {
+    ditolak(fn () => periksa(['nonce' => 'nonce-lain'] + klaimSah()), 'nonce', 'nonce berbeda');
+});
+
+uji('UJ-48', 'Surel yang belum diverifikasi direktori ditolak', function () {
+    // Siapa pun yang dapat mendaftar dengan surel orang lain akan masuk
+    // sebagai orang itu.
+    ditolak(fn () => periksa(['email_verified' => false] + klaimSah()),
+        'diverifikasi', 'email_verified false');
+});
+
+uji('UJ-48b', 'Token tanpa surel ditolak', function () {
+    $k = klaimSah();
+    unset($k['email']);
+    ditolak(fn () => periksa($k), 'surel', 'tanpa klaim email');
+});
+
+uji('UJ-49', 'state dipakai sekali dan kedaluwarsa', function () {
+    Db::jalankan(
+        "INSERT INTO oidc_permintaan (state, nonce, verifier, kedaluwarsa)
+         VALUES ('state-uji', 'n', 'v', now() + interval '10 minutes')"
+    );
+    $pertama = Db::baris(
+        "DELETE FROM oidc_permintaan WHERE state = 'state-uji' AND kedaluwarsa > now()
+         RETURNING nonce");
+    benar($pertama !== null, 'pemakaian pertama berhasil');
+
+    $kedua = Db::baris(
+        "DELETE FROM oidc_permintaan WHERE state = 'state-uji' AND kedaluwarsa > now()
+         RETURNING nonce");
+    sama(null, $kedua, 'pemakaian kedua gagal');
+
+    Db::jalankan(
+        "INSERT INTO oidc_permintaan (state, nonce, verifier, kedaluwarsa)
+         VALUES ('state-basi', 'n', 'v', now() - interval '1 minute')"
+    );
+    sama(null, Db::baris(
+        "DELETE FROM oidc_permintaan WHERE state = 'state-basi' AND kedaluwarsa > now()
+         RETURNING nonce"), 'state kedaluwarsa tidak dapat dipakai');
+});
+
+uji('UJ-50', 'Jalur masuk demo dimatikan saat konfigurasi mematikannya', function () {
+    $semula = Konfigurasi::ambil();
+    Konfigurasi::paksa(['izinkan_masuk_demo' => false] + [
+        'db_dsn' => $semula['db_dsn'], 'db_pengguna' => $semula['db_pengguna'],
+        'db_sandi' => $semula['db_sandi'],
+    ]);
+    try {
+        $h = panggil('POST', '/sesi/masuk-demo', ['email' => 'qhse@kg.test']);
+        sama(403, $h['status'], 'ditolak pada lingkungan tanpa jalur demo');
+    } finally {
+        Konfigurasi::paksa([
+            'db_dsn' => $semula['db_dsn'], 'db_pengguna' => $semula['db_pengguna'],
+            'db_sandi' => $semula['db_sandi'], 'izinkan_masuk_demo' => true,
+        ]);
+    }
 });
 
 echo "\nSinkronisasi lapangan\n";

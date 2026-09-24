@@ -15,6 +15,7 @@ psql -d kg_safeguard -f api/migrasi/001_skema.sql
 psql -d kg_safeguard -f api/migrasi/002_acuan.sql
 psql -d kg_safeguard -f api/migrasi/004_skema_lanjutan.sql
 psql -d kg_safeguard -f api/migrasi/006_skema_kpi.sql
+psql -d kg_safeguard -f api/migrasi/008_skema_oidc.sql
 psql -d kg_safeguard -f api/migrasi/007_contoh.sql   # peragaan saja
 
 # 2 · konfigurasi
@@ -36,7 +37,7 @@ purwarupa.
 `007_contoh.sql` mengisi basis data peragaan dengan isi yang sama persis
 seperti purwarupa — dibangkitkan dari `assets/data.js`, bukan diketik ulang.
 Ia menolak berjalan bila basis datanya sudah berisi catatan. Pada produksi,
-jalankan 001, 002, 004, dan 006 saja — data contoh dilewati.
+jalankan 001, 002, 004, 006, dan 008 saja — data contoh dilewati.
 
 ## Menjalankan pengujian
 
@@ -68,6 +69,8 @@ src/Jawab.php          Bentuk balasan JSON baku
 src/Galat.php          Galat, termasuk penolakan aturan dengan kode AB-xx
 src/Rute.php           Router
 src/Sesi.php           Sesi dan pengguna yang sedang masuk
+src/Oidc.php           Masuk lewat direktori perusahaan (OpenID Connect)
+src/Kpi.php            Perhitungan KPI, dipakai dua layar
 src/Wewenang.php       Penegakan peran dan cakupan pabrik
 src/Jejak.php          Jejak audit
 src/Nomor.php          Pembangkit nomor tampil
@@ -81,6 +84,7 @@ migrasi/               Skema, data acuan, dan data contoh
                        dokumen, regulasi, pelatihan, kegiatan, pemberitahuan
   006_skema_kpi.sql    Jam kerja, rekap awal, target KPI, program strategis
   007_contoh.sql       Data peragaan (dibangkitkan; bukan untuk produksi)
+  008_skema_oidc.sql   Permintaan masuk dan simpanan kunci penerbit
   buat-contoh.mjs      Pembangkit 007 dari assets/data.js
 uji/                   Pelari uji dan kasusnya
 ```
@@ -153,6 +157,21 @@ tidak punya satu pun catatan pada periode berjalan. TRIR nol di sana berarti
 tidak ada yang mencatat, bukan tidak ada kejadian, jadi kartunya berstatus
 Perhatian dengan penentu "Tanpa catatan".
 
+## Masuk
+
+Dua jalur, dan hanya satu yang hidup pada produksi.
+
+| Jalur | Kapan |
+|---|---|
+| `POST /sesi/oidc/mulai` lalu `/sesi/oidc/kembali` | Produksi. OpenID Connect, *authorization code* + PKCE |
+| `POST /sesi/masuk-demo` | Pengembangan dan pengujian saja; hidup hanya bila `izinkan_masuk_demo` bernilai benar |
+
+Tidak ada kolom kata sandi pada basis data, dan tidak ada endpoint yang
+menerimanya. Seluruh pemeriksaan `id_token` dan alasannya ada pada
+[docs/09](../docs/09-kebutuhan-nonfungsional.md#bagaimana-knf-18-ditegakkan);
+uji UJ-40 sampai UJ-50 membuktikannya terhadap penerbit tiruan yang kuncinya
+dibuat saat uji berjalan.
+
 ## Kosakata mengikuti purwarupa
 
 Nilai status, kategori, dan jenis ditulis **persis** seperti purwarupa —
@@ -167,8 +186,8 @@ bersamaan, bukan salah satunya.
 
 | Hal | Rencana |
 |---|---|
-| Autentikasi direktori perusahaan (OIDC) | Tahap 2; jalur masuk demo sementara, dimatikan pada produksi |
-| Modul selain sepuluh yang sudah tersambung | Tahap 3, urutan pada [docs/12](../docs/12-rencana-rilis.md) |
+| Asisten QHSE | Tahap 3 lanjutan; ia membaca seluruh modul, jadi dibangun terakhir |
+| Modul selain yang sudah tersambung | Tahap 3, urutan pada [docs/12](../docs/12-rencana-rilis.md) |
 | Penyimpanan objek untuk foto | Tahap 2 |
 | Pemberitahuan surel dan dorong | Tahap 3; penerima sudah ditentukan (AB-02), pengirimannya belum |
 | Ekspor PDF dan Excel | Tahap 3 |

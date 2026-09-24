@@ -105,7 +105,12 @@ ON CONFLICT (kode) DO NOTHING;
 INSERT INTO kategori_bahaya (kode, nama, urutan) VALUES
   ('Unsafe Condition','Unsafe Condition',10),
   ('Unsafe Action','Unsafe Action',11),
-  ('Aspek Lingkungan','Aspek Lingkungan',12)
+  ('Aspek Lingkungan','Aspek Lingkungan',12),
+  -- Dua kategori yang hanya ada pada aplikasi lapangan. Dicantumkan supaya
+  -- laporan dari lapangan tidak perlu dipaksa masuk ke kategori lain; memaksa
+  -- berarti membuang keterangan yang sengaja dikumpulkan petugas.
+  ('Housekeeping','Housekeeping',13),
+  ('Peralatan','Peralatan',14)
 ON CONFLICT (kode) DO NOTHING;
 
 COMMIT;

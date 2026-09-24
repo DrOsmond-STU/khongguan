@@ -54,6 +54,46 @@ lapangan. Antrean di perangkat adalah lapisan yang membuat itu mungkin.
 | KNF-27 | Uji penetrasi dilakukan sebelum rilis produksi; temuan Tinggi wajib ditutup |
 | KNF-28 | Pustaka pihak ketiga dipindai kerentanannya setiap bulan selama masa dukungan |
 
+### Bagaimana KNF-18 ditegakkan
+
+Autentikasi memakai OpenID Connect, alur *authorization code* dengan PKCE.
+Tidak ada kolom kata sandi pada basis data, dan tidak ada endpoint yang
+menerimanya.
+
+PKCE dipakai walaupun aplikasi ini punya *client secret*: kode otorisasi yang
+bocor pada log peladen perantara tetap tidak dapat ditukar tanpa *verifier*
+yang hanya diketahui peladen ini.
+
+`id_token` diterima hanya bila seluruh pemeriksaan berikut lulus:
+
+| Diperiksa | Bila dilewatkan |
+|---|---|
+| Tanda tangan terhadap JWKS penerbit | Siapa pun dapat membuat token sendiri |
+| `alg` hanya RS256/384/512 | `none` dan HMAC memberi pengirim kuasa memilih cara memverifikasi dirinya |
+| `iss` sama dengan penerbit yang dikonfigurasi | Token dari penerbit lain diterima |
+| `aud` memuat `client_id` kita, dan `azp` bila audiensnya lebih dari satu | Token untuk aplikasi lain dapat dipakai di sini |
+| `exp` dan `iat`, toleransi jam 60 detik | Token lama dapat diputar ulang |
+| `nonce` sama dengan yang dikirim saat memulai | Token dapat disuntikkan dari sesi lain |
+| `email_verified` bernilai benar | Siapa pun yang mendaftar dengan surel orang lain masuk sebagai orang itu |
+
+`state`, `nonce`, dan PKCE *verifier* disimpan di peladen (tabel
+`oidc_permintaan`), bukan di kuki penjelajah, dan dipakai sekali —
+`DELETE ... RETURNING` membuat dua permintaan bersamaan dengan `state` yang
+sama tidak mungkin dua-duanya berhasil. Kuki dipilih tidak dipakai karena
+penjelajah di lapangan sering membuka tautan di jendela baru; kuki yang hilang
+membuat masuk selalu gagal, dan yang paling mungkin dilakukan orang berikutnya
+adalah mematikan pemeriksaannya.
+
+Akun **tidak** dibuat otomatis kecuali `oidc.buat_akun_otomatis` dinyalakan.
+Akun yang dapat lahir dari dua tempat akan berbeda di dua tempat, dan hak
+aksesnya perlu diputuskan orang, bukan diterka dari klaim direktori. Bila
+dinyalakan, akun baru berstatus `Menunggu` dan belum dapat dipakai sampai
+administrator menetapkan peran dan pabriknya.
+
+Jalur masuk demo (`POST /sesi/masuk-demo`) hanya hidup bila
+`izinkan_masuk_demo` bernilai benar, dan dimatikan pada produksi. Uji UJ-50
+membuktikan jalur itu menjawab `403` ketika dimatikan.
+
 ## Kerahasiaan orang
 
 | Kode | Kebutuhan |

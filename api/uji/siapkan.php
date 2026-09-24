@@ -30,7 +30,7 @@ if (!preg_match('/dbname=([^;]+)/', $dsn, $c) || !str_ends_with($c[1], '_uji')) 
 
 $pdo = Db::pdo();
 $pdo->exec('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
-foreach (['001_skema', '002_acuan', '004_skema_lanjutan', '006_skema_kpi'] as $berkas) {
+foreach (['001_skema', '002_acuan', '004_skema_lanjutan', '006_skema_kpi', '008_skema_oidc'] as $berkas) {
     $pdo->exec(file_get_contents(__DIR__ . "/../migrasi/$berkas.sql"));
 }
 

@@ -606,7 +606,9 @@
   }
 
   function barisLaporan(r) {
-    const nada = r.status === 'Antre' ? 'medium' : 'low';
+    /* Ditolak berwarna merah, bukan hijau. Laporan yang ditolak peladen dan
+       tampil seperti laporan yang berhasil adalah laporan yang hilang. */
+    const nada = { 'Antre': 'medium', 'Ditolak': 'critical' }[r.status] || 'low';
     const label = { bahaya: 'Bahaya', insiden: 'Insiden', observasi: 'Observasi',
                     apd: 'APD', izin: 'Izin Kerja' }[r.jenis] || r.jenis;
     return `<button type="button" class="baris" data-lapor="${r.id}">
@@ -1112,10 +1114,16 @@
           <dt>Pelapor</dt><dd>${esc(r.pelapor)} · ${esc(r.peran)}</dd>
           <dt>Waktu</dt><dd>${esc(r.waktuTampil)}</dd>
           <dt>Status</dt><dd>${r.status}</dd>
+          ${r.nomorResmi ? `<dt>Nomor resmi</dt><dd class="mono">${esc(r.nomorResmi)}</dd>` : ''}
+          ${r.pesanTolak ? `<dt>Sebab ditolak</dt><dd>${esc(r.pesanTolak)}${r.aturan ? ` <span class="mono">(${esc(r.aturan)})</span>` : ''}</dd>` : ''}
         </dl>
-        <div class="catatan">${KGAI.L(
-          `Laporan ini sudah terlihat di aplikasi meja pada modul ${modulUntuk(r.jenis)}, ditandai sebagai kiriman dari lapangan.`,
-          `This report is already visible in the desktop app under ${modulUntuk(r.jenis)}, marked as a field submission.`)}</div>`,
+        <div class="catatan">${r.status === 'Ditolak'
+          ? KGAI.L(
+            'Laporan ini tidak diterima peladen dan belum masuk ke modul mana pun. Perbaiki isinya lalu kirim ulang, atau hapus bila memang keliru.',
+            'The server did not accept this report, so it has not entered any module. Fix it and resend, or delete it if it was a mistake.')
+          : KGAI.L(
+            `Laporan ini sudah terlihat di aplikasi meja pada modul ${modulUntuk(r.jenis)}, ditandai sebagai kiriman dari lapangan.`,
+            `This report is already visible in the desktop app under ${modulUntuk(r.jenis)}, marked as a field submission.`)}</div>`,
       aksi: 'hapus:' + r.id, aksiLabel: 'Hapus laporan', batal: 'Tutup'
     });
   }
@@ -1270,10 +1278,19 @@
 
   function kirimSemua() {
     if (!daring) { roti('Belum ada sinyal. Laporan tetap aman di perangkat.'); return; }
-    const h = LAP.kirim();
-    if (!h.terkirim) { roti('Tidak ada laporan yang menunggu.'); return; }
-    roti(h.terkirim + ' laporan terkirim dan sudah terlihat di aplikasi meja.');
-    gambar();
+    LAP.kirim().then(function (h) {
+      gambar();
+      if (h.luring) {
+        /* Gagal kirim bukan gagal simpan; antrean tetap utuh. */
+        roti('Pengiriman gagal, laporan tetap aman di antrean.');
+      } else if (!h.terkirim && !h.ditolak) {
+        roti('Tidak ada laporan yang menunggu.');
+      } else if (h.ditolak) {
+        roti(h.terkirim + ' terkirim, ' + h.ditolak + ' ditolak. Buka laporannya untuk melihat sebabnya.');
+      } else {
+        roti(h.terkirim + ' laporan terkirim dan sudah terlihat di aplikasi meja.');
+      }
+    });
   }
 
   /* ───────── Masuk ───────── */
@@ -1303,6 +1320,30 @@
     try { localStorage.setItem('kg-session', u.email); } catch (e) {}
     sesi = u;
     tampilkanApp();
+    /* Bila peladen dikonfigurasi, sesi perangkat dibuka di belakang layar dan
+       data acuan diambil sekali. Kegagalannya tidak menahan petugas masuk:
+       aplikasi ini harus tetap dapat dipakai tanpa sinyal, dan antrean yang
+       belum terkirim tidak hilang karenanya. */
+    ambilSesiPeladen(u.email);
+  }
+
+  function ambilSesiPeladen(email) {
+    const alamat = ((window.KG_KONFIG || {}).api || '').replace(/\/$/, '');
+    if (!alamat) return;
+    fetch(alamat + '/api/v1/sesi/masuk-demo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      /* Sesi lapangan berumur jauh lebih panjang daripada sesi aplikasi meja:
+         petugas tidak dapat diminta masuk ulang di tengah shift, dengan sarung
+         tangan, di area tanpa sinyal. */
+      body: JSON.stringify({ email: email, klien: 'lapangan' })
+    }).then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j.data || !j.data.token) return;
+        try { localStorage.setItem('kg-token', j.data.token); } catch (e) {}
+        return LAP.muatAcuan();
+      })
+      .catch(function () {});
   }
 
   function tampilkanApp() {
@@ -1474,7 +1515,14 @@
     }
 
     if (t.closest('#tbl-keluar')) {
-      try { localStorage.removeItem('kg-session'); sessionStorage.removeItem('kg-session'); } catch (e) {}
+      try {
+        localStorage.removeItem('kg-session');
+        sessionStorage.removeItem('kg-session');
+        /* Token dihapus, penanda perangkat tidak: ia separuh kunci
+           keidempotenan, dan penanda baru membuat antrean lama terkirim dua
+           kali sebagai dua catatan. */
+        localStorage.removeItem('kg-token');
+      } catch (e) {}
       sesi = null; tab = 'beranda'; rujukanBuka = null; cariQ = '';
       tampilkanMasuk();
       return;
@@ -1554,7 +1602,7 @@
          jadi pekerja layanan baru benar-benar terpasang, menggantikan yang
          lama pada cakupan yang sama. Angkanya disamakan dengan penanda di
          index.html supaya keduanya naik bersamaan. */
-      navigator.serviceWorker.register('sw.js?v=3').catch(function () {});
+      navigator.serviceWorker.register('sw.js?v=4').catch(function () {});
     });
   }
 })();

@@ -24,6 +24,10 @@ function rute(): Rute
     // Sesi
     $r->post('/sesi/masuk-demo', [Modul\Masuk::class, 'demo']);
     $r->post('/sesi/akhiri',     [Modul\Masuk::class, 'akhiri']);
+    // Masuk lewat direktori perusahaan. Jalur ini yang dipakai pada produksi;
+    // masuk-demo di atas dimatikan di sana.
+    $r->post('/sesi/oidc/mulai',   [Modul\MasukOidc::class, 'mulai']);
+    $r->post('/sesi/oidc/kembali', [Modul\MasukOidc::class, 'kembali']);
     $r->get('/saya',             [Modul\Saya::class, 'tampil']);
     $r->get('/acuan',            [Modul\Acuan::class, 'tampil']);
 

@@ -17,14 +17,15 @@
    fitur yang sudah tayang di server tidak pernah sampai ke lapangan.
    v2: tab Panduan, formulir Observasi APD dan pengajuan izin kerja.
    v3: menu ikon di Beranda; berkas pendukung dipanggil dengan penanda ?v=.
+   v4: antrean dikirim ke peladen; konfigurasi.js ikut disimpan.
 
    Penanda ?v= pada alamat di bawah harus sama persis dengan yang tertulis di
    index.html. Berkas yang sama dengan penanda berbeda adalah dua alamat yang
    berbeda bagi simpanan — itulah yang membuat pembaruan benar-benar sampai,
    dan itu pula yang membuat ketidakcocokan menjadi salinan ganda yang
    diam-diam memenuhi penyimpanan perangkat. */
-const TANDA = '?v=3';
-const VERSI = 'kg-lapangan-v3';
+const TANDA = '?v=4';
+const VERSI = 'kg-lapangan-v4';
 const INTI = [
   './',
   './index.html',
@@ -36,6 +37,7 @@ const INTI = [
   './icon-maskable-512.png',
   '../assets/tokens.css' + TANDA,
   '../assets/data.js' + TANDA,
+  '../assets/konfigurasi.js' + TANDA,
   '../assets/i18n.js' + TANDA,
   '../assets/lapangan.js' + TANDA,
   '../assets/ai.js' + TANDA
