@@ -1498,44 +1498,54 @@ INSERT INTO kegiatan (nomor, pabrik_id, jenis, judul, tanggal, area_id, lokasi, 
 
 -- Modul 25 · Pemberitahuan. AB-30 membatasi sebabnya pada tiga hal;
 -- purwarupa tidak menyimpan sebab, jadi diturunkan dari isinya.
-INSERT INTO notifikasi (pabrik_id, jenis, modul, judul, isi, sebab, aksi, dibuat_pada, dibaca_pada)
-  VALUES ((SELECT id FROM t_pabrik), 'critical', 'Dokumen Eksternal', 'SKLO Boiler 2 sudah kedaluwarsa 83 hari', 'Surat Keterangan Layak Operasi boiler 2 berakhir 30 Jun 2026. Pengoperasian boiler tanpa SKLO adalah pelanggaran regulasi.',
+INSERT INTO notifikasi (pabrik_id, jenis, modul, label, judul, isi, sebab, aksi,
+                         dibuat_pada, dibaca_pada)
+  VALUES ((SELECT id FROM t_pabrik), 'critical', 'Dokumen Eksternal', 'LEWAT TEMPO', 'SKLO Boiler 2 sudah kedaluwarsa 83 hari', 'Surat Keterangan Layak Operasi boiler 2 berakhir 30 Jun 2026. Pengoperasian boiler tanpa SKLO adalah pelanggaran regulasi.',
           'lewat_tenggat', 'docext',
           date_trunc('day', now()) + interval '08 hours 12 minutes', NULL);
-INSERT INTO notifikasi (pabrik_id, jenis, modul, judul, isi, sebab, aksi, dibuat_pada, dibaca_pada)
-  VALUES ((SELECT id FROM t_pabrik), 'critical', 'CAPA', 'CAPA-2026-0124 terlambat 11 hari', 'Laporan P2K3 triwulan II belum dikirim ke Disnaker. Tenggat 10 Sep 2026, penanggung jawab Fadli Saldi.',
+INSERT INTO notifikasi (pabrik_id, jenis, modul, label, judul, isi, sebab, aksi,
+                         dibuat_pada, dibaca_pada)
+  VALUES ((SELECT id FROM t_pabrik), 'critical', 'CAPA', 'LEWAT TEMPO', 'CAPA-2026-0124 terlambat 11 hari', 'Laporan P2K3 triwulan II belum dikirim ke Disnaker. Tenggat 10 Sep 2026, penanggung jawab Fadli Saldi.',
           'lewat_tenggat', 'capa',
           date_trunc('day', now()) + interval '08 hours 00 minutes', NULL);
-INSERT INTO notifikasi (pabrik_id, jenis, modul, judul, isi, sebab, aksi, dibuat_pada, dibaca_pada)
-  VALUES ((SELECT id FROM t_pabrik), 'high', 'Work Permit', 'WP-2026-0913 tertahan 18 jam di verifikasi QHSE', 'Izin ruang terbatas menunggu hasil uji gas O₂/LEL/H₂S. Eskalasi otomatis ke Plant Manager pada jam ke-24.',
+INSERT INTO notifikasi (pabrik_id, jenis, modul, label, judul, isi, sebab, aksi,
+                         dibuat_pada, dibaca_pada)
+  VALUES ((SELECT id FROM t_pabrik), 'high', 'Work Permit', 'TERTAHAN', 'WP-2026-0913 tertahan 18 jam di verifikasi QHSE', 'Izin ruang terbatas menunggu hasil uji gas O₂/LEL/H₂S. Eskalasi otomatis ke Plant Manager pada jam ke-24.',
           'menunggu_keputusan', 'permit',
           date_trunc('day', now()) + interval '07 hours 45 minutes', NULL);
-INSERT INTO notifikasi (pabrik_id, jenis, modul, judul, isi, sebab, aksi, dibuat_pada, dibaca_pada)
-  VALUES ((SELECT id FROM t_pabrik), 'high', 'Pelatihan', 'Sertifikat Teknisi K3 Listrik berakhir 17 hari lagi', 'Sertifikat atas nama Hendra Gunawan berlaku sampai 08 Okt 2026. Pendaftaran penyegaran perlu dilakukan sekarang.',
+INSERT INTO notifikasi (pabrik_id, jenis, modul, label, judul, isi, sebab, aksi,
+                         dibuat_pada, dibaca_pada)
+  VALUES ((SELECT id FROM t_pabrik), 'high', 'Pelatihan', 'LEWAT TEMPO', 'Sertifikat Teknisi K3 Listrik berakhir 17 hari lagi', 'Sertifikat atas nama Hendra Gunawan berlaku sampai 08 Okt 2026. Pendaftaran penyegaran perlu dilakukan sekarang.',
           'lewat_tenggat', 'training',
           date_trunc('day', now()) + interval '06 hours 30 minutes', now());
-INSERT INTO notifikasi (pabrik_id, jenis, modul, judul, isi, sebab, aksi, dibuat_pada, dibaca_pada)
-  VALUES ((SELECT id FROM t_pabrik), 'high', 'Environment', 'Minyak & lemak IPAL melewati baku mutu', 'Hasil uji 15 Sep menunjukkan 14 mg/L terhadap ambang 10 mg/L. Uji ulang wajib dalam 14 hari.',
+INSERT INTO notifikasi (pabrik_id, jenis, modul, label, judul, isi, sebab, aksi,
+                         dibuat_pada, dibaca_pada)
+  VALUES ((SELECT id FROM t_pabrik), 'high', 'Environment', 'BAKU MUTU', 'Minyak & lemak IPAL melewati baku mutu', 'Hasil uji 15 Sep menunjukkan 14 mg/L terhadap ambang 10 mg/L. Uji ulang wajib dalam 14 hari.',
           'lewat_tenggat', 'environment',
           date_trunc('day', now()) - interval '1 day' + interval '16 hours 20 minutes', now());
-INSERT INTO notifikasi (pabrik_id, jenis, modul, judul, isi, sebab, aksi, dibuat_pada, dibaca_pada)
-  VALUES ((SELECT id FROM t_pabrik), 'medium', 'Insiden', 'INC-2026-0318 menunggu investigasi akar masalah', 'Accident berkeparahan Serius di Line 3. Investigasi 5-Why belum lengkap, status belum dapat naik ke Terverifikasi.',
+INSERT INTO notifikasi (pabrik_id, jenis, modul, label, judul, isi, sebab, aksi,
+                         dibuat_pada, dibaca_pada)
+  VALUES ((SELECT id FROM t_pabrik), 'medium', 'Insiden', 'TERTAHAN', 'INC-2026-0318 menunggu investigasi akar masalah', 'Accident berkeparahan Serius di Line 3. Investigasi 5-Why belum lengkap, status belum dapat naik ke Terverifikasi.',
           'menunggu_keputusan', 'incident',
           date_trunc('day', now()) - interval '1 day' + interval '14 hours 05 minutes', now());
-INSERT INTO notifikasi (pabrik_id, jenis, modul, judul, isi, sebab, aksi, dibuat_pada, dibaca_pada)
-  VALUES ((SELECT id FROM t_pabrik), 'medium', 'Dokumen Internal', 'Kebijakan K3 dan Lingkungan lewat masa tinjau', 'KGK-01 revisi 3 seharusnya ditinjau ulang 14 Jan 2026. Perubahan struktur organisasi Mei 2026 belum tercermin.',
+INSERT INTO notifikasi (pabrik_id, jenis, modul, label, judul, isi, sebab, aksi,
+                         dibuat_pada, dibaca_pada)
+  VALUES ((SELECT id FROM t_pabrik), 'medium', 'Dokumen Internal', 'LEWAT TEMPO', 'Kebijakan K3 dan Lingkungan lewat masa tinjau', 'KGK-01 revisi 3 seharusnya ditinjau ulang 14 Jan 2026. Perubahan struktur organisasi Mei 2026 belum tercermin.',
           'lewat_tenggat', 'docint',
           date_trunc('day', now()) - interval '1 day' + interval '09 hours 40 minutes', now());
-INSERT INTO notifikasi (pabrik_id, jenis, modul, judul, isi, sebab, aksi, dibuat_pada, dibaca_pada)
-  VALUES ((SELECT id FROM t_pabrik), 'medium', 'Safety Checklist', 'P2H Forklift shift 2 belum dikerjakan', 'CHK-2026-1846 belum dimulai. Forklift tidak boleh dioperasikan sebelum P2H selesai.',
+INSERT INTO notifikasi (pabrik_id, jenis, modul, label, judul, isi, sebab, aksi,
+                         dibuat_pada, dibaca_pada)
+  VALUES ((SELECT id FROM t_pabrik), 'medium', 'Safety Checklist', 'AMBANG', 'P2H Forklift shift 2 belum dikerjakan', 'CHK-2026-1846 belum dimulai. Forklift tidak boleh dioperasikan sebelum P2H selesai.',
           'melewati_ambang', 'checklist',
           date_trunc('day', now()) - interval '1 day' + interval '08 hours 15 minutes', now());
-INSERT INTO notifikasi (pabrik_id, jenis, modul, judul, isi, sebab, aksi, dibuat_pada, dibaca_pada)
-  VALUES ((SELECT id FROM t_pabrik), 'low', 'CAPA', 'CAPA-2026-0138 ditutup dan diverifikasi', 'Cermin cembung dan marka pejalan kaki persimpangan B2 terpasang, bukti foto terlampir.',
+INSERT INTO notifikasi (pabrik_id, jenis, modul, label, judul, isi, sebab, aksi,
+                         dibuat_pada, dibaca_pada)
+  VALUES ((SELECT id FROM t_pabrik), 'low', 'CAPA', 'AMBANG', 'CAPA-2026-0138 ditutup dan diverifikasi', 'Cermin cembung dan marka pejalan kaki persimpangan B2 terpasang, bukti foto terlampir.',
           'melewati_ambang', 'capa',
           now() - interval '2 days', now());
-INSERT INTO notifikasi (pabrik_id, jenis, modul, judul, isi, sebab, aksi, dibuat_pada, dibaca_pada)
-  VALUES ((SELECT id FROM t_pabrik), 'info', 'SHE Activity', 'Safety Talk bahaya uap panas — 24 peserta', 'ACT-2026-0091 tersimpan dengan daftar hadir terpindai. Jam-orang otomatis masuk ke KPI Jam Pelatihan K3.',
+INSERT INTO notifikasi (pabrik_id, jenis, modul, label, judul, isi, sebab, aksi,
+                         dibuat_pada, dibaca_pada)
+  VALUES ((SELECT id FROM t_pabrik), 'info', 'SHE Activity', 'AMBANG', 'Safety Talk bahaya uap panas — 24 peserta', 'ACT-2026-0091 tersimpan dengan daftar hadir terpindai. Jam-orang otomatis masuk ke KPI Jam Pelatihan K3.',
           'melewati_ambang', 'activity',
           now() - interval '2 days', now());
 
@@ -1614,6 +1624,156 @@ INSERT INTO capa (nomor, pabrik_id, judul, sumber_jenis, sumber_id, sumber_nomor
           NULL,
           NULL,
           NULL);
+
+-- Jam kerja dan jumlah pekerja. Ini masukan, bukan turunan: keduanya
+-- datang dari HRD, dan tanpa keduanya TRIR serta LTIFR tidak dapat dihitung.
+-- Angka bulanan dibagi rata dari manhours tahunan pada purwarupa.
+INSERT INTO jam_kerja_bulanan (pabrik_id, periode, jam_kerja, pekerja, kerugian_properti_juta)
+  SELECT p.id, (date_trunc('month', current_date) - (g || ' months')::interval)::date,
+         228333, 412, CASE WHEN g = 0 THEN 18.4 ELSE 12.0 END
+    FROM pabrik p CROSS JOIN generate_series(0, 11) AS g
+   WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, periode) DO NOTHING;
+INSERT INTO jam_kerja_bulanan (pabrik_id, periode, jam_kerja, pekerja, kerugian_properti_juta)
+  SELECT p.id, (date_trunc('month', current_date) - (g || ' months')::interval)::date,
+         165000, 298, CASE WHEN g = 0 THEN 18.4 ELSE 12.0 END
+    FROM pabrik p CROSS JOIN generate_series(0, 11) AS g
+   WHERE p.kode = 'BKS'
+  ON CONFLICT (pabrik_id, periode) DO NOTHING;
+INSERT INTO jam_kerja_bulanan (pabrik_id, periode, jam_kerja, pekerja, kerugian_properti_juta)
+  SELECT p.id, (date_trunc('month', current_date) - (g || ' months')::interval)::date,
+         118333, 214, CASE WHEN g = 0 THEN 18.4 ELSE 12.0 END
+    FROM pabrik p CROSS JOIN generate_series(0, 11) AS g
+   WHERE p.kode = 'SMG'
+  ON CONFLICT (pabrik_id, periode) DO NOTHING;
+INSERT INTO jam_kerja_bulanan (pabrik_id, periode, jam_kerja, pekerja, kerugian_properti_juta)
+  SELECT p.id, (date_trunc('month', current_date) - (g || ' months')::interval)::date,
+         81667, 147, CASE WHEN g = 0 THEN 18.4 ELSE 12.0 END
+    FROM pabrik p CROSS JOIN generate_series(0, 11) AS g
+   WHERE p.kode = 'MDN'
+  ON CONFLICT (pabrik_id, periode) DO NOTHING;
+
+-- Rekap bulan-bulan sebelum sistem berjalan. Grafik 12 bulan tidak dapat
+-- menunggu setahun, dan mengarang catatan insiden mundur berarti membuat
+-- jejak audit yang berbohong. Baris ini bertanda sumbernya sendiri, dan API
+-- menyebutkannya pada setiap titik grafik.
+INSERT INTO rekap_awal_bulanan (pabrik_id, periode, insiden, trc, lti, hari_hilang, bahaya)
+  SELECT p.id, (date_trunc('month', current_date) - interval '11 months')::date,
+         4, 3, 1, 3, 52
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, periode) DO NOTHING;
+INSERT INTO rekap_awal_bulanan (pabrik_id, periode, insiden, trc, lti, hari_hilang, bahaya)
+  SELECT p.id, (date_trunc('month', current_date) - interval '10 months')::date,
+         5, 4, 1, 3, 61
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, periode) DO NOTHING;
+INSERT INTO rekap_awal_bulanan (pabrik_id, periode, insiden, trc, lti, hari_hilang, bahaya)
+  SELECT p.id, (date_trunc('month', current_date) - interval '9 months')::date,
+         7, 6, 2, 6, 48
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, periode) DO NOTHING;
+INSERT INTO rekap_awal_bulanan (pabrik_id, periode, insiden, trc, lti, hari_hilang, bahaya)
+  SELECT p.id, (date_trunc('month', current_date) - interval '8 months')::date,
+         9, 8, 3, 9, 66
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, periode) DO NOTHING;
+INSERT INTO rekap_awal_bulanan (pabrik_id, periode, insiden, trc, lti, hari_hilang, bahaya)
+  SELECT p.id, (date_trunc('month', current_date) - interval '7 months')::date,
+         8, 7, 2, 6, 74
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, periode) DO NOTHING;
+INSERT INTO rekap_awal_bulanan (pabrik_id, periode, insiden, trc, lti, hari_hilang, bahaya)
+  SELECT p.id, (date_trunc('month', current_date) - interval '6 months')::date,
+         6, 5, 2, 6, 81
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, periode) DO NOTHING;
+INSERT INTO rekap_awal_bulanan (pabrik_id, periode, insiden, trc, lti, hari_hilang, bahaya)
+  SELECT p.id, (date_trunc('month', current_date) - interval '5 months')::date,
+         7, 6, 2, 6, 77
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, periode) DO NOTHING;
+INSERT INTO rekap_awal_bulanan (pabrik_id, periode, insiden, trc, lti, hari_hilang, bahaya)
+  SELECT p.id, (date_trunc('month', current_date) - interval '4 months')::date,
+         5, 4, 1, 3, 88
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, periode) DO NOTHING;
+INSERT INTO rekap_awal_bulanan (pabrik_id, periode, insiden, trc, lti, hari_hilang, bahaya)
+  SELECT p.id, (date_trunc('month', current_date) - interval '3 months')::date,
+         6, 5, 2, 6, 95
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, periode) DO NOTHING;
+INSERT INTO rekap_awal_bulanan (pabrik_id, periode, insiden, trc, lti, hari_hilang, bahaya)
+  SELECT p.id, (date_trunc('month', current_date) - interval '2 months')::date,
+         4, 3, 1, 3, 92
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, periode) DO NOTHING;
+INSERT INTO rekap_awal_bulanan (pabrik_id, periode, insiden, trc, lti, hari_hilang, bahaya)
+  SELECT p.id, (date_trunc('month', current_date) - interval '1 months')::date,
+         5, 4, 1, 3, 101
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, periode) DO NOTHING;
+
+-- Penilaian 12 elemen SMK3 untuk Cibitung; pabrik lain belum dinilai.
+INSERT INTO elemen_smk3 (pabrik_id, nomor, nama, kriteria, penuhi)
+  SELECT p.id, 1, 'Pembangunan & Pemeliharaan Komitmen', 26, 26
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, nomor) DO NOTHING;
+INSERT INTO elemen_smk3 (pabrik_id, nomor, nama, kriteria, penuhi)
+  SELECT p.id, 2, 'Strategi Pendokumentasian', 15, 14
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, nomor) DO NOTHING;
+INSERT INTO elemen_smk3 (pabrik_id, nomor, nama, kriteria, penuhi)
+  SELECT p.id, 3, 'Peninjauan Perancangan & Kontrak', 8, 8
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, nomor) DO NOTHING;
+INSERT INTO elemen_smk3 (pabrik_id, nomor, nama, kriteria, penuhi)
+  SELECT p.id, 4, 'Pengendalian Dokumen', 7, 7
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, nomor) DO NOTHING;
+INSERT INTO elemen_smk3 (pabrik_id, nomor, nama, kriteria, penuhi)
+  SELECT p.id, 5, 'Pembelian & Pengendalian Produk', 9, 8
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, nomor) DO NOTHING;
+INSERT INTO elemen_smk3 (pabrik_id, nomor, nama, kriteria, penuhi)
+  SELECT p.id, 6, 'Keamanan Bekerja Berdasarkan SMK3', 41, 37
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, nomor) DO NOTHING;
+INSERT INTO elemen_smk3 (pabrik_id, nomor, nama, kriteria, penuhi)
+  SELECT p.id, 7, 'Standar Pemantauan', 17, 15
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, nomor) DO NOTHING;
+INSERT INTO elemen_smk3 (pabrik_id, nomor, nama, kriteria, penuhi)
+  SELECT p.id, 8, 'Pelaporan & Perbaikan Kekurangan', 9, 8
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, nomor) DO NOTHING;
+INSERT INTO elemen_smk3 (pabrik_id, nomor, nama, kriteria, penuhi)
+  SELECT p.id, 9, 'Pengelolaan Material & Perpindahannya', 12, 12
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, nomor) DO NOTHING;
+INSERT INTO elemen_smk3 (pabrik_id, nomor, nama, kriteria, penuhi)
+  SELECT p.id, 10, 'Pengumpulan & Penggunaan Data', 6, 6
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, nomor) DO NOTHING;
+INSERT INTO elemen_smk3 (pabrik_id, nomor, nama, kriteria, penuhi)
+  SELECT p.id, 11, 'Pemeriksaan SMK3', 5, 4
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, nomor) DO NOTHING;
+INSERT INTO elemen_smk3 (pabrik_id, nomor, nama, kriteria, penuhi)
+  SELECT p.id, 12, 'Pengembangan Keterampilan & Kemampuan', 11, 10
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, nomor) DO NOTHING;
+
+-- Program strategis pada Dashboard Eksekutif.
+INSERT INTO program_strategis (nama, target, capai, dari, tenggat, status, urutan)
+  VALUES ('Pemisahan jalur pejalan kaki & forklift', '4 pabrik', 2, 4, 'Des 2026', 'Dalam Proses', 1);
+INSERT INTO program_strategis (nama, target, capai, dari, tenggat, status, urutan)
+  VALUES ('Sertifikasi ulang ISO 45001 & 14001', 'Surveillance Okt', 0, 1, 'Okt 2026', 'Terjadwal', 2);
+INSERT INTO program_strategis (nama, target, capai, dari, tenggat, status, urutan)
+  VALUES ('Program Observasi Perilaku Aman', '400 observasi/bulan', 302, 400, 'Berjalan', 'Dalam Proses', 3);
+INSERT INTO program_strategis (nama, target, capai, dari, tenggat, status, urutan)
+  VALUES ('Penggantian boiler tua Cibitung', 'Boiler 2', 0, 1, 'Q2 2027', 'Terbuka', 4);
+INSERT INTO program_strategis (nama, target, capai, dari, tenggat, status, urutan)
+  VALUES ('Nihil kecelakaan hilang waktu kerja', '4 pabrik sepanjang 2026', 3, 4, 'Des 2026', 'Dalam Proses', 5);
 
 -- Pencacah disetel melewati nomor tertinggi yang terpakai; tanpa ini
 -- catatan pertama yang dibuat lewat API akan menabrak nomor data contoh.

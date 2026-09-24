@@ -1,4 +1,4 @@
-/* Membangkitkan 005_contoh.sql dari assets/data.js.
+/* Membangkitkan 007_contoh.sql dari assets/data.js.
    Jalankan:  node api/migrasi/buat-contoh.mjs
    Dibangkitkan, bukan diketik ulang: data contoh yang menyimpang dari
    purwarupa membuat layar terlihat berbeda tanpa ada yang sengaja mengubahnya. */
@@ -423,10 +423,22 @@ const waktuNotif = t => {
   if (m) return `now() - interval '${m[1]} days'`;
   return 'now()';
 };
+/* Label chip mengikuti panel "Perlu Perhatian" pada purwarupa. */
+const labelDari = (n, sebab) => {
+  const t = n.judul + ' ' + n.isi;
+  if (/ambang|baku mutu|mg\/L/i.test(t)) return 'BAKU MUTU';
+  if (/masa simpan|TPS|90 hari/i.test(t)) return 'MASA SIMPAN';
+  if (/Major/i.test(t)) return 'TEMUAN MAJOR';
+  if (sebab === 'menunggu_keputusan') return 'TERTAHAN';
+  if (sebab === 'lewat_tenggat') return 'LEWAT TEMPO';
+  return 'AMBANG';
+};
 for (const t of K.notifikasi) {
-  w(`INSERT INTO notifikasi (pabrik_id, jenis, modul, judul, isi, sebab, aksi, dibuat_pada, dibaca_pada)
-  VALUES (${cbt}, ${q(t.jenis)}, ${q(t.modul)}, ${q(t.judul)}, ${q(t.isi)},
-          ${q(sebabDari(t.judul + ' ' + t.isi))}, ${q(t.aksi)},
+  const sebab = sebabDari(t.judul + ' ' + t.isi);
+  w(`INSERT INTO notifikasi (pabrik_id, jenis, modul, label, judul, isi, sebab, aksi,
+                         dibuat_pada, dibaca_pada)
+  VALUES (${cbt}, ${q(t.jenis)}, ${q(t.modul)}, ${q(labelDari(t, sebab))}, ${q(t.judul)}, ${q(t.isi)},
+          ${q(sebab)}, ${q(t.aksi)},
           ${waktuNotif(t.waktu)}, ${t.baca ? 'now()' : 'NULL'});`);
 }
 
@@ -463,6 +475,58 @@ for (const c of K.capa.filter(adaInduk)) {
           ${selesai ? `${q(tgl(c.tenggat))}::timestamptz` : 'NULL'});`);
 }
 
+/* ── KPI · jam kerja, rekap awal, program strategis ─────────────────── */
+w(`\n-- Jam kerja dan jumlah pekerja. Ini masukan, bukan turunan: keduanya
+-- datang dari HRD, dan tanpa keduanya TRIR serta LTIFR tidak dapat dihitung.
+-- Angka bulanan dibagi rata dari manhours tahunan pada purwarupa.`);
+const PABRIK_KODE = { Cibitung: 'CBT', Bekasi: 'BKS', Semarang: 'SMG', Medan: 'MDN' };
+const angkaId = t => Number(String(t).replace(/\./g, '').replace(',', '.'));
+for (const pk of K.pabrikKinerja) {
+  const kode = PABRIK_KODE[pk.nama];
+  if (!kode) continue;
+  const jamBulan = Math.round(angkaId(pk.manhours) / 12);
+  w(`INSERT INTO jam_kerja_bulanan (pabrik_id, periode, jam_kerja, pekerja, kerugian_properti_juta)
+  SELECT p.id, (date_trunc('month', current_date) - (g || ' months')::interval)::date,
+         ${jamBulan}, ${pk.pekerja}, CASE WHEN g = 0 THEN 18.4 ELSE 12.0 END
+    FROM pabrik p CROSS JOIN generate_series(0, 11) AS g
+   WHERE p.kode = ${q(kode)}
+  ON CONFLICT (pabrik_id, periode) DO NOTHING;`);
+}
+
+w(`\n-- Rekap bulan-bulan sebelum sistem berjalan. Grafik 12 bulan tidak dapat
+-- menunggu setahun, dan mengarang catatan insiden mundur berarti membuat
+-- jejak audit yang berbohong. Baris ini bertanda sumbernya sendiri, dan API
+-- menyebutkannya pada setiap titik grafik.`);
+/* trenInsiden dan trenBahaya pada purwarupa berurut dari 11 bulan lalu
+   sampai bulan ini. Bulan terakhir dilewati: bulan berjalan dihitung dari
+   catatan sistem, bukan dari rekap. */
+K.trenInsiden.forEach((t, i) => {
+  if (i === K.trenInsiden.length - 1) return;
+  const mundur = K.trenInsiden.length - 1 - i;
+  const bahaya = K.trenBahaya[i] ? K.trenBahaya[i].v : 0;
+  const trc = Math.max(0, t.v - 1);
+  const lti = Math.max(0, Math.round(trc / 3));
+  w(`INSERT INTO rekap_awal_bulanan (pabrik_id, periode, insiden, trc, lti, hari_hilang, bahaya)
+  SELECT p.id, (date_trunc('month', current_date) - interval '${mundur} months')::date,
+         ${t.v}, ${trc}, ${lti}, ${lti * 3}, ${bahaya}
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, periode) DO NOTHING;`);
+});
+
+w(`\n-- Penilaian 12 elemen SMK3 untuk Cibitung; pabrik lain belum dinilai.`);
+for (const e of K.elemenSMK3) {
+  w(`INSERT INTO elemen_smk3 (pabrik_id, nomor, nama, kriteria, penuhi)
+  SELECT p.id, ${e.no}, ${q(e.nama)}, ${e.kriteria}, ${e.penuhi}
+    FROM pabrik p WHERE p.kode = 'CBT'
+  ON CONFLICT (pabrik_id, nomor) DO NOTHING;`);
+}
+
+w(`\n-- Program strategis pada Dashboard Eksekutif.`);
+K.programStrategis.forEach((g, i) => {
+  w(`INSERT INTO program_strategis (nama, target, capai, dari, tenggat, status, urutan)
+  VALUES (${q(g.nama)}, ${q(g.target)}, ${g.capai}, ${g.dari}, ${q(g.tenggat)}, ${q(g.status)}, ${i + 1});`);
+});
+
 /* Pencacah nomor disetel melewati nomor tertinggi yang dipakai, supaya catatan
    berikutnya tidak menabrak nomor data contoh. */
 w(`\n-- Pencacah disetel melewati nomor tertinggi yang terpakai; tanpa ini
@@ -490,5 +554,5 @@ ON CONFLICT (awalan, tahun) DO UPDATE SET nilai = greatest(pencacah_nomor.nilai,
 
 COMMIT;`);
 
-fs.writeFileSync(new URL('./005_contoh.sql', import.meta.url).pathname, L.join('\n') + '\n');
-console.log('005_contoh.sql: ' + L.length + ' pernyataan');
+fs.writeFileSync(new URL('./007_contoh.sql', import.meta.url).pathname, L.join('\n') + '\n');
+console.log('007_contoh.sql: ' + L.length + ' pernyataan');

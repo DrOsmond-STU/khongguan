@@ -119,6 +119,13 @@ function rute(): Rute
     $r->get('/notifikasi',              [Modul\Notifikasi::class, 'daftar']);
     $r->post('/notifikasi/{id}/terbaca', [Modul\Notifikasi::class, 'tandaiTerbaca']);
 
+    // Modul 21 · SHE KPI & Analytics
+    $r->get('/kpi',      [Modul\KpiModul::class, 'tampil']);
+    $r->get('/kpi/tren', [Modul\KpiModul::class, 'tren']);
+
+    // Modul 00 · Dashboard Eksekutif
+    $r->get('/eksekutif', [Modul\Eksekutif::class, 'tampil']);
+
     // Aplikasi lapangan
     $r->post('/lapangan/kirim',   [Modul\Lapangan::class, 'kirim']);
     $r->get('/lapangan/rujukan',  [Modul\Lapangan::class, 'rujukan']);

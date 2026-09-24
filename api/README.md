@@ -14,7 +14,8 @@ createdb kg_safeguard
 psql -d kg_safeguard -f api/migrasi/001_skema.sql
 psql -d kg_safeguard -f api/migrasi/002_acuan.sql
 psql -d kg_safeguard -f api/migrasi/004_skema_lanjutan.sql
-psql -d kg_safeguard -f api/migrasi/005_contoh.sql   # peragaan saja
+psql -d kg_safeguard -f api/migrasi/006_skema_kpi.sql
+psql -d kg_safeguard -f api/migrasi/007_contoh.sql   # peragaan saja
 
 # 2 · konfigurasi
 cp api/config.contoh.php api/config.php     # lalu sesuaikan isinya
@@ -32,10 +33,10 @@ window.KG_KONFIG = { api: 'http://127.0.0.1:8150', versi: '3' };
 Dikosongkan berarti mode peragaan dengan data contoh — persis seperti
 purwarupa.
 
-`005_contoh.sql` mengisi basis data peragaan dengan isi yang sama persis
+`007_contoh.sql` mengisi basis data peragaan dengan isi yang sama persis
 seperti purwarupa — dibangkitkan dari `assets/data.js`, bukan diketik ulang.
 Ia menolak berjalan bila basis datanya sudah berisi catatan. Pada produksi,
-jalankan 001, 002, dan 004 saja.
+jalankan 001, 002, 004, dan 006 saja — data contoh dilewati.
 
 ## Menjalankan pengujian
 
@@ -78,8 +79,9 @@ migrasi/               Skema, data acuan, dan data contoh
   002_acuan.sql        Pabrik, area, peran, dan matriks hak akses
   004_skema_lanjutan.sql  Inspeksi, checklist, audit, risiko, lingkungan,
                        dokumen, regulasi, pelatihan, kegiatan, pemberitahuan
-  005_contoh.sql       Data peragaan (dibangkitkan; bukan untuk produksi)
-  buat-contoh.mjs      Pembangkit 005 dari assets/data.js
+  006_skema_kpi.sql    Jam kerja, rekap awal, target KPI, program strategis
+  007_contoh.sql       Data peragaan (dibangkitkan; bukan untuk produksi)
+  buat-contoh.mjs      Pembangkit 007 dari assets/data.js
 uji/                   Pelari uji dan kasusnya
 ```
 
@@ -116,6 +118,10 @@ menulis langsung ke tabel.
 | AB-25 Jam pelatihan dari kegiatan | — | `sum(peserta × durasi_jam)`, tidak ada kolom untuk mengetiknya |
 | AB-30 Tiga sebab pemberitahuan | `CHECK (sebab IN (…))` | Tidak ada nilai untuk "sekadar memberi tahu" |
 | AB-31 Terbaca bukan selesai | Kolom `dibaca_pada` dan `selesai_pada` terpisah | Menandai terbaca tidak menutup |
+| AB-19 Angka punya pembanding | `target_kpi.target` | Setiap kartu KPI membawa periode sebelumnya, target, atau akumulasi |
+| AB-26 Lagging ≠ leading | `target_kpi.jenis` | Dua deret terpisah pada satu balasan; tidak pernah satu |
+| AB-27 Rumus di tempatnya | `target_kpi.rumus` | Ikut pada setiap kartu, bukan di dokumen terpisah |
+| AB-28 Grup tidak menutupi pabrik | — | Kartu pabrik dan angka grup dalam satu balasan; status = indikator terburuk |
 | KNF-24 Jejak audit kekal | Pemicu + `REVOKE` | — |
 
 Setiap penolakan membawa kode aturannya:
@@ -125,6 +131,27 @@ Setiap penolakan membawa kode aturannya:
   "pesan": "Izin tidak dapat diterbitkan: langkah 2 pada JSA-2026-002 berada di zona Ekstrem (skor sisa 16).",
   "rincian": { "langkah": 2, "skor_sisa": 16 } } }
 ```
+
+## Angka yang dihitung dan angka yang dicatat
+
+Hampir seluruh angka KPI diturunkan dari catatan yang sudah ada. Yang disimpan
+hanya dua hal, dan keduanya punya alasan:
+
+| Disimpan | Mengapa tidak dihitung |
+|---|---|
+| `jam_kerja_bulanan` | Jam kerja dan jumlah pekerja datang dari HRD; tidak ada modul QHSE yang mengetahuinya. Tanpa keduanya TRIR dan LTIFR tidak dapat dihitung |
+| `rekap_awal_bulanan` | Bulan-bulan sebelum sistem berjalan. Grafik 12 bulan tidak dapat menunggu setahun, dan mengarang catatan insiden mundur berarti membuat jejak audit yang berbohong |
+| `elemen_smk3` | Penilaian kriteria SMK3 adalah hasil audit manusia, bukan turunan dari catatan |
+
+Setiap titik grafik dan setiap kartu KPI menyebutkan sumbernya (`rekaman` atau
+`rekap_awal`). Bila dua periode yang dibandingkan berbeda sumbernya,
+`banding_setara` bernilai `false` dan arah naik-turunnya tidak disimpulkan —
+selisih antara angka yang dihitung sistem dan angka rekap bukan tren.
+
+Satu hal yang sengaja **tidak** diperlakukan sebagai kabar baik: pabrik yang
+tidak punya satu pun catatan pada periode berjalan. TRIR nol di sana berarti
+tidak ada yang mencatat, bukan tidak ada kejadian, jadi kartunya berstatus
+Perhatian dengan penentu "Tanpa catatan".
 
 ## Kosakata mengikuti purwarupa
 

@@ -54,11 +54,24 @@ window.KGSUMBER = (function () {
     pelatihan:       { jalur: '/pelatihan',           modul: 'training'    },
     sertifikasi:     { jalur: '/pelatihan/sertifikasi', modul: 'training'  },
     kegiatan:        { jalur: '/kegiatan',            modul: 'activity'    },
-    notifikasi:      { jalur: '/notifikasi',          modul: 'notif'       }
+    notifikasi:      { jalur: '/notifikasi',          modul: 'notif'       },
+    kpi:             { jalur: '/kpi',                  modul: 'kpi'         },
+    tren:            { jalur: '/kpi/tren',             modul: 'kpi'         },
+    eksekutif:       { jalur: '/eksekutif',            modul: 'exec'        }
   };
 
   /* Koleksi yang balasannya bukan larik catatan; dipetakan utuh. */
-  var UTUH = { lingkungan: true };
+  var UTUH = { lingkungan: true, kpi: true, eksekutif: true };
+
+  /* Satu balasan yang mengisi beberapa koleksi window.KG sekaligus. Dipisah di
+     sini, bukan di peladen: memecah /kpi menjadi enam endpoint hanya supaya
+     bentuknya cocok dengan purwarupa berarti enam perjalanan jaringan untuk
+     satu layar. */
+  var PECAH = {
+    kpi:       ['kpiLagging', 'kpiLeading'],
+    tren:      ['trenInsiden', 'trenBahaya', 'trenTrir'],
+    eksekutif: ['pabrikKinerja', 'programStrategis']
+  };
 
   function token() {
     try { return localStorage.getItem(KUNCI_TOKEN); } catch (e) { return null; }
@@ -288,8 +301,41 @@ window.KGSUMBER = (function () {
     },
     notifikasi: function (r) {
       return {
-        id: r.id, jenis: r.jenis, modul: r.modul, judul: r.judul, isi: r.isi,
-        waktu: sejakJam(r.dibuat_pada), baca: r.baca === true, aksi: r.aksi
+        id: r.id, jenis: r.jenis, modul: r.modul, label: r.label || '', judul: r.judul,
+        isi: r.isi, waktu: sejakJam(r.dibuat_pada), baca: r.baca === true, aksi: r.aksi
+      };
+    },
+    /* KPI · dua deret terpisah, tidak pernah satu (AB-26). */
+    kpi: function (o) {
+      return {
+        kpiLagging: (o.lagging || []).map(kartuKpi),
+        kpiLeading: (o.leading || []).map(kartuKpi)
+      };
+    },
+    tren: function (d) {
+      return {
+        trenInsiden: d.map(function (t) { return { bln: t.bln, v: Number(t.insiden) }; }),
+        trenBahaya:  d.map(function (t) { return { bln: t.bln, v: Number(t.bahaya) }; }),
+        trenTrir:    d.map(function (t) { return { bln: t.bln, v: t.trir === null ? 0 : Number(t.trir) }; })
+      };
+    },
+    eksekutif: function (o) {
+      return {
+        pabrikKinerja: (o.pabrik || []).map(function (p) {
+          return {
+            nama: p.nama, pekerja: Number(p.pekerja),
+            trir: num(p.trir, 2), ltifr: num(p.ltifr, 2),
+            manhours: num(p.jam_kerja, 0),
+            insiden: Number(p.insiden), bahaya: Number(p.bahaya),
+            capa: p.capa === null ? '\u2014' : p.capa + '%',
+            smk3: p.smk3 === null ? '\u2014' : p.smk3 + '%',
+            status: p.status
+          };
+        }),
+        programStrategis: (o.program || []).map(function (g) {
+          return { nama: g.nama, target: g.target, capai: Number(g.capai),
+                   dari: Number(g.dari), tenggat: g.tenggat, status: g.status };
+        })
       };
     },
     /* Lingkungan bukan larik: empat pemantauan bernama, masing-masing dengan
@@ -358,6 +404,51 @@ window.KGSUMBER = (function () {
 
   function angka(v) { return v === null || v === undefined ? null : Number(v); }
 
+  /* Angka dalam bentuk Indonesia: titik ribuan, koma desimal. Purwarupa
+     menulisnya begitu, dan angka yang berpindah bentuk adalah perubahan
+     tampilan walaupun nilainya sama. */
+  function num(v, desimal) {
+    if (v === null || v === undefined) return '\u2014';
+    var n = Number(v);
+    if (isNaN(n)) return '\u2014';
+    var t = n.toFixed(desimal === undefined ? 0 : desimal);
+    var bagian = t.split('.');
+    bagian[0] = bagian[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return bagian.join(',');
+  }
+
+  /* Satu kartu KPI: nilai, pembandingnya (AB-19), dan rumusnya (AB-27). */
+  function kartuKpi(k) {
+    var desimal = k.satuan === '%' || k.satuan === '/bln' || k.satuan === 'hari' ? 0
+      : (k.kode === 'manhours' ? 0 : (k.kode === 'ltisr' || k.kode === 'pelatihan' ? 1 : 2));
+
+    var delta;
+    if (k.selisih === null || k.selisih === undefined) {
+      delta = k.catatan || '\u2014';
+    } else if (Number(k.selisih) === 0) {
+      delta = 'sama dengan ' + k.bandingkan_dengan;
+    } else {
+      delta = num(Math.abs(k.selisih), desimal) + (k.satuan === '%' ? '%' : '')
+        + ' vs ' + k.bandingkan_dengan;
+      /* Selisih antara angka rekaman dan angka rekap sebelum sistem berjalan
+         bukan perbandingan yang setara; dikatakan, bukan disembunyikan. */
+      if (k.banding_setara === false) delta += ' (rekap awal)';
+    }
+
+    var bagian = [];
+    if (k.selisih !== null && k.selisih !== undefined && k.catatan) bagian.push(k.catatan);
+    else bagian.push(k.rumus);
+    if (k.target !== null && k.target !== undefined) {
+      bagian.push('target ' + k.target_arah + ' ' + num(k.target, desimal)
+        + (k.satuan === '%' ? '%' : ''));
+    }
+
+    return {
+      nama: k.nama, nilai: num(k.nilai, desimal), satuan: k.satuan,
+      delta: delta, arah: k.arah, note: bagian.join(' \u00b7 ')
+    };
+  }
+
   /* "12–14 Okt 2026" bila sebulan sama, jika tidak dua tanggal penuh. */
   function rentangTanggal(mulai, selesai) {
     var a = tanggal(mulai);
@@ -409,10 +500,16 @@ window.KGSUMBER = (function () {
         if (saya.modul.indexOf(t.modul) === -1) return;
         janji.push(
           ambil(t.jalur).then(function (r) {
-            window.KG[koleksi] = UTUH[koleksi]
+            var hasil = UTUH[koleksi]
               ? PETA[koleksi](r.data || {})
-              : (r.data || []).map(PETA[koleksi]);
-            hidup.push(koleksi);
+              : (PECAH[koleksi] ? PETA[koleksi](r.data || []) : (r.data || []).map(PETA[koleksi]));
+            if (PECAH[koleksi]) {
+              PECAH[koleksi].forEach(function (nama) { window.KG[nama] = hasil[nama]; });
+              hidup.push(PECAH[koleksi].join('+'));
+            } else {
+              window.KG[koleksi] = hasil;
+              hidup.push(koleksi);
+            }
           }).catch(function (e) {
             /* Satu modul gagal tidak boleh menggagalkan seluruh aplikasi:
                data contohnya tetap dipakai, dan kegagalannya disebutkan. */
@@ -422,6 +519,16 @@ window.KGSUMBER = (function () {
       });
 
       return Promise.all(janji).then(function () {
+        /* Panel "Perhatian Segera" pada dashboard adalah pandangan lain atas
+           pemberitahuan yang sama, bukan daftar kedua. Dua daftar terpisah
+           akan berbeda isinya begitu salah satunya ditutup. */
+        if (hidup.indexOf('notifikasi') !== -1) {
+          window.KG.perhatian = window.KG.notifikasi
+            .filter(function (n) { return n.jenis === 'critical' || n.jenis === 'high'; })
+            .map(function (n) {
+              return { chip: n.jenis, label: n.label, judul: n.judul, meta: n.isi };
+            });
+        }
         console.info('[KG] tersambung ke ' + API + ' sebagai ' + saya.nama
           + ' (' + saya.peran.nama + '). Koleksi langsung: ' + (hidup.sort().join(', ') || 'belum ada')
           + '. Sisanya masih data contoh.');

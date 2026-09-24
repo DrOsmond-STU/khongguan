@@ -573,6 +573,109 @@ uji('UJ-16b', 'Ringkasan inspeksi dihitung dari butirnya, tidak disimpan', funct
     sama(1, (int) $baris['temuan'], 'satu temuan');
 });
 
+uji('UJ-26b', 'AB-26 · lagging dan leading tidak pernah satu deret', function () use ($D, $T) {
+    Db::jalankan(
+        "INSERT INTO jam_kerja_bulanan (pabrik_id, periode, jam_kerja, pekerja)
+         VALUES (:p, date_trunc('month', current_date)::date, 200000, 400)",
+        [':p' => $D['pabrik_cbt']]
+    );
+    $h = panggil('GET', '/kpi', [], $T['qhse']);
+    sama(200, $h['status'], 'terbaca');
+    benar(isset($h['data']['lagging'], $h['data']['leading']), 'dua deret terpisah');
+
+    $kode = static fn (array $d): array => array_column($d, 'kode');
+    sama([], array_intersect($kode($h['data']['lagging']), $kode($h['data']['leading'])),
+        'tidak ada indikator yang muncul di keduanya');
+});
+
+uji('UJ-27c', 'AB-27 · setiap angka KPI membawa rumusnya', function () use ($T) {
+    $h = panggil('GET', '/kpi', [], $T['qhse']);
+    foreach (array_merge($h['data']['lagging'], $h['data']['leading']) as $k) {
+        benar(is_string($k['rumus']) && $k['rumus'] !== '', $k['nama'] . ' punya rumus');
+    }
+});
+
+uji('UJ-19d', 'AB-19 · setiap angka KPI punya pembanding', function () use ($T) {
+    $h = panggil('GET', '/kpi', [], $T['qhse']);
+    foreach (array_merge($h['data']['lagging'], $h['data']['leading']) as $k) {
+        // Pembanding boleh berupa periode sebelumnya, target, atau catatan
+        // yang menyebut akumulasi. Yang tidak boleh adalah angka telanjang.
+        benar($k['sebelum'] !== null || $k['target'] !== null || $k['catatan'] !== null,
+            $k['nama'] . ' punya pembanding');
+    }
+});
+
+uji('UJ-27d', 'TRIR dan LTIFR memakai rumus yang disepakati', function () {
+    // (TRC × 200.000) ÷ jam kerja
+    sama(2.0,  \KG\Kpi::trir(10, 1000000), 'TRIR');
+    sama(10.0, \KG\Kpi::ltifr(10, 1000000), 'LTIFR');
+    // Jam kerja nol berarti belum dicatat, bukan nol kejadian.
+    sama(null, \KG\Kpi::trir(3, 0), 'tanpa jam kerja hasilnya kosong, bukan nol');
+});
+
+uji('UJ-26c', 'Angka rekaman dan angka rekap tidak dibandingkan diam-diam',
+    function () use ($D, $T) {
+        // Bulan lalu hanya punya rekap; bulan ini punya catatan sungguhan.
+        Db::jalankan(
+            "INSERT INTO rekap_awal_bulanan (pabrik_id, periode, insiden, trc, lti, hari_hilang, bahaya)
+             VALUES (:p, (date_trunc('month', current_date) - interval '1 month')::date,
+                     5, 4, 1, 3, 90)", [':p' => $D['pabrik_cbt']]
+        );
+        panggil('POST', '/bahaya', ['area_id' => $D['area_cbt'], 'isi' => 'Untuk KPI'], $T['qhse']);
+
+        $h = panggil('GET', '/kpi', [], $T['qhse']);
+        sama('rekaman',    $h['data']['sumber'], 'bulan ini dari catatan');
+        sama('rekap_awal', $h['data']['sumber_sebelum'], 'bulan lalu dari rekap');
+
+        $bahaya = null;
+        foreach ($h['data']['leading'] as $k) if ($k['kode'] === 'bahaya') $bahaya = $k;
+        benar($bahaya !== null, 'indikator laporan bahaya ada');
+        sama(false, $bahaya['banding_setara'], 'perbandingan ditandai tidak setara');
+        sama('flat', $bahaya['arah'], 'arah tidak disimpulkan dari sumber berbeda');
+    });
+
+uji('UJ-28', 'AB-28 · angka grup tidak menutupi pabrik', function () use ($D, $T) {
+    $h = panggil('GET', '/eksekutif', [], $T['admin']);
+    sama(200, $h['status'], 'terbaca');
+    benar(isset($h['data']['grup'], $h['data']['pabrik']), 'grup dan pabrik dikembalikan bersama');
+    benar(count($h['data']['pabrik']) > 1, 'kartu per pabrik ada');
+
+    // Status grup mengikuti pabrik terburuk, bukan rata-ratanya.
+    $peringkat = ['Baik' => 0, 'Perhatian' => 1, 'Kritis' => 2];
+    $terburuk = 'Baik';
+    foreach ($h['data']['pabrik'] as $p) {
+        if ($peringkat[$p['status']] > $peringkat[$terburuk]) $terburuk = $p['status'];
+    }
+    sama($terburuk, $h['data']['grup']['status'], 'status grup = pabrik terburuk');
+});
+
+uji('UJ-28d', 'Pabrik tanpa catatan tidak dilaporkan Baik', function () use ($T) {
+    $h = panggil('GET', '/eksekutif', [], $T['admin']);
+    foreach ($h['data']['pabrik'] as $p) {
+        if ($p['tanpa_data'] === true) {
+            // TRIR nol di pabrik yang tidak mencatat apa pun bukan kabar baik.
+            benar($p['status'] !== 'Baik', $p['nama'] . ' tidak dilaporkan Baik');
+            sama('Tanpa catatan', $p['penentu'], $p['nama'] . ' menyebut sebabnya');
+        }
+    }
+});
+
+uji('UJ-28e', 'Dashboard eksekutif tertutup bagi peran yang tidak berhak', function () use ($T) {
+    foreach (['qhse', 'operator', 'lingkungan'] as $peran) {
+        sama(403, panggil('GET', '/eksekutif', [], $T[$peran])['status'], "peran $peran ditolak");
+    }
+    sama(200, panggil('GET', '/eksekutif', [], $T['manajemen'])['status'], 'Plant Manager diterima');
+});
+
+uji('UJ-25b', 'Tren 12 bulan menyebut sumber tiap titik', function () use ($T) {
+    $h = panggil('GET', '/kpi/tren', [], $T['qhse']);
+    sama(200, $h['status'], 'terbaca');
+    sama(12, count($h['data']), 'dua belas titik');
+    foreach ($h['data'] as $t) {
+        benar(in_array($t['sumber'], ['rekaman', 'rekap_awal'], true), $t['bln'] . ' menyebut sumbernya');
+    }
+});
+
 echo "\nHak akses\n";
 
 uji('UJ-21', 'Operator tidak dapat membuka HIRADC', function () use ($T) {
