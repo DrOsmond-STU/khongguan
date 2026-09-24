@@ -11,6 +11,63 @@ return [
     // Dimatikan pada produksi. Identitas datang dari direktori perusahaan.
     'izinkan_masuk_demo' => false,
 
+    // Alamat aplikasi, dipakai pada tautan di dalam surel pemberitahuan.
+    'alamat_aplikasi' => 'https://khongguan.example.com',
+
+    /**
+     * Penyimpanan berkas dan foto.
+     *
+     * WAJIB di luar docroot. Foto insiden memuat wajah, luka, dan lokasi
+     * kerja; direktori yang dapat ditebak alamatnya membocorkan semuanya
+     * tanpa jejak. Satu-satunya jalan mengambilnya adalah lewat endpoint
+     * yang memeriksa hak akses.
+     */
+    'jalur_berkas' => '/home/pengguna/berkas-kg',
+
+    /**
+     * Rahasia penanda tautan unduh (minimal 32 aksara acak).
+     *
+     * Bangkitkan sekali:  php -r "echo bin2hex(random_bytes(32));"
+     *
+     * Menggantinya membuat seluruh tautan yang sedang beredar berhenti
+     * berlaku — itu yang diinginkan bila ia pernah bocor.
+     */
+    'rahasia_tanda' => '',
+
+    /**
+     * Pengiriman surel pemberitahuan.
+     *
+     * Fungsi mail() PHP sengaja tidak dipakai: pada hosting bersama ia
+     * mengirim lewat alamat yang tidak punya SPF dan DKIM domain ini, dan
+     * surelnya berakhir di folder sampah — yang berarti pemberitahuan tidak
+     * sampai, tanpa ada yang tahu.
+     */
+    'smtp' => [
+        'aktif'    => false,
+        'host'     => 'mail.example.com',
+        'porta'    => 587,
+        'starttls' => true,
+        // true bila memakai porta 465 (TLS sejak awal, bukan STARTTLS).
+        'tls_langsung' => false,
+        'pengguna' => 'qhse@example.com',
+        'sandi'    => '',
+        'dari'     => 'qhse@example.com',
+        'nama_dari' => 'KG SafeGuard',
+    ],
+
+    /**
+     * Pengiriman WhatsApp lewat penyedia.
+     *
+     * Berbentuk adaptor HTTP karena penyedia di Indonesia berganti syarat dan
+     * harga lebih cepat daripada masa dukungan sistem ini. Nomor penerima
+     * diambil dari kolom pengguna.telepon; yang tidak punya nomor dilewati.
+     */
+    'whatsapp' => [
+        'aktif'  => false,
+        'alamat' => 'https://penyedia.example.com/kirim',
+        'kepala' => ['Authorization: Bearer ganti-dengan-kunci'],
+    ],
+
     /**
      * Masuk lewat direktori perusahaan (OpenID Connect).
      *

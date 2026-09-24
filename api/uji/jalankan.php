@@ -30,6 +30,10 @@ Konfigurasi::paksa([
     'db_pengguna' => getenv('KG_UJI_PENGGUNA') ?: 'kg',
     'db_sandi'    => getenv('KG_UJI_SANDI') ?: '',
     'izinkan_masuk_demo' => true,
+    // Berkas uji ditulis ke direktori sementara, bukan ke penyimpanan
+    // pemasangan mana pun.
+    'jalur_berkas'  => sys_get_temp_dir() . '/kg-berkas-uji',
+    'rahasia_tanda' => str_repeat('uji-rahasia-tanda-tangan-', 3),
 ]);
 
 $lulus = 0;

@@ -53,6 +53,16 @@ final class Jawab
         self::selesai(200);
     }
 
+    /**
+     * Menutup permintaan yang badannya sudah ditulis sendiri — berkas biner,
+     * bukan JSON. Dipisahkan supaya tidak ada jalur yang tanpa sengaja
+     * menambahkan JSON di belakang isi berkas.
+     */
+    public static function selesaiMentah(int $status = 200): void
+    {
+        self::selesai($status);
+    }
+
     public static function galat(Galat $g): void
     {
         self::kepala($g->status);

@@ -130,6 +130,15 @@ function rute(): Rute
     // Modul 00 · Dashboard Eksekutif
     $r->get('/eksekutif', [Modul\Eksekutif::class, 'tampil']);
 
+    // Lampiran · foto dan berkas
+    $r->post('/lampiran',      [Modul\Lampiran::class, 'unggah']);
+    $r->get('/lampiran/{id}',  [Modul\Lampiran::class, 'unduh']);
+
+    // Ekspor · Excel dan berkas cetak
+    $r->get('/ekspor',               [Modul\Ekspor::class, 'daftarTersedia']);
+    $r->get('/ekspor/{kode}/xlsx',   [Modul\Ekspor::class, 'xlsx']);
+    $r->get('/ekspor/{kode}/cetak',  [Modul\Ekspor::class, 'cetak']);
+
     // Aplikasi lapangan
     $r->post('/lapangan/kirim',   [Modul\Lapangan::class, 'kirim']);
     $r->get('/lapangan/rujukan',  [Modul\Lapangan::class, 'rujukan']);

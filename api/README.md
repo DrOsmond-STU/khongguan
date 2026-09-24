@@ -88,6 +88,13 @@ src/Rute.php           Router
 src/Sesi.php           Sesi dan pengguna yang sedang masuk
 src/Oidc.php           Masuk lewat direktori perusahaan (OpenID Connect)
 src/Kpi.php            Perhitungan KPI, dipakai dua layar
+src/Berkas.php         Penyimpanan foto dan berkas, tautan bertanda waktu
+src/Pemberitahuan.php  Penyusunan pemberitahuan menurut AB-30 dan AB-31
+src/Saluran.php        Antarmuka saluran kirim
+src/SaluranSurel.php   SMTP langsung, tanpa pustaka
+src/SaluranWhatsapp.php  Adaptor HTTP ke penyedia WhatsApp
+src/Xlsx.php           Penulis .xlsx tanpa pustaka
+tugas/                 Pekerjaan terjadwal (cron)
 src/Wewenang.php       Penegakan peran dan cakupan pabrik
 src/Jejak.php          Jejak audit
 src/Nomor.php          Pembangkit nomor tampil
@@ -189,6 +196,68 @@ menerimanya. Seluruh pemeriksaan `id_token` dan alasannya ada pada
 uji UJ-40 sampai UJ-50 membuktikannya terhadap penerbit tiruan yang kuncinya
 dibuat saat uji berjalan.
 
+## Berkas dan foto
+
+Berkas disimpan **di luar docroot** dan tidak pernah dilayani peladen web
+langsung. Satu-satunya jalan mengambilnya adalah `GET /lampiran/{id}` dengan
+tautan bertanda waktu yang berlaku 15 menit (KNF-25), dan endpoint itu
+memeriksa dua hal: tanda tautannya, lalu hak akses pengguna atas catatan
+induknya.
+
+Tanda saja tidak cukup — tautan yang diteruskan lewat pesan akan tetap terbuka
+bagi siapa pun yang menerimanya selama masih berlaku. Karena itu tanda
+diikatkan pada pengguna yang memintanya.
+
+Jenis berkas ditentukan dari **isinya**, bukan dari nama atau header yang
+dikirim klien; keduanya dapat ditulis apa saja oleh pengirim. Nama berkas di
+disk dibangkitkan peladen dan tidak pernah berasal dari pengguna.
+
+## Pemberitahuan
+
+```bash
+php api/tugas/pemberitahuan.php     # dijalankan cron, 2× sehari
+```
+
+Menyusun pemberitahuan dari catatan yang ada, lalu mengirimkannya. Idempoten:
+aman dijalankan tumpang tindih, dan indeks unik pada basis data menutup
+kemungkinan dua salinan untuk satu tenggat yang sama.
+
+| Aturan | Bagaimana ditegakkan |
+|---|---|
+| AB-30 · tiga sebab saja | Kolom `sebab` tidak punya nilai untuk "sekadar memberi tahu" |
+| AB-31 · terbaca ≠ selesai | Dikirim ulang sekali sehari selama `selesai_pada` masih kosong; yang menutup adalah penyelesaian catatannya |
+| AB-02 · kejadian Serius seketika | Dipanggil modul Insiden, bukan menunggu cron |
+
+Tanpa saluran aktif, **tidak ada** yang ditandai terkirim. Menandainya berarti
+pemberitahuan hari ini tidak akan pernah dikirim setelah SMTP dipasang besok.
+
+Surel dikirim lewat SMTP langsung, bukan `mail()`: pada hosting bersama
+`mail()` mengirim lewat alamat yang tidak punya SPF dan DKIM domain ini, dan
+surelnya berakhir di folder sampah — yang berarti pemberitahuan tidak sampai,
+tanpa ada yang tahu.
+
+## Ekspor
+
+| Alamat | Hasil |
+|---|---|
+| `GET /ekspor` | Daftar yang boleh diekspor peran ini |
+| `GET /ekspor/{kode}/xlsx` | Berkas Excel, kepala dibekukan dan bersaring |
+| `GET /ekspor/{kode}/cetak` | Halaman bergaya cetak; peramban menyimpannya sebagai PDF |
+
+PDF tidak dibuat peladen. Menanam mesin PDF beserta hurufnya berarti satu
+ketergantungan besar lagi, dan hasilnya tetap kalah rapi dibanding cetakan
+peramban — yang sudah punya huruf, pemenggalan halaman, dan "Simpan sebagai
+PDF" di semua sistem.
+
+Setiap ekspor melewati pemeriksaan modul dan cakupan pabrik yang sama dengan
+layarnya, dan tercatat pada `jejak_unduhan` — tabel terpisah dari `jejak_audit`
+karena keduanya menjawab pertanyaan yang berbeda: apa yang berubah, dan siapa
+mengambil apa keluar dari sistem.
+
+> **Belum ada tombolnya.** Purwarupa tidak punya tombol ekspor pada layar mana
+> pun. Menambahkannya mengubah tampilan, jadi ia menunggu keputusan. Alamat di
+> atas sudah berjalan hari ini.
+
 ## Kosakata mengikuti purwarupa
 
 Nilai status, kategori, dan jenis ditulis **persis** seperti purwarupa —
@@ -203,7 +272,8 @@ bersamaan, bukan salah satunya.
 
 | Hal | Rencana |
 |---|---|
-| Asisten QHSE | Tahap 3 lanjutan; ia membaca seluruh modul, jadi dibangun terakhir |
+| Tombol ekspor pada layar | Purwarupa tidak punya tombolnya; menambahkannya mengubah tampilan, jadi menunggu keputusan |
+| APK Android | Perlu JDK, Android SDK, dan kunci penanda tangan milik STU |
 | Modul selain yang sudah tersambung | Tahap 3, urutan pada [docs/12](../docs/12-rencana-rilis.md) |
 | Penyimpanan objek untuk foto | Tahap 2 |
 | Pemberitahuan surel dan dorong | Tahap 3; penerima sudah ditentukan (AB-02), pengirimannya belum |

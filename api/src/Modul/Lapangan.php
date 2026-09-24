@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace KG\Modul;
 
-use KG\{Aturan, Db, Galat, Jawab, Jejak, Nomor, Permintaan, Sesi, Wewenang};
+use KG\{Aturan, Berkas, Db, Galat, Jawab, Jejak, Nomor, Permintaan, Sesi, Wewenang};
 
 /**
  * Sinkronisasi antrean aplikasi lapangan.
@@ -107,6 +107,30 @@ final class Lapangan
         }
     }
 
+    /**
+     * Foto dari lapangan datang sebagai data URL di dalam antrean, bukan
+     * sebagai unggahan multipart: antrean disimpan sebagai JSON di perangkat,
+     * dan harus utuh saat sinyal kembali.
+     *
+     * Foto yang gagal disimpan tidak boleh menjatuhkan laporannya. Bahaya yang
+     * tercatat tanpa foto masih bahaya yang tercatat; bahaya yang hilang
+     * karena fotonya bermasalah hilang sama sekali.
+     *
+     * @param array<string,mixed> $k
+     */
+    private static function lampirkan(array $k, string $tabel, string $indukId, string $penggunaId): void
+    {
+        $foto = $k['foto'] ?? null;
+        if (!is_string($foto) || $foto === '') return;
+        try {
+            $l = Berkas::simpanDataUrl($foto, $penggunaId);
+            if ($l !== null) Berkas::kaitkan($l['id'], $tabel, $indukId);
+        } catch (\Throwable $e) {
+            error_log('[KG] foto lapangan gagal disimpan untuk ' . $tabel . ' ' . $indukId
+                . ': ' . $e->getMessage());
+        }
+    }
+
     /** @param array<string,mixed> $u @param array<string,mixed> $k */
     private static function area(array $u, array $k): array
     {
@@ -136,6 +160,7 @@ final class Lapangan
              ':ak'  => is_array($ko) ? ($ko['akurasi_m'] ?? null) : null,
              ':o' => $u['id']]
         );
+        self::lampirkan($k, 'bahaya', $id, $u['id']);
         Jejak::catat('bahaya', $id, 'buat', null, ['nomor' => $nomor, 'dari' => 'lapangan'], $u['id']);
         return $nomor;
     }
@@ -153,6 +178,7 @@ final class Lapangan
              ':pl' => $u['id'], ':r' => (string) ($k['isi'] ?? ''), ':c' => $k['cedera'] ?? null,
              ':o' => $u['id']]
         );
+        self::lampirkan($k, 'insiden', $id, $u['id']);
         Jejak::catat('insiden', $id, 'buat', null, ['nomor' => $nomor, 'dari' => 'lapangan'], $u['id']);
         return $nomor;
     }
@@ -179,6 +205,7 @@ final class Lapangan
              ':pg' => $u['id'], ':d' => $diamati, ':p' => $patuh,
              ':c' => (string) ($k['isi'] ?? ''), ':o' => $u['id']]
         );
+        self::lampirkan($k, 'observasi_apd', $id, $u['id']);
         Jejak::catat('observasi_apd', $id, 'buat', null, ['nomor' => $nomor, 'dari' => 'lapangan'], $u['id']);
         return $nomor;
     }
@@ -196,6 +223,7 @@ final class Lapangan
              ':am' => (int) ($k['aman'] ?? 0), ':br' => (int) ($k['berisiko'] ?? 0),
              ':c' => (string) ($k['isi'] ?? ''), ':o' => $u['id']]
         );
+        self::lampirkan($k, 'observasi', $id, $u['id']);
         Jejak::catat('observasi', $id, 'buat', null, ['nomor' => $nomor, 'dari' => 'lapangan'], $u['id']);
         return $nomor;
     }
@@ -224,6 +252,7 @@ final class Lapangan
              ':pr' => json_encode($k['prasyarat'] ?? [], JSON_UNESCAPED_UNICODE),
              ':st' => 'Menunggu Supervisor', ':o' => $u['id']]
         );
+        self::lampirkan($k, 'izin', $id, $u['id']);
         Jejak::catat('izin', $id, 'buat', null, ['nomor' => $nomor, 'dari' => 'lapangan'], $u['id']);
         return $nomor;
     }

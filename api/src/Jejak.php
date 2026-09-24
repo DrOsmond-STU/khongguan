@@ -13,6 +13,23 @@ namespace KG;
 final class Jejak
 {
     /**
+     * Jejak unduhan, terpisah dari jejak perubahan.
+     *
+     * jejak_audit menjawab "apa yang berubah"; ini menjawab "siapa mengambil
+     * apa keluar dari sistem". Mencampurnya melemahkan keduanya.
+     */
+    public static function unduhan(?string $penggunaId, string $ekspor, string $bentuk,
+                                   int $baris): void
+    {
+        Db::jalankan(
+            'INSERT INTO jejak_unduhan (pengguna_id, ekspor, bentuk, baris, alamat_ip)
+             VALUES (:u, :e, :b, :n, :ip)',
+            [':u' => $penggunaId, ':e' => $ekspor, ':b' => $bentuk, ':n' => $baris,
+             ':ip' => $_SERVER['REMOTE_ADDR'] ?? null]
+        );
+    }
+
+    /**
      * @param array<string,mixed>|null $sebelum
      * @param array<string,mixed>|null $sesudah
      */

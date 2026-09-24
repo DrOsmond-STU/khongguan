@@ -822,6 +822,18 @@ function periksa(array $klaim, ?Penerbit $pn = null, string $alg = 'RS256', bool
         'https://direktori.khongguan.test', 'kg-safeguard', 'nonce-uji');
 }
 
+/** Memastikan pemanggilan melempar Galat yang menyebut sebabnya. */
+function ditolakGalat(callable $fn, string $sebutkan, string $pesan): void
+{
+    try {
+        $fn();
+        throw new \RuntimeException("$pesan — seharusnya ditolak");
+    } catch (\KG\Galat $g) {
+        benar(stripos($g->getMessage(), $sebutkan) !== false,
+            "$pesan (pesan menyebut '$sebutkan', didapat: " . $g->getMessage() . ')');
+    }
+}
+
 /** Memastikan pemeriksaan menolak, dan menyebut sebabnya. */
 function ditolak(callable $fn, string $sebutkan, string $pesan): void
 {
@@ -924,19 +936,16 @@ uji('UJ-49', 'state dipakai sekali dan kedaluwarsa', function () {
 });
 
 uji('UJ-50', 'Jalur masuk demo dimatikan saat konfigurasi mematikannya', function () {
+    // Seluruh konfigurasi uji dikembalikan, bukan sebagiannya: mengembalikan
+    // sebagian membuat uji berikutnya gagal karena kunci yang hilang, dan
+    // penyebabnya tampak berasal dari kode yang diujinya.
     $semula = Konfigurasi::ambil();
-    Konfigurasi::paksa(['izinkan_masuk_demo' => false] + [
-        'db_dsn' => $semula['db_dsn'], 'db_pengguna' => $semula['db_pengguna'],
-        'db_sandi' => $semula['db_sandi'],
-    ]);
     try {
+        Konfigurasi::paksa(['izinkan_masuk_demo' => false] + $semula);
         $h = panggil('POST', '/sesi/masuk-demo', ['email' => 'qhse@kg.test']);
         sama(403, $h['status'], 'ditolak pada lingkungan tanpa jalur demo');
     } finally {
-        Konfigurasi::paksa([
-            'db_dsn' => $semula['db_dsn'], 'db_pengguna' => $semula['db_pengguna'],
-            'db_sandi' => $semula['db_sandi'], 'izinkan_masuk_demo' => true,
-        ]);
+        Konfigurasi::paksa($semula);
     }
 });
 
@@ -1015,6 +1024,186 @@ uji('UJ-28b', 'Rujukan luring disaring menurut peran', function () use ($T) {
     $lk = panggil('GET', '/lapangan/rujukan', [], $T['lingkungan']);
     benar(isset($lk['data']['hiradc']), 'lingkungan menerima HIRADC');
     benar(!isset($lk['data']['jsa']), 'lingkungan tidak menerima JSA');
+});
+
+echo "\nLampiran, pemberitahuan, dan ekspor\n";
+
+/** PNG 1×1 yang sah, supaya finfo mengenalinya sebagai image/png. */
+function pngKecil(): string
+{
+    return base64_decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==');
+}
+
+uji('UJ-60', 'Lampiran tersimpan dan jenisnya ditentukan dari isi, bukan namanya',
+    function () use ($D) {
+        // Nama berkas mengaku .pdf, isinya PNG. Yang dipercaya adalah isinya.
+        $l = \KG\Berkas::simpan(pngKecil(), 'mengaku.pdf', $D['qhse']);
+        sama('image/png', $l['tipe_media'], 'tipe dari isi berkas');
+        benar($l['ukuran'] > 0, 'ukuran tercatat');
+    });
+
+uji('UJ-60b', 'Jenis berkas di luar daftar ditolak', function () use ($D) {
+    try {
+        \KG\Berkas::simpan("#!/bin/sh\necho halo\n", 'skrip.sh', $D['qhse']);
+        throw new \RuntimeException('skrip seharusnya ditolak');
+    } catch (\KG\Galat $g) {
+        benar(str_contains($g->getMessage(), 'tidak diterima'), 'ditolak dengan sebab');
+    }
+});
+
+uji('UJ-61', 'Tautan lampiran kedaluwarsa setelah 15 menit', function () use ($D) {
+    $l = \KG\Berkas::simpan(pngKecil(), 'foto.png', $D['qhse']);
+
+    $sampai = time() + 600;
+    $tanda  = \KG\Berkas::tanda($l['id'], $D['qhse'], $sampai);
+    \KG\Berkas::periksaTanda($l['id'], $D['qhse'], $sampai, $tanda);   // tidak melempar
+
+    ditolakGalat(fn () => \KG\Berkas::periksaTanda($l['id'], $D['qhse'], time() - 1,
+        \KG\Berkas::tanda($l['id'], $D['qhse'], time() - 1)), 'kedaluwarsa', 'tautan lewat waktu');
+
+    // Tanda milik pengguna lain tidak berlaku: tautan yang diteruskan lewat
+    // pesan tidak boleh membuka berkas bagi penerimanya.
+    ditolakGalat(fn () => \KG\Berkas::periksaTanda($l['id'], $D['operator'], $sampai, $tanda),
+        'tidak sah', 'tanda milik pengguna lain');
+});
+
+uji('UJ-61b', 'Lampiran tidak dapat berpindah induk', function () use ($D, $T) {
+    $l = \KG\Berkas::simpan(pngKecil(), 'foto.png', $D['qhse']);
+    $b1 = panggil('POST', '/bahaya', ['area_id' => $D['area_cbt'], 'isi' => 'Pertama'], $T['qhse']);
+    $b2 = panggil('POST', '/bahaya', ['area_id' => $D['area_cbt'], 'isi' => 'Kedua'], $T['qhse']);
+
+    \KG\Berkas::kaitkan($l['id'], 'bahaya', $b1['data']['id']);
+    // Satu foto yang berpindah induk membuat dua catatan menunjuk bukti yang
+    // sama, dan yang satu kehilangan buktinya tanpa jejak.
+    ditolakGalat(fn () => \KG\Berkas::kaitkan($l['id'], 'bahaya', $b2['data']['id']),
+        'sudah terkait', 'lampiran dipindahkan');
+});
+
+uji('UJ-62', 'AB-30 · pemberitahuan tersusun hanya untuk tiga sebab', function () use ($D) {
+    \KG\Pemberitahuan::susun();
+    $sebab = array_column(Db::semua(
+        'SELECT DISTINCT sebab FROM notifikasi WHERE rujukan_id IS NOT NULL'), 'sebab');
+    foreach ($sebab as $x) {
+        benar(in_array($x, ['lewat_tenggat', 'menunggu_keputusan', 'melewati_ambang'], true),
+            "sebab '$x' termasuk yang diizinkan");
+    }
+});
+
+uji('UJ-62b', 'Penyusunan pemberitahuan idempoten', function () {
+    \KG\Pemberitahuan::susun();
+    $sebelum = (int) Db::nilai('SELECT count(*) FROM notifikasi');
+    $kedua = \KG\Pemberitahuan::susun();
+    sama(0, $kedua['dibuat'], 'jalan kedua tidak membuat apa pun');
+    sama($sebelum, (int) Db::nilai('SELECT count(*) FROM notifikasi'), 'jumlah tetap');
+});
+
+uji('UJ-62c', 'Tanpa saluran aktif, tidak ada yang ditandai terkirim', function () {
+    // Menandainya berarti pemberitahuan hari ini tidak akan pernah dikirim
+    // setelah SMTP dipasang besok — hilang tanpa jejak.
+    \KG\DaftarSaluran::paksa([]);
+    \KG\Pemberitahuan::susun();
+    Db::jalankan('UPDATE notifikasi SET dikirim_pada = NULL');
+    $h = \KG\Pemberitahuan::kirim();
+    sama(0, $h['terkirim'], 'tidak ada yang dikirim');
+    sama(0, (int) Db::nilai('SELECT count(*) FROM notifikasi WHERE dikirim_pada IS NOT NULL'),
+        'tidak ada yang ditandai');
+    \KG\DaftarSaluran::paksa(null);
+});
+
+uji('UJ-62d', 'AB-31 · yang lewat tenggat dikirim ulang, yang lain tidak', function () use ($D) {
+    $saluran = new class implements \KG\Saluran {
+        /** @var array<int,string> */
+        public array $terkirim = [];
+        public function kirim(array $penerima, array $n): bool
+        {
+            $this->terkirim[] = (string) $n['id'];
+            return true;
+        }
+    };
+    \KG\DaftarSaluran::paksa([$saluran]);
+
+    Db::jalankan('DELETE FROM notifikasi');
+    foreach ([['lewat_tenggat', 'A'], ['menunggu_keputusan', 'B']] as [$sebab, $judul]) {
+        Db::jalankan(
+            "INSERT INTO notifikasi (pabrik_id, jenis, modul, judul, isi, sebab, aksi, dikirim_pada)
+             VALUES (:p, 'high', 'Uji', :j, 'isi', :s, 'capa', now() - interval '2 days')",
+            [':p' => $D['pabrik_cbt'], ':j' => $judul, ':s' => $sebab]
+        );
+    }
+    \KG\Pemberitahuan::kirim();
+
+    $ulang = Db::semua(
+        "SELECT judul FROM notifikasi WHERE dikirim_pada >= current_date ORDER BY judul");
+    sama([['judul' => 'A']], $ulang, 'hanya yang lewat tenggat dikirim ulang');
+    \KG\DaftarSaluran::paksa(null);
+});
+
+uji('UJ-63', 'Ekspor mengikuti hak akses modulnya', function () use ($T) {
+    // Ekspor yang melewati pemeriksaan adalah cara paling umum data keluar.
+    sama(403, panggil('GET', '/ekspor/hiradc/xlsx', [], $T['operator'])['status'],
+        'Operator tidak dapat mengekspor HIRADC');
+    sama(200, panggil('GET', '/ekspor/hiradc/xlsx', [], $T['qhse'])['status'],
+        'QHSE dapat');
+});
+
+uji('UJ-63b', 'Ekspor hanya memuat pabrik sendiri', function () use ($D, $T) {
+    panggil('POST', '/bahaya', ['area_id' => $D['area_cbt'], 'isi' => 'Milik Cibitung'], $T['qhse']);
+    panggil('POST', '/bahaya', ['area_id' => $D['area_smg'], 'isi' => 'Milik Semarang'], $T['qhse_smg']);
+
+    $h = panggil('GET', '/ekspor/bahaya/xlsx', [], $T['qhse']);
+    sama(200, $h['status'], 'terunduh');
+
+    $baris = (int) Db::nilai(
+        "SELECT baris FROM jejak_unduhan WHERE ekspor = 'bahaya' ORDER BY waktu DESC LIMIT 1");
+    $cbt = (int) Db::nilai(
+        'SELECT count(*) FROM bahaya WHERE pabrik_id = :p AND dihapus_pada IS NULL',
+        [':p' => $D['pabrik_cbt']]);
+    sama($cbt, $baris, 'jumlah baris sama dengan milik pabriknya sendiri');
+});
+
+uji('UJ-63c', 'Setiap unduhan meninggalkan jejak yang tidak dapat dihapus', function () use ($T) {
+    panggil('GET', '/ekspor/capa/xlsx', [], $T['qhse']);
+    $j = Db::baris("SELECT ekspor, bentuk FROM jejak_unduhan ORDER BY waktu DESC LIMIT 1");
+    sama('capa', $j['ekspor'], 'ekspor tercatat');
+    sama('xlsx', $j['bentuk'], 'bentuk tercatat');
+
+    try {
+        Db::jalankan('DELETE FROM jejak_unduhan');
+        throw new \RuntimeException('penghapusan jejak unduhan seharusnya ditolak');
+    } catch (\PDOException $e) {
+        benar(str_contains($e->getMessage(), 'hanya menerima INSERT'), 'ditolak basis data');
+    }
+});
+
+uji('UJ-64', 'Berkas xlsx yang dihasilkan adalah arsip zip yang sah', function () {
+    $isi = \KG\Xlsx::tulis('Uji', ['Nomor', 'Jumlah'], [['A-1', 12], ['A-2', 7.5]]);
+    benar(str_starts_with($isi, "PK\x03\x04"), 'berawalan tanda zip');
+
+    $berkas = tempnam(sys_get_temp_dir(), 'ujixlsx');
+    file_put_contents($berkas, $isi);
+    $zip = new \ZipArchive();
+    sama(true, $zip->open($berkas) === true, 'dapat dibuka sebagai zip');
+
+    $lembar = (string) $zip->getFromName('xl/worksheets/sheet1.xml');
+    benar(str_contains($lembar, '<v>12</v>'), 'angka ditulis sebagai angka');
+    benar(str_contains($lembar, '<t>Nomor</t>'), 'kepala kolom ada');
+    $zip->close();
+    @unlink($berkas);
+});
+
+uji('UJ-64b', 'Aksara kendali tidak merusak berkas xlsx', function () {
+    // Satu aksara kendali membuat Excel menolak seluruh berkas, dan catatan
+    // yang disalin dari dokumen lain sering membawanya.
+    $isi = \KG\Xlsx::tulis('Uji', ['Teks'], [["Baris\x07dengan\x00kendali"]]);
+    $berkas = tempnam(sys_get_temp_dir(), 'ujixlsx');
+    file_put_contents($berkas, $isi);
+    $zip = new \ZipArchive();
+    $zip->open($berkas);
+    $lembar = (string) $zip->getFromName('xl/worksheets/sheet1.xml');
+    $zip->close();
+    @unlink($berkas);
+    benar(simplexml_load_string($lembar) !== false, 'XML tetap sah');
 });
 
 echo "\nJejak audit dan penomoran\n";

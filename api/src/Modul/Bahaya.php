@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace KG\Modul;
 
-use KG\{Aturan, Db, Galat, Jawab, Jejak, Nomor, Permintaan, Sesi, Wewenang};
+use KG\{Aturan, Berkas, Db, Galat, Jawab, Jejak, Nomor, Permintaan, Sesi, Wewenang};
 
 /** Modul 04 · Laporan Bahaya K3L. */
 final class Bahaya
@@ -67,6 +67,8 @@ final class Bahaya
                     ':o' => $u['id'],
                 ]
             );
+            $lampiran = $p->isi('lampiran_id');
+            Berkas::kaitkan(is_string($lampiran) ? $lampiran : null, 'bahaya', $id);
             Jejak::catat('bahaya', $id, 'buat', null, ['nomor' => $nomor, 'isi' => $isi], $u['id']);
             return ['id' => $id, 'nomor' => $nomor];
         });
