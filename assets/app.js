@@ -3705,6 +3705,12 @@
     host.hidden = true; host.innerHTML = '';
   }
 
+  /* Dipakai lapisan data untuk berbicara kepada pengguna tanpa membuat
+     komponen tampilan sendiri. Hanya dua: memberi pesan, dan mengeluarkan
+     sesi yang sudah tidak berlaku. */
+  window.KG_PESAN = function (msg) { toast(msg); };
+  window.KG_KELUAR = function () { logout(); };
+
   function toast(msg) {
     const t = document.createElement('div');
     t.className = 'toast'; t.setAttribute('role', 'status');

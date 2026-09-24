@@ -85,12 +85,29 @@ window.KGSUMBER = (function () {
     try { t ? localStorage.setItem(KUNCI_TOKEN, t) : localStorage.removeItem(KUNCI_TOKEN); } catch (e) {}
   }
 
+  /* Benar setelah sesi pernah terbuka. Membedakan "belum masuk" dari "sesi
+     berakhir di tengah jalan" — yang pertama biasa, yang kedua harus
+     dikatakan kepada pengguna. */
+  var PERNAH_MASUK = false;
+
+  function sesiPutus() {
+    simpanToken(null);
+    if (!PERNAH_MASUK) return;
+    PERNAH_MASUK = false;
+    /* Membiarkan aplikasi berjalan dengan data contoh setelah sesi berakhir
+       berarti menampilkan catatan rekaan sebagai catatan sungguhan. Pada
+       sistem K3 itu kegagalan terburuk yang mungkin: orang mengambil
+       keputusan dari angka yang tidak pernah ada. */
+    if (window.KG_PESAN) window.KG_PESAN('Sesi berakhir. Masuk kembali untuk melanjutkan.');
+    if (window.KG_KELUAR) window.KG_KELUAR();
+  }
+
   function ambil(jalur) {
     var opsi = { headers: { 'Accept': 'application/json' } };
     var t = token();
     if (t) opsi.headers['Authorization'] = 'Bearer ' + t;
     return fetch(API + '/api/v1' + jalur, opsi).then(function (r) {
-      if (r.status === 401) { simpanToken(null); throw new Error('sesi berakhir'); }
+      if (r.status === 401) { sesiPutus(); throw new Error('sesi berakhir'); }
       return r.json().then(function (j) {
         if (!r.ok) throw new Error((j.galat && j.galat.pesan) || ('HTTP ' + r.status));
         return j;
@@ -107,6 +124,7 @@ window.KGSUMBER = (function () {
     var t = token();
     if (t) opsi.headers['Authorization'] = 'Bearer ' + t;
     return fetch(API + '/api/v1' + jalur, opsi).then(function (r) {
+      if (r.status === 401) { sesiPutus(); throw new Error('sesi berakhir'); }
       return r.json().then(function (j) {
         if (!r.ok) {
           var g = new Error((j.galat && j.galat.pesan) || ('HTTP ' + r.status));
@@ -850,6 +868,7 @@ window.KGSUMBER = (function () {
     return kirim('/sesi/masuk-demo', { email: email, klien: 'meja' })
       .then(function (j) {
         if (!j.data || !j.data.token) return false;
+        PERNAH_MASUK = true;
         simpanToken(j.data.token);
         return tersambung().then(function () {
           try {
@@ -881,6 +900,7 @@ window.KGSUMBER = (function () {
 
       var janji = [];
       var hidup = [];
+      var gagal = [];
 
       /* Data acuan diambil sekali: formulir memakai nama area, peladen
          memakai id-nya. */
@@ -902,13 +922,25 @@ window.KGSUMBER = (function () {
             }
           }).catch(function (e) {
             /* Satu modul gagal tidak boleh menggagalkan seluruh aplikasi:
-               data contohnya tetap dipakai, dan kegagalannya disebutkan. */
+               data contohnya tetap dipakai. Tetapi itu TIDAK boleh diam-diam —
+               lihat peringatan setelah seluruh koleksi selesai. */
+            gagal.push(koleksi);
             console.warn('[KG] ' + koleksi + ' memakai data contoh — ' + e.message);
           })
         );
       });
 
       return Promise.all(janji).then(function () {
+        PERNAH_MASUK = true;
+
+        /* Modul yang gagal diambil tetap menampilkan data contoh, dan itu
+           harus dikatakan. Angka contoh yang tampak seperti angka sungguhan
+           adalah kegagalan yang paling mahal pada sistem K3. */
+        if (gagal.length && window.KG_PESAN) {
+          window.KG_PESAN(gagal.length + ' modul memakai data contoh karena peladen '
+            + 'tidak menjawab: ' + gagal.sort().join(', ') + '.');
+        }
+
         /* Panel "Perhatian Segera" pada dashboard adalah pandangan lain atas
            pemberitahuan yang sama, bukan daftar kedua. Dua daftar terpisah
            akan berbeda isinya begitu salah satunya ditutup. */
@@ -933,7 +965,12 @@ window.KGSUMBER = (function () {
     }
     tersambung()
       .catch(function (e) {
-        console.warn('[KG] gagal tersambung ke peladen (' + e.message + '); memakai data contoh.');
+        /* Sebelum masuk memang belum ada sesi; itu keadaan biasa, bukan
+           kegagalan, dan tidak perlu diumumkan. Layar masuk yang tampil
+           berikutnya adalah jawabannya. */
+        if (e.message !== 'sesi berakhir') {
+          console.warn('[KG] gagal tersambung ke peladen (' + e.message + '); memakai data contoh.');
+        }
       })
       .then(function () { muatApp(); });
   }

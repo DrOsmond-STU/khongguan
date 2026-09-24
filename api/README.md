@@ -287,6 +287,18 @@ delapan membuat orang ragu simpanannya berhasil.
 Penolakan aturan sampai ke pengisi lengkap dengan kode aturannya, bukan sekadar
 "gagal menyimpan".
 
+### Ketika peladen tidak menjawab
+
+Aplikasi **tidak** diam-diam menampilkan data contoh sebagai catatan sungguhan.
+Pada sistem K3 itu kegagalan terburuk yang mungkin: orang mengambil keputusan
+dari angka yang tidak pernah ada.
+
+| Keadaan | Yang terjadi |
+|---|---|
+| Belum masuk | Senyap. Layar masuk yang tampil berikutnya adalah jawabannya |
+| Sesi berakhir di tengah jalan | Token dihapus, pesan "Sesi berakhir", kembali ke layar masuk |
+| Sebagian modul gagal diambil | Modul itu memakai data contoh, dan namanya disebutkan: "2 modul memakai data contoh karena peladen tidak menjawab: hiradc, regulasi." |
+
 ## Kosakata mengikuti purwarupa
 
 Nilai status, kategori, dan jenis ditulis **persis** seperti purwarupa —
