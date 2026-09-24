@@ -182,7 +182,12 @@ final class Aturan
         }
     }
 
-    /** AB-23 · Masa berlaku induksi menurut jenis peserta. */
+    /**
+     * AB-23 · Masa berlaku induksi menurut jenis peserta.
+     *
+     * Dipanggil hanya untuk peserta yang lulus; yang tidak lulus tidak punya
+     * masa berlaku (lihat kolom induksi.berlaku).
+     */
     public static function berlakuInduksi(string $jenis, string $tanggal): string
     {
         $bulan = match ($jenis) {
@@ -194,11 +199,17 @@ final class Aturan
         return date('Y-m-d', strtotime("$tanggal +$bulan months"));
     }
 
-    /** AB-24 · Nilai di bawah ambang berarti mengulang, bukan diloloskan. */
-    public static function statusInduksi(?int $nilai, string $berlaku): string
+    /**
+     * AB-24 · Nilai di bawah ambang berarti mengulang, bukan diloloskan.
+     *
+     * $berlaku null hanya sah bagi peserta yang tidak lulus — mereka memang
+     * tidak punya kartu.
+     */
+    public static function statusInduksi(?int $nilai, ?string $berlaku): string
     {
         $ambang = (int) Konfigurasi::satu('ambang_lulus_induksi');
         if ($nilai !== null && $nilai < $ambang) return 'Tidak Lulus';
+        if ($berlaku === null) return 'Tidak Lulus';
 
         $sisa = (int) floor((strtotime($berlaku) - strtotime(date('Y-m-d'))) / 86400);
         return match (true) {

@@ -155,7 +155,14 @@ Pemeriksaan `patuh ≤ diamati` ditegakkan basis data dan API (AB-07).
 Atribut purwarupa: nomor ✓, nama ✓, jenis ✓, asal ✓, tanggal ✓, pemandu ✓,
 nilai ✓, berlaku_sampai ✓, status ✓. `sisa` dihitung, tidak disimpan.
 
-`berlaku_sampai` dihitung dari `tanggal` + masa berlaku menurut jenis (AB-23).
+`berlaku_sampai` dihitung dari `tanggal` + masa berlaku menurut jenis (AB-23),
+dan **kosong bagi peserta yang tidak lulus** — mereka tidak punya kartu sama
+sekali, bukan kartu yang kebetulan sudah lewat. Tanggal yang sudah lewat masih
+berupa kartu, dan kartu yang pernah ada dapat diperpanjang; yang tidak lulus
+harus mengulang induksinya. Batasan `induksi_berlaku_wajib` menutup jalur
+sebaliknya: selain berstatus Tidak Lulus, kartu wajib punya masa berlaku,
+karena izin kerja membacanya sebagai gerbang (AB-11) dan gerbang tanpa tanggal
+selalu terbuka.
 
 ### `regulasi`
 

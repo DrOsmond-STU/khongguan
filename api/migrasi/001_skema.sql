@@ -432,7 +432,10 @@ CREATE TABLE induksi (
   tanggal   date NOT NULL,
   pemandu   text,
   nilai     smallint CHECK (nilai BETWEEN 0 AND 100),
-  berlaku   date NOT NULL,
+  -- Peserta yang tidak lulus tidak punya masa berlaku sama sekali; itu NULL,
+  -- bukan tanggal yang kebetulan sudah lewat. Tanggal yang sudah lewat masih
+  -- berupa kartu, dan kartu yang pernah ada dapat diperpanjang.
+  berlaku   date,
   status    text NOT NULL CHECK (status IN ('Berlaku','Segera Berakhir','Kedaluwarsa','Tidak Lulus')),
   dibuat_oleh uuid REFERENCES pengguna(id),
   dibuat_pada timestamptz NOT NULL DEFAULT now(),
@@ -443,7 +446,11 @@ CREATE TABLE induksi (
   -- Ambang 80 ditulis di sini supaya tidak ada jalur mana pun yang dapat
   -- meloloskan peserta yang tidak lulus.
   CONSTRAINT induksi_ambang_lulus
-    CHECK (nilai IS NULL OR nilai >= 80 OR status = 'Tidak Lulus')
+    CHECK (nilai IS NULL OR nilai >= 80 OR status = 'Tidak Lulus'),
+  -- Selain Tidak Lulus, kartu wajib punya masa berlaku: izin kerja membacanya
+  -- sebagai gerbang (AB-11), dan gerbang tanpa tanggal selalu terbuka.
+  CONSTRAINT induksi_berlaku_wajib
+    CHECK (status = 'Tidak Lulus' OR berlaku IS NOT NULL)
 );
 
 -- ═══════════════════════════════════════════════════════════════════

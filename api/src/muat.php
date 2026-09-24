@@ -51,6 +51,27 @@ function rute(): Rute
     $r->get('/observasi-apd',   [Modul\ObservasiApd::class, 'daftar']);
     $r->post('/observasi-apd',  [Modul\ObservasiApd::class, 'buat']);
 
+    // Modul 06 · Analisis JSA
+    $r->get('/jsa',              [Modul\Jsa::class, 'daftar']);
+    $r->post('/jsa',             [Modul\Jsa::class, 'buat']);
+    $r->post('/jsa/{id}/sahkan', [Modul\Jsa::class, 'sahkan']);
+
+    // Modul 07 · HIRADC K3
+    $r->get('/hiradc',                     [Modul\Hiradc::class, 'daftar']);
+    $r->post('/hiradc',                    [Modul\Hiradc::class, 'buat']);
+    $r->post('/hiradc/{id}/turunkan-sisa', [Modul\Hiradc::class, 'turunkanSisa']);
+
+    // Modul 08 · Induksi K3
+    $r->get('/induksi',  [Modul\Induksi::class, 'daftar']);
+    $r->post('/induksi', [Modul\Induksi::class, 'buat']);
+
+    // Modul 15 · Observasi perilaku
+    $r->get('/observasi',  [Modul\Observasi::class, 'daftar']);
+    $r->post('/observasi', [Modul\Observasi::class, 'buat']);
+
+    // Modul 24 · Pengguna
+    $r->get('/pengguna', [Modul\Pengguna::class, 'daftar']);
+
     // Aplikasi lapangan
     $r->post('/lapangan/kirim',   [Modul\Lapangan::class, 'kirim']);
     $r->get('/lapangan/rujukan',  [Modul\Lapangan::class, 'rujukan']);

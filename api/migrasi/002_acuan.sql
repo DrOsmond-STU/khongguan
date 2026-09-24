@@ -17,10 +17,12 @@ INSERT INTO area (pabrik_id, nama, urutan)
 SELECT p.id, a.nama, a.urutan
   FROM pabrik p
  CROSS JOIN (VALUES
+   -- Ditulis persis seperti daftar lokasi pada purwarupa: nama area muncul
+   -- apa adanya pada chip, penyaring, dan judul kartu.
    ('Line 1 — Mixing', 1), ('Line 2 — Moulding', 2), ('Line 3 — Oven Biskuit', 3),
-   ('Line 4 — Packing', 4), ('Ruang Boiler', 5), ('Ruang Panel Utama', 6),
-   ('Gudang Bahan Baku', 7), ('Gudang & Logistik', 8), ('Area Forklift B2', 9),
-   ('Workshop Maintenance', 10), ('TPS Limbah B3', 11), ('Kantor & Kantin', 12)
+   ('Line 4 — Packing', 4), ('Gudang Bahan Baku', 5), ('Gudang Barang Jadi', 6),
+   ('Ruang Boiler', 7), ('Area Forklift B2', 8), ('IPAL', 9),
+   ('TPS Limbah B3', 10), ('Workshop Maintenance', 11), ('Kantin & Area Umum', 12)
  ) AS a(nama, urutan)
 ON CONFLICT (pabrik_id, nama) DO NOTHING;
 

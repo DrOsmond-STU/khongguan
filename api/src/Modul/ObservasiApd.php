@@ -30,6 +30,29 @@ final class ObservasiApd
               WHERE o.dihapus_pada IS NULL AND $saring
               ORDER BY o.tanggal DESC", $par
         );
+
+        // Rincian per jenis APD dibawa serta: tanpa itu layar hanya dapat
+        // menampilkan kepatuhan keseluruhan, dan "86% patuh" tidak memberi
+        // tahu siapa pun APD mana yang tidak dipakai.
+        if ($baris !== []) {
+            $tanda = [];
+            $ids   = [];
+            foreach ($baris as $i => $b) { $tanda[] = ":o$i"; $ids[":o$i"] = $b['id']; }
+            $per = [];
+            foreach (Db::semua(
+                'SELECT r.observasi_apd_id, r.diamati, r.patuh, ja.nama
+                   FROM observasi_apd_rincian r
+                   JOIN jenis_apd ja ON ja.id = r.jenis_apd_id
+                  WHERE r.observasi_apd_id IN (' . implode(',', $tanda) . ')
+                  ORDER BY ja.urutan', $ids
+            ) as $r) {
+                $per[$r['observasi_apd_id']][] = [
+                    'jenis' => $r['nama'], 'diamati' => (int) $r['diamati'], 'patuh' => (int) $r['patuh'],
+                ];
+            }
+            foreach ($baris as &$b) { $b['rincian'] = $per[$b['id']] ?? []; }
+        }
+
         Jawab::daftar($baris, 1, count($baris), count($baris));
     }
 

@@ -58,6 +58,18 @@ memverifikasi catatan yang ia sendiri menjadi penanggung jawabnya.
 > karena itu berbunyi "—". Bila Khong Guan Group menghendaki Operator melihat
 > CAPA miliknya sendiri, itu penambahan yang diputuskan pada tahap 1.
 
+> **Pertentangan kedua: siapa yang mengesahkan JSA.** Kartu pada layar Analisis
+> JSA berbunyi "Pengesah: Plant Manager atau QHSE Supervisor", sedangkan
+> matriks di atas memberi QHSE Supervisor kewenangan *Isi* pada modul itu —
+> satu tingkat di bawah yang dibutuhkan untuk mengesahkan. Matriks yang
+> dipakai, karena matriks itu sendiri ditampilkan sebagai tabel pada layar
+> User Management: mengubahnya berarti mengubah apa yang terlihat. Peladen
+> menolak pengesahan oleh QHSE Supervisor dengan 403.
+>
+> Keputusan ini perlu ditinjau bersama Khong Guan Group. Bila yang dimaksud
+> memang QHSE Supervisor boleh mengesahkan, yang diubah adalah matriksnya —
+> pada purwarupa dan pada peladen sekaligus, bukan salah satunya.
+
 Petugas Lingkungan tidak tercantum sebagai kolom karena kewenangannya sama
 dengan QHSE Supervisor pada modul Environment, Dokumen Eksternal, CAPA, HIRADC,
 Induksi, dan Regulasi, serta tidak punya akses pada sisanya. Tahap 1 menetapkan

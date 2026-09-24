@@ -16,16 +16,23 @@ final class Izin
 
         $baris = Db::semua(
             "SELECT z.id, z.nomor, z.nomor_asal, z.jenis, z.judul, z.pelaksana, z.vendor, z.pekerja,
-                    z.pengawas, z.mulai, z.status, a.nama AS area,
+                    z.pengawas, z.mulai, z.durasi, z.prasyarat, z.status,
+                    a.nama AS area, ji.nama AS jenis_nama,
                     j.nomor AS jsa_nomor, j.status AS jsa_status,
+                    -- AB-13 · izin memakai skor tertinggi di antara langkah
+                    -- JSA-nya, bukan rata-rata: satu langkah Ekstrem menutup
+                    -- penerbitan walaupun sembilan langkah lain aman (AB-10).
+                    (SELECT max(skor_awal) FROM jsa_langkah l WHERE l.jsa_id = z.jsa_id) AS risiko_awal,
                     (SELECT max(skor_sisa) FROM jsa_langkah l WHERE l.jsa_id = z.jsa_id) AS risiko_sisa
                FROM izin z
                JOIN area a ON a.id = z.area_id
+               JOIN jenis_izin ji ON ji.kode = z.jenis
           LEFT JOIN jsa j  ON j.id = z.jsa_id
               WHERE z.dihapus_pada IS NULL AND $saring
               ORDER BY z.dibuat_pada DESC", $par
         );
         foreach ($baris as &$b) {
+            $b['prasyarat'] = json_decode((string) $b['prasyarat'], true) ?: [];
             $b['zona'] = $b['risiko_sisa'] === null ? null : Aturan::zona((int) $b['risiko_sisa']);
         }
         Jawab::daftar($baris, 1, count($baris), count($baris));

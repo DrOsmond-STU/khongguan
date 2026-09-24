@@ -21,11 +21,16 @@ require __DIR__ . '/../src/muat.php';
 date_default_timezone_set('UTC');
 
 // ── Lingkungan uji ─────────────────────────────────────────────────────
-putenv('KG_DB_DSN=' . (getenv('KG_UJI_DSN')
-    ?: 'pgsql:host=127.0.0.1;port=5433;dbname=kg_safeguard_uji'));
-putenv('KG_DB_PENGGUNA=' . (getenv('KG_UJI_PENGGUNA') ?: 'kg'));
-putenv('KG_DB_SANDI=' . (getenv('KG_UJI_SANDI') ?: ''));
-putenv('KG_DEMO=1');
+//
+// Dipaksa, bukan lewat peubah lingkungan: config.php mengalahkan peubah
+// lingkungan, sehingga uji akan menyiapkan ulang skema pada basis data
+// pengembangan yang tertulis di sana.
+Konfigurasi::paksa([
+    'db_dsn'      => getenv('KG_UJI_DSN') ?: 'pgsql:host=127.0.0.1;port=5433;dbname=kg_safeguard_uji',
+    'db_pengguna' => getenv('KG_UJI_PENGGUNA') ?: 'kg',
+    'db_sandi'    => getenv('KG_UJI_SANDI') ?: '',
+    'izinkan_masuk_demo' => true,
+]);
 
 $lulus = 0;
 $gagal = [];

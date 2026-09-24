@@ -234,6 +234,147 @@ uji('UJ-04b', 'AB-04 · laporan anonim tidak menyimpan identitas pelapor', funct
     benar($b['anonim'] === true || $b['anonim'] === 't' || $b['anonim'] === 1, 'ditandai anonim');
 });
 
+// Matriks docs/04: JSA — Operator Baca, QHSE Isi, Plant Manager Verifikasi.
+// Pengesahan karena itu milik Plant Manager, bukan QHSE Supervisor.
+uji('UJ-19', 'Pengesahan JSA menuntut kewenangan verifikasi', function () use ($D, $T) {
+    $j = panggil('POST', '/jsa', [
+        'area_id' => $D['area_cbt'], 'pekerjaan' => 'Uji pengesahan', 'jenis' => 'Non-rutin',
+        'langkah' => [['kerja' => 'Langkah', 'bahaya' => 'Bahaya',
+                       'kemungkinan' => 2, 'keparahan' => 2,
+                       'kemungkinan_sisa' => 1, 'keparahan_sisa' => 2]],
+    ], $T['qhse']);
+    sama(201, $j['status'], 'QHSE boleh menyusun');
+
+    sama(403, panggil('POST', '/jsa/' . $j['data']['id'] . '/sahkan', [], $T['qhse'])['status'],
+        'QHSE tidak boleh mengesahkan');
+
+    $sah = panggil('POST', '/jsa/' . $j['data']['id'] . '/sahkan', [], $T['manajemen']);
+    sama(200, $sah['status'], 'Plant Manager boleh mengesahkan');
+    sama('Disahkan', $sah['data']['status'], 'status berubah');
+});
+
+uji('UJ-19c', 'AB-17 · penyusun JSA tidak dapat mengesahkan susunannya sendiri', function () use ($D, $T) {
+    $j = panggil('POST', '/jsa', [
+        'area_id' => $D['area_cbt'], 'pekerjaan' => 'Disusun pengesah', 'jenis' => 'Non-rutin',
+        'langkah' => [['kerja' => 'Langkah', 'bahaya' => 'Bahaya',
+                       'kemungkinan' => 2, 'keparahan' => 2,
+                       'kemungkinan_sisa' => 1, 'keparahan_sisa' => 2]],
+    ], $T['manajemen']);
+    sama(201, $j['status'], 'tersusun');
+
+    $h = panggil('POST', '/jsa/' . $j['data']['id'] . '/sahkan', [], $T['manajemen']);
+    sama(409, $h['status'], 'penyusunnya sendiri ditolak');
+    sama('AB-17', $h['galat']['aturan'] ?? null, 'kode aturan');
+});
+
+uji('UJ-19b', 'JSA tanpa langkah tidak dapat disusun', function () use ($D, $T) {
+    $h = panggil('POST', '/jsa', [
+        'area_id' => $D['area_cbt'], 'pekerjaan' => 'Tanpa langkah', 'langkah' => [],
+    ], $T['qhse']);
+    sama(400, $h['status'], 'ditolak');
+});
+
+uji('UJ-13b', 'AB-13 · risiko JSA memakai skor tertinggi, bukan rata-rata', function () use ($T) {
+    $h = panggil('GET', '/jsa', [], $T['qhse']);
+    sama(200, $h['status'], 'daftar terbaca');
+    foreach ($h['data'] as $j) {
+        if ($j['langkah'] === []) continue;
+        $tertinggi = max(array_map(static fn (array $l): int => (int) $l['skor_awal'], $j['langkah']));
+        $rata      = array_sum(array_map(static fn (array $l): int => (int) $l['skor_awal'], $j['langkah']))
+                     / count($j['langkah']);
+        sama($tertinggi, (int) $j['skor'], $j['nomor'] . ' memakai skor tertinggi');
+        if ($tertinggi != $rata) {
+            benar((int) $j['skor'] !== (int) $rata, $j['nomor'] . ' bukan rata-rata');
+        }
+    }
+});
+
+uji('UJ-34', 'AB-34 · JSA yang seluruh kendalinya APD ditandai, bukan ditolak', function () use ($D, $T) {
+    $h = panggil('POST', '/jsa', [
+        'area_id' => $D['area_cbt'], 'pekerjaan' => 'Hanya APD', 'jenis' => 'Rutin',
+        'langkah' => [['kerja' => 'Kerja', 'bahaya' => 'Bahaya',
+                       'kemungkinan' => 3, 'keparahan' => 3, 'kemungkinan_sisa' => 3, 'keparahan_sisa' => 2,
+                       'kendali' => [['hierarki' => 'APD', 'teks' => 'Sarung tangan']]]],
+    ], $T['qhse']);
+    sama(201, $h['status'], 'tetap diterima');
+
+    $d = panggil('GET', '/jsa', [], $T['qhse']);
+    $baris = null;
+    foreach ($d['data'] as $j) if ($j['nomor'] === $h['data']['nomor']) $baris = $j;
+    benar($baris !== null, 'JSA ditemukan pada daftar');
+    sama(true, $baris['hanya_apd'], 'ditandai hanya APD');
+});
+
+uji('UJ-15b', 'AB-15 · penurunan skor sisa HIRADC lewat API ditolak saat kendali Terbuka',
+    function () use ($D, $T) {
+        // Yang menilai (QHSE) bukan yang menyetujui penurunannya; matriks
+        // docs/04 memberi kewenangan verifikasi kepada Plant Manager.
+        sama(403, panggil('POST', '/hiradc/' . $D['hiradc_terbuka'] . '/turunkan-sisa',
+            ['kemungkinan_sisa' => 1, 'keparahan_sisa' => 1], $T['qhse'])['status'],
+            'QHSE tidak boleh menurunkan sendiri');
+
+        $h = panggil('POST', '/hiradc/' . $D['hiradc_terbuka'] . '/turunkan-sisa',
+            ['kemungkinan_sisa' => 1, 'keparahan_sisa' => 1], $T['manajemen']);
+        sama(409, $h['status'], 'ditolak selama kendali masih Terbuka');
+        sama('AB-15', $h['galat']['aturan'] ?? null, 'kode aturan');
+    });
+
+uji('UJ-14b', 'HIRADC dengan skor sisa di atas skor awal ditolak', function () use ($T) {
+    $h = panggil('POST', '/hiradc', [
+        'proses' => 'Uji', 'aktivitas' => 'Uji', 'bahaya' => 'Uji', 'risiko' => 'Uji', 'korban' => 'Uji',
+        'kemungkinan' => 2, 'keparahan' => 2, 'kemungkinan_sisa' => 4, 'keparahan_sisa' => 4,
+    ], $T['qhse']);
+    sama(400, $h['status'], 'ditolak');
+});
+
+uji('UJ-24b', 'AB-23/24 · masa berlaku dan status induksi dihitung peladen', function () use ($T) {
+    $lulus = panggil('POST', '/induksi', [
+        'nama' => 'Peserta Lulus', 'jenis' => 'Kontraktor', 'tanggal' => date('Y-m-d'), 'nilai' => 85,
+    ], $T['qhse']);
+    sama(201, $lulus['status'], 'tersimpan');
+    sama('Berlaku', $lulus['data']['status'], 'status dihitung');
+    sama(date('Y-m-d', strtotime('+6 months')), $lulus['data']['berlaku'], 'kontraktor 6 bulan');
+
+    // Nilai di bawah ambang: tidak ada kartu sama sekali, bukan kartu yang
+    // kebetulan sudah lewat.
+    $gagal = panggil('POST', '/induksi', [
+        'nama' => 'Peserta Gagal', 'jenis' => 'Pekerja Baru', 'tanggal' => date('Y-m-d'), 'nilai' => 70,
+    ], $T['qhse']);
+    sama(201, $gagal['status'], 'tersimpan');
+    sama('Tidak Lulus', $gagal['data']['status'], 'status Tidak Lulus');
+    sama(null, $gagal['data']['berlaku'], 'tanpa masa berlaku');
+});
+
+uji('UJ-24c', 'Masa berlaku wajib ada selain bagi yang tidak lulus', function () use ($D) {
+    try {
+        Db::jalankan(
+            "INSERT INTO induksi (nomor, pabrik_id, nama, jenis, tanggal, berlaku, status)
+             VALUES ('IND-TANPA-BERLAKU', :p, 'Tanpa kartu', 'Tamu', current_date, NULL, 'Berlaku')",
+            [':p' => $D['pabrik_cbt']]
+        );
+        throw new \RuntimeException('basis data seharusnya menolak kartu Berlaku tanpa masa berlaku');
+    } catch (\PDOException $e) {
+        benar(str_contains($e->getMessage(), 'induksi_berlaku_wajib'), 'ditolak basis data');
+    }
+});
+
+uji('UJ-07b', 'AB-06 · observasi perilaku tidak punya kolom identitas pekerja', function () {
+    $kolom = array_column(
+        Db::semua("SELECT column_name FROM information_schema.columns
+                    WHERE table_name = 'observasi'"), 'column_name');
+    foreach (['pekerja', 'pekerja_id', 'nama_pekerja', 'yang_diamati'] as $terlarang) {
+        benar(!in_array($terlarang, $kolom, true), "tidak ada kolom '$terlarang'");
+    }
+});
+
+uji('UJ-07c', 'Observasi tanpa satu pun pengamatan ditolak', function () use ($D, $T) {
+    $h = panggil('POST', '/observasi', [
+        'area_id' => $D['area_cbt'], 'kategori' => 'Kepatuhan Prosedur',
+        'catatan' => 'Tidak mengamati apa pun', 'aman' => 0, 'berisiko' => 0,
+    ], $T['qhse']);
+    sama(400, $h['status'], 'ditolak');
+});
+
 echo "\nHak akses\n";
 
 uji('UJ-21', 'Operator tidak dapat membuka HIRADC', function () use ($T) {
@@ -286,6 +427,24 @@ uji('UJ-26', 'AB-12 · Operator boleh mengajukan izin dari lapangan', function (
     sama('diterima', $h['data']['hasil'][0]['status'], 'diterima');
     $st = Db::nilai('SELECT status FROM izin WHERE nomor = :n', [':n' => $h['data']['hasil'][0]['nomor']]);
     sama('Menunggu Supervisor', $st, 'masuk sebagai pengajuan, bukan izin aktif');
+});
+
+uji('UJ-24', 'Hanya Administrator yang melihat daftar pengguna', function () use ($T) {
+    foreach (['qhse', 'manajemen', 'operator', 'lingkungan'] as $peran) {
+        $h = panggil('GET', '/pengguna', [], $T[$peran]);
+        sama(403, $h['status'], "peran $peran ditolak");
+    }
+    sama(200, panggil('GET', '/pengguna', [], $T['admin'])['status'], 'admin diterima');
+});
+
+uji('UJ-22c', 'Operator tidak dapat menyusun JSA, hanya membacanya', function () use ($D, $T) {
+    sama(200, panggil('GET', '/jsa', [], $T['operator'])['status'], 'boleh membaca');
+    $h = panggil('POST', '/jsa', [
+        'area_id' => $D['area_cbt'], 'pekerjaan' => 'Oleh operator',
+        'langkah' => [['kerja' => 'K', 'bahaya' => 'B', 'kemungkinan' => 1, 'keparahan' => 1,
+                       'kemungkinan_sisa' => 1, 'keparahan_sisa' => 1]],
+    ], $T['operator']);
+    sama(403, $h['status'], 'tidak boleh menyusun');
 });
 
 uji('UJ-27', 'Akun nonaktif kehilangan akses', function () use ($D, $T) {

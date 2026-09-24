@@ -32,11 +32,16 @@ window.KGSUMBER = (function () {
 
   /* Koleksi yang endpoint-nya sudah ada. Ditambah seiring modul disambungkan. */
   var TERSAMBUNG = {
-    bahaya:       { jalur: '/bahaya',        modul: 'hazard'  },
+    bahaya:       { jalur: '/bahaya',        modul: 'hazard'   },
     insiden:      { jalur: '/insiden',       modul: 'incident' },
-    capa:         { jalur: '/capa',          modul: 'capa'    },
-    izin:         { jalur: '/izin',          modul: 'permit'  },
-    observasiAPD: { jalur: '/observasi-apd', modul: 'bbs'     }
+    capa:         { jalur: '/capa',          modul: 'capa'     },
+    izin:         { jalur: '/izin',          modul: 'permit'   },
+    observasiAPD: { jalur: '/observasi-apd', modul: 'bbs'      },
+    observasi:    { jalur: '/observasi',     modul: 'bbs'      },
+    jsa:          { jalur: '/jsa',           modul: 'jsa'      },
+    hiradc:       { jalur: '/hiradc',        modul: 'hiradc'   },
+    induksi:      { jalur: '/induksi',       modul: 'induksi'  },
+    pengguna:     { jalur: '/pengguna',      modul: 'users'    }
   };
 
   function token() {
@@ -94,7 +99,7 @@ window.KGSUMBER = (function () {
     bahaya: function (r) {
       return {
         id: r.nomor, kategori: r.kategori, lokasi: r.area, isi: r.isi,
-        pelapor: r.pelapor || 'Anonim', waktu: waktuSingkat(r.dibuat_pada),
+        pelapor: r.pelapor || 'Anonim', waktu: sejak(r.dibuat_pada),
         status: r.status, risiko: r.risiko
       };
     },
@@ -111,24 +116,83 @@ window.KGSUMBER = (function () {
     capa: function (r) {
       return {
         id: r.nomor, judul: r.judul, sumber: r.sumber_nomor, sumberJenis: r.sumber_jenis,
-        pj: r.pj, terbit: r.terbit, tenggat: r.tenggat, umur: Number(r.umur),
+        pj: r.pj, terbit: tanggalPanjang(r.terbit), tenggat: tanggalPanjang(r.tenggat),
+        umur: Number(r.umur),
         status: r.status, prioritas: r.prioritas, terlambat: r.terlambat === true
       };
     },
     izin: function (r) {
       return {
-        id: r.nomor, jenis: r.jenis, ikon: ikonIzin(r.jenis), judul: r.judul,
+        id: r.nomor, jenis: r.jenis_nama, ikon: ikonIzin(r.jenis), judul: r.judul,
         pelaksana: r.pelaksana, vendor: r.vendor === true, pekerja: Number(r.pekerja),
-        pengawas: r.pengawas, mulai: r.mulai || '', status: r.status,
-        zona: r.zona || '—', risikoAwal: null, risikoSisa: r.risiko_sisa,
-        prasyarat: []
+        pengawas: r.pengawas,
+        mulai: [tanggalPanjang(r.mulai), r.durasi].filter(Boolean).join(' \u00b7 '),
+        status: r.status, zona: r.zona || '\u2014',
+        risikoAwal: angka(r.risiko_awal), risikoSisa: angka(r.risiko_sisa),
+        prasyarat: r.prasyarat || []
       };
     },
     observasiAPD: function (r) {
       return {
-        id: r.nomor, area: r.area, tanggal: r.tanggal, pengamat: r.pengamat,
+        id: r.nomor, area: r.area, tanggal: tanggalPanjang(r.tanggal), pengamat: r.pengamat,
         diamati: Number(r.diamati), patuh: Number(r.patuh),
-        catatan: r.catatan, rincian: []
+        catatan: r.catatan,
+        /* app.js membaca rincian sebagai [nama, diamati, patuh]. */
+        rincian: (r.rincian || []).map(function (d) {
+          return [d.jenis, Number(d.diamati), Number(d.patuh)];
+        })
+      };
+    },
+    observasi: function (r) {
+      return {
+        id: r.nomor, observer: r.pengamat, area: r.area, tanggal: tanggalPanjang(r.tanggal),
+        aman: Number(r.aman), berisiko: Number(r.berisiko), kategori: r.kategori,
+        catatan: r.catatan, tindakan: r.tindakan || ''
+      };
+    },
+    jsa: function (r) {
+      return {
+        id: r.nomor, pekerjaan: r.pekerjaan, area: r.area, jenis: r.jenis,
+        penyusun: r.penyusun || '\u2014', peninjau: r.peninjau || '\u2014',
+        pengesah: r.pengesah || '\u2014',
+        disusun: tanggalPanjang(r.disusun), disahkan: tanggalPanjang(r.disahkan),
+        tinjau: tanggalPanjang(r.tinjau), rev: Number(r.revisi), status: r.status,
+        izinTerkait: r.izin_terkait || [], apd: r.apd_wajib || [],
+        langkah: (r.langkah || []).map(function (l) {
+          return {
+            no: Number(l.nomor), kerja: l.kerja, bahaya: l.bahaya,
+            k: Number(l.kemungkinan), s: Number(l.keparahan),
+            sk: Number(l.kemungkinan_sisa), ss: Number(l.keparahan_sisa),
+            /* app.js membaca kendali sebagai pasangan [hierarki, teks]. */
+            kendali: (l.kendali || []).map(function (c) { return [c.hierarki, c.teks]; })
+          };
+        })
+      };
+    },
+    hiradc: function (r) {
+      return {
+        id: r.nomor, proses: r.proses, aktivitas: r.aktivitas, rutin: r.sifat,
+        kategori: r.kategori, bahaya: r.bahaya, risiko: r.risiko, korban: r.korban,
+        k: Number(r.kemungkinan), p: Number(r.keparahan), kendaliAda: r.kendali_ada || '',
+        sk: Number(r.kemungkinan_sisa), sp: Number(r.keparahan_sisa),
+        kendaliTambah: r.kendali_tambahan || '', hierarki: r.hierarki || '\u2014',
+        pj: r.pj || '\u2014', target: tanggalPanjang(r.target), status: r.status
+      };
+    },
+    induksi: function (r) {
+      return {
+        id: r.nomor, nama: r.nama, jenis: r.jenis, asal: r.asal || '\u2014',
+        tanggal: tanggalPanjang(r.tanggal), pemandu: r.pemandu || '\u2014',
+        nilai: r.nilai === null ? null : Number(r.nilai),
+        berlaku: tanggalPanjang(r.berlaku), sisa: r.sisa === null ? null : Number(r.sisa),
+        status: r.status
+      };
+    },
+    pengguna: function (r) {
+      return {
+        email: r.email, nama: r.nama, inisial: r.inisial, peran: r.peran_kode,
+        lokasi: r.pabrik.replace(/^Pabrik /, ''), status: r.status,
+        masuk: r.masuk_terakhir ? tanggalPanjang(r.masuk_terakhir) + ', ' + jam(r.masuk_terakhir) : '\u2014'
       };
     }
   };
@@ -137,14 +201,43 @@ window.KGSUMBER = (function () {
     return { 'panas': 'hot', 'ruang-terbatas': 'conf', 'ketinggian': 'height', 'listrik': 'elec' }[jenis] || 'hot';
   }
 
-  function waktuSingkat(iso) {
-    if (!iso) return '';
-    var d = new Date(iso);
-    if (isNaN(d)) return '';
-    var jam = String(d.getHours()).padStart(2, '0') + '.' + String(d.getMinutes()).padStart(2, '0');
-    var hariIni = new Date();
-    return d.toDateString() === hariIni.toDateString() ? jam + ' hari ini' : jam + ' ' + d.getDate() + '/' + (d.getMonth() + 1);
+  /* Format tanggal ditulis sama persis dengan purwarupa — "18 Sep 2026",
+     bukan "2026-09-18". Tanggal yang tampil beda bentuk adalah perubahan
+     tampilan, walaupun isinya sama. */
+  var BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+  function tanggalPanjang(nilai) {
+    var d = tanggal(nilai);
+    if (!d) return '\u2014';
+    return String(d.getDate()).padStart(2, '0') + ' ' + BULAN[d.getMonth()] + ' ' + d.getFullYear();
   }
+
+  function jam(nilai) {
+    var d = tanggal(nilai);
+    if (!d) return '';
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+
+  /* "3 jam lalu" — bentuk yang dipakai purwarupa pada laporan bahaya. */
+  function sejak(nilai) {
+    var d = tanggal(nilai);
+    if (!d) return '';
+    var menit = Math.round((Date.now() - d.getTime()) / 60000);
+    if (menit < 60)   return Math.max(menit, 1) + ' menit lalu';
+    if (menit < 1440) return Math.round(menit / 60) + ' jam lalu';
+    return Math.round(menit / 1440) + ' hari lalu';
+  }
+
+  function tanggal(nilai) {
+    if (!nilai) return null;
+    /* Tanggal murni dibaca sebagai waktu setempat, bukan UTC: "2026-09-18"
+       yang dibaca UTC berubah menjadi 17 September di zona waktu Indonesia. */
+    var t = /^\d{4}-\d{2}-\d{2}$/.test(nilai) ? nilai + 'T00:00:00' : nilai;
+    var d = new Date(t);
+    return isNaN(d) ? null : d;
+  }
+
+  function angka(v) { return v === null || v === undefined ? null : Number(v); }
 
   /* ─────────────────────────────────────────────────────────────────
      Pemuatan

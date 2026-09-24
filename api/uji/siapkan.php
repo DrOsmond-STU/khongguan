@@ -12,11 +12,21 @@ declare(strict_types=1);
 
 namespace KG\Uji;
 
-use KG\{Db, Jawab};
+use KG\{Db, Jawab, Konfigurasi};
 
 // Penutup balasan diganti supaya beberapa permintaan dapat dijalankan dalam
 // satu proses. Lihat catatan pada Jawab::$penutup.
 Jawab::$penutup = static function (int $status): void { throw new Keluar($status); };
+
+// Penjaga terakhir sebelum DROP SCHEMA. Nama basis data uji wajib berakhiran
+// _uji; tanpa penjagaan ini satu salah konfigurasi menghapus basis data
+// pengembangan, dan tidak ada yang menyadarinya sampai datanya dicari.
+$dsn = (string) Konfigurasi::satu('db_dsn');
+if (!preg_match('/dbname=([^;]+)/', $dsn, $c) || !str_ends_with($c[1], '_uji')) {
+    fwrite(STDERR, "Uji menolak berjalan: basis data '" . ($c[1] ?? $dsn)
+        . "' bukan basis data uji (nama wajib berakhiran _uji).\n");
+    exit(1);
+}
 
 $pdo = Db::pdo();
 $pdo->exec('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
@@ -83,6 +93,17 @@ function isi(): array
                  4, 3, 'Pemasangan pelindung panas', 'Terbuka') RETURNING id",
         [':p' => $cbt]
     );
+
+    // Pencacah didorong melewati nomor bawaan di atas. Tanpa ini nomor
+    // pertama yang dibangkitkan API menabrak nomor bawaan, dan uji gagal
+    // karena persiapannya, bukan karena kodenya.
+    foreach ([['JSA', 2026, 3], ['HRD', 0, 1], ['IND', 2026, 1], ['IND', 2025, 9]] as [$awalan, $tahun, $nilai]) {
+        Db::jalankan(
+            'INSERT INTO pencacah_nomor (awalan, tahun, nilai) VALUES (:a, :t, :n)
+             ON CONFLICT (awalan, tahun) DO UPDATE SET nilai = greatest(pencacah_nomor.nilai, EXCLUDED.nilai)',
+            [':a' => $awalan, ':t' => $tahun, ':n' => $nilai]
+        );
+    }
 
     return $o;
 }

@@ -13,6 +13,24 @@ final class Konfigurasi
     /** @var array<string,mixed>|null */
     private static ?array $nilai = null;
 
+    /** @var array<string,mixed> */
+    private static array $paksa = [];
+
+    /**
+     * Menimpa konfigurasi, mengalahkan config.php.
+     *
+     * Dipakai pelari uji. Tanpa ini config.php menang atas peubah lingkungan,
+     * dan uji yang dijalankan di mesin pengembang akan menyiapkan ulang
+     * skema pada basis data pengembangannya — kejadian nyata, sekali.
+     *
+     * @param array<string,mixed> $nilai
+     */
+    public static function paksa(array $nilai): void
+    {
+        self::$paksa = $nilai;
+        self::$nilai = null;
+    }
+
     /** @return array<string,mixed> */
     public static function ambil(): array
     {
@@ -34,7 +52,7 @@ final class Konfigurasi
             'izinkan_masuk_demo' => (getenv('KG_DEMO') === '1'),
         ];
 
-        return self::$nilai = array_merge($bawaan, is_array($dari_berkas) ? $dari_berkas : []);
+        return self::$nilai = array_merge($bawaan, is_array($dari_berkas) ? $dari_berkas : [], self::$paksa);
     }
 
     public static function satu(string $kunci): mixed
