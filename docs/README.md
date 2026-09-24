@@ -24,6 +24,7 @@ dibutuhkan.
 | [11](11-rencana-pengujian.md) | Rencana pengujian | Penguji, QHSE | Apa yang diuji dan bagaimana dinyatakan lulus |
 | [12](12-rencana-rilis.md) | Rencana rilis | Manajer proyek | Tahapan, migrasi, pelatihan, kriteria terima |
 | [13](13-glosarium.md) | Glosarium | Semua | Arti istilah dan singkatan QHSE |
+| [14](14-pemasangan.md) | Pemasangan di peladen | Pengembang, STU | Langkah pemasangan cPanel, dan mengapa jalur masuk demo dimatikan pada produksi |
 
 ## Penomoran acuan
 
