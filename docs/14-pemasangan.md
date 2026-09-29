@@ -10,8 +10,10 @@ Untuk cPanel dengan PHP 8.3 dan PostgreSQL 16 — lingkungan
 | Berkas aplikasi | Terpasang dari komit `0c0607f`: `api/`, `assets/`, `m/`, `index.html`. `api/uji/` sengaja tidak ikut |
 | Pengguna `semestat_kgapp` | Dibuat dari sandi yang disediakan manusia; hak ALL pada `semestat_kgsafe` |
 | `api/config.php` | Terpasang, izin 600, **tanpa rahasia** — lihat "Rahasia dari berkas" |
-| Migrasi | 001, 002, 004, 006, 008, 009 tercatat; 007 (data contoh) tidak dimuat |
-| Skema | 52 tabel, 2 fungsi/pemicu — sama dengan basis data pengembangan |
+| Migrasi | 001, 002, 004, 006, 008, 009, 010 tercatat; 007 (data contoh) tidak dimuat |
+| Skema | 54 tabel, 2 fungsi/pemicu — sama dengan basis data pengembangan |
+| Masuk dengan sandi (komit `85cd1a7`) | Terpasang. Diperiksa dari dalam peladen: `/sesi/masuk` hidup, `masuk-demo` mati, `config.php` dijawab 403 |
+| Pengguna | **Belum ada.** Administrator pertama dibuat dengan `buat-admin.php` — lihat di bawah |
 | Acuan | 4 pabrik, 5 peran, 48 area, 5 jenis izin, 12 kategori bahaya |
 | Catatan | Kosong, sebagaimana mestinya untuk basis data produksi baru |
 | `/home/semestat/kg-berkas` | Ada, izin 700, di luar docroot |
@@ -81,6 +83,8 @@ sandi membacanya dari berkas dan menyaringnya dari log.
 | `kg-perancah.php` | Mencatat `008` sebagai sudah dijalankan **hanya bila** dua tabel yang pernah dibuat manual identik dengan yang akan dibuat `008`. Tidak menghapus apa pun. Sudah bekerja; tidak akan berbuat apa-apa lagi |
 | `kg-periksa.php` | Cetak migrasi tercatat, jumlah tabel, isi acuan dan catatan |
 | `kg-cron.sh` | Pemberitahuan dua kali sehari; diam bila `config.php` belum ada |
+| `kg-perbarui.sh` | `kg-salin.sh` lalu `kg-selesaikan.sh`, sekali jalan per penanda. Untuk pembaruan berikutnya, ganti `PENANDA` di dalamnya lalu jalankan. Log: `kg-perbarui.log` |
+| `kg-periksa-api.sh` | Memeriksa API dari dalam peladen (lewat HTTP lokal; HTTPS tidak terikat ke 127.0.0.1 di hosting ini). Log: `kg-periksa-api.log` |
 
 Skrip dijalankan lewat cron sekali-jalan (`* * * * *`, lalu dihapus) karena
 sesi pemasangan tidak punya shell ke peladen — hanya alat berkas dan cron
