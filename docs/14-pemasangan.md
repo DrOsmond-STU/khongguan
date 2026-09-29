@@ -3,139 +3,105 @@
 Untuk cPanel dengan PHP 8.3 dan PostgreSQL 16 — lingkungan
 `khongguan.semestateknologiutama.com` pada akun `semestat`.
 
-## Yang sudah dikerjakan
+## Keadaan · 29 September 2026 — terpasang dan terverifikasi
 
 | Hal | Keadaan |
 |---|---|
-| Basis data `semestat_kgsafe` | Dibuat |
-| Pengguna `semestat_kgapp` | **Dihapus** — harus dibuat kembali, lihat catatan di bawah |
-| PostgreSQL | 16.15 · `gen_random_uuid()` inti tersedia, `pgcrypto` tidak ada dan tidak diperlukan |
-| PHP CLI (cron) | 8.3.33 · `pdo_pgsql`, `zip`, `fileinfo` tersedia |
-| `/home/semestat/kgrepo` | Ada, tetapi **salinan lama** (komit 4f6c132, tanpa `api/`) — bukan klon yang dapat di-`git pull` |
-| Docroot | Berisi purwarupa lama saja: `assets/`, `m/`, `index.html`. **Tidak ada `api/`** |
-| Sisa skema, berkas aplikasi, cron | **Belum** — lihat di bawah |
+| Berkas aplikasi | Terpasang dari komit `0c0607f`: `api/`, `assets/`, `m/`, `index.html`. `api/uji/` sengaja tidak ikut |
+| Pengguna `semestat_kgapp` | Dibuat dari sandi yang disediakan manusia; hak ALL pada `semestat_kgsafe` |
+| `api/config.php` | Terpasang, izin 600, **tanpa rahasia** — lihat "Rahasia dari berkas" |
+| Migrasi | 001, 002, 004, 006, 008, 009 tercatat; 007 (data contoh) tidak dimuat |
+| Skema | 52 tabel, 2 fungsi/pemicu — sama dengan basis data pengembangan |
+| Acuan | 4 pabrik, 5 peran, 48 area, 5 jenis izin, 12 kategori bahaya |
+| Catatan | Kosong, sebagaimana mestinya untuk basis data produksi baru |
+| `/home/semestat/kg-berkas` | Ada, izin 700, di luar docroot |
+| Cron pemberitahuan | `0 6,13 * * *  /bin/bash /home/semestat/kg-cron.sh` |
+| `assets/konfigurasi.js` | `api: ''` — situs berjalan pada mode peragaan |
+| Log galat domain | Bersih untuk `api/` |
 
-### Keadaan pengguna basis data · 24 September 2026
+Situs **belum** disambungkan ke API (`api: ''`). Itu disengaja: masuk-demo
+dimatikan dan OIDC belum dikonfigurasi, sehingga tidak ada satu pun cara masuk
+yang sah. Menyambungkannya sekarang hanya akan menampilkan layar masuk yang
+tidak bisa dilewati siapa pun. Lihat "Menyalakan mode tersambung" di bawah.
 
-Pengguna `semestat_kgapp` **sudah dihapus** dan belum dibuat kembali.
+## Rahasia dari berkas
 
-Sandinya tidak tercatat di mana pun — memang tidak boleh — sehingga satu-satunya
-jalan memasang adalah membuat penggunanya kembali dengan sandi baru. Penghapusan
-itu sudah dilakukan; pembuatan kembali belum, karena membangkitkan dan memegang
-sandi produksi ditolak oleh penjaga izin lingkungan tempat sesi ini berjalan.
+`config.php` tidak memuat sandi. Ia membaca dua berkas satu-baris di luar
+docroot, keduanya berizin 600:
 
-Basis data `semestat_kgsafe` **masih ada dan tidak tersentuh** (7,86 MB — ukuran
-basis data kosong; migrasi belum pernah dijalankan). Yang hilang hanya
-penggunanya, bukan datanya.
+| Berkas | Isi |
+|---|---|
+| `/home/semestat/kg-sandi.txt` | sandi pengguna PostgreSQL `semestat_kgapp` |
+| `/home/semestat/kg-rahasia.txt` | kunci acak ≥ 32 aksara untuk tautan unduh |
 
-Akibatnya: saat ini tidak ada yang dapat menyambung ke basis data itu. Situs
-tetap hidup seperti biasa karena berjalan pada mode peragaan dan tidak
-memerlukan basis data sama sekali.
+Dua alasan. Pertama, orang yang memasang tidak perlu menyunting PHP: satu
+berkas, satu baris, tidak ada tanda petik yang bisa salah. Kedua — dan ini
+yang menentukan — sesi AI yang mengerjakan pemasangan ini **tidak diizinkan
+membuat atau memegang sandi produksi**, dan itu batas yang benar. Sandi harus
+lahir dari tangan manusia di STU; dengan pola ini ia lahir di cPanel File
+Manager dan tidak pernah lewat mana pun selain itu.
 
-## Langkah yang tersisa
+Mengganti sandi: sunting berkasnya, lalu ganti sandi pengguna di cPanel →
+PostgreSQL Databases. `config.php` tidak perlu disentuh.
 
-### 0 · Buat kembali pengguna basis data
+### Insiden saat pemasangan
 
-Di cPanel → **PostgreSQL Databases**:
+Kedua berkas rahasia pertama kali dibuat di **docroot**, bukan di
+`/home/semestat/`, dengan izin 644 — artinya selama ±3 menit keduanya dapat
+diunduh siapa pun lewat `https://khongguan.semestateknologiutama.com/kg-sandi.txt`.
+Dipindahkan dan ditutup begitu ketahuan. Tidak ada tanda diakses (log akses
+tidak menunjukkan permintaan ke jalur itu), domain belum diumumkan, dan
+basis data saat itu masih kosong. Risiko dinilai kecil; bila ingin nol,
+ganti sandinya mengikuti langkah di atas.
 
-1. Buat pengguna `semestat_kgapp` dengan sandi baru yang kuat.
-2. Tambahkan pengguna itu ke basis data `semestat_kgsafe` dengan hak **ALL
-   PRIVILEGES**.
+Pelajaran untuk runbook: **sebutkan folder tujuan dengan jalur penuh, dan
+minta orangnya membacakan jalur yang tampil di File Manager sebelum menyimpan.**
 
-Sandi itu hanya masuk ke `config.php` pada langkah berikutnya, dan tidak ke
-tempat lain mana pun — bukan ke repositori, bukan ke catatan sesi, bukan ke log.
+## Skrip pembantu di peladen
 
-### 1 · Konfigurasi
+Semua di `/home/semestat/`. Tidak satu pun memuat rahasia; yang menyentuh
+sandi membacanya dari berkas dan menyaringnya dari log.
 
-Buat `/home/semestat/khongguan.semestateknologiutama.com/api/config.php`
-dengan izin `600`. Isinya mengikuti `api/config.contoh.php`; yang wajib diisi:
+| Skrip | Guna |
+|---|---|
+| `kg-salin.sh` | Klon ulang cabang dan salin `api/`, `assets/`, `m/`, `index.html` ke docroot. **Jalankan lagi untuk memperbarui aplikasi.** Log: `kg-salin.log` |
+| `kg-selesaikan.sh` | Pengguna basis data → uji sambungan → pendamaian perancah → migrasi → periksa. Aman diulang. Log: `kg-selesaikan.log` |
+| `kg-perancah.php` | Mencatat `008` sebagai sudah dijalankan **hanya bila** dua tabel yang pernah dibuat manual identik dengan yang akan dibuat `008`. Tidak menghapus apa pun. Sudah bekerja; tidak akan berbuat apa-apa lagi |
+| `kg-periksa.php` | Cetak migrasi tercatat, jumlah tabel, isi acuan dan catatan |
+| `kg-cron.sh` | Pemberitahuan dua kali sehari; diam bila `config.php` belum ada |
 
-```php
-'db_dsn'      => 'pgsql:host=127.0.0.1;port=5432;dbname=semestat_kgsafe',
-'db_pengguna' => 'semestat_kgapp',
-'db_sandi'    => '…',                       // sandi yang dipakai saat membuat pengguna
-'izinkan_masuk_demo' => false,              // lihat catatan keamanan di bawah
-'alamat_aplikasi' => 'https://khongguan.semestateknologiutama.com',
-'jalur_berkas'    => '/home/semestat/kg-berkas',
-'rahasia_tanda'   => '…',                   // php -r "echo bin2hex(random_bytes(32));"
-```
+Skrip dijalankan lewat cron sekali-jalan (`* * * * *`, lalu dihapus) karena
+sesi pemasangan tidak punya shell ke peladen — hanya alat berkas dan cron
+cPanel. Pola itu bekerja dan tidak perlu diubah; hanya perlu diingat untuk
+**menghapus cron-nya** setelah log menunjukkan `SELESAI`.
 
-`config.php` tidak pernah masuk repositori, dan `api/.htaccess` menolak
-melayaninya sekalipun ada yang salah menaruhnya di tempat yang terbaca.
-
-### 2 · Direktori berkas
-
-```bash
-mkdir -p /home/semestat/kg-berkas
-chmod 700 /home/semestat/kg-berkas
-```
-
-**Di luar docroot.** Foto insiden memuat wajah, luka, dan lokasi kerja;
-direktori yang dapat ditebak alamatnya membocorkan semuanya tanpa jejak.
-
-### 3 · Salin berkas
-
-`/home/semestat/kgrepo` bukan klon git, jadi `git pull` di sana tidak bekerja.
-Klon ulang, atau tarik langsung dari cabangnya:
-
-```bash
-rm -rf /home/semestat/kgrepo
-git clone --branch claude/affectionate-fermi-s38tfh --depth 1 \
-  https://github.com/DrOsmond-STU/khongguan.git /home/semestat/kgrepo
-
-APP=/home/semestat/khongguan.semestateknologiutama.com
-cd /home/semestat
-rsync -a --delete --exclude 'config.php' --exclude 'uji' kgrepo/api/ "$APP/api/"
-rsync -a --delete kgrepo/assets/ "$APP/assets/"
-rsync -a --delete kgrepo/m/      "$APP/m/"
-cp kgrepo/index.html "$APP/index.html"
-
-chmod 600 "$APP/api/config.php"
-```
-
-`api/uji/` sengaja tidak ikut: pengujian membuat ulang skema dari nol, dan
-berkas itu tidak boleh ada di peladen yang memegang catatan sungguhan.
-`api/.htaccess` ikut tersalin dan itu yang menolak melayani `config.php`;
-pastikan ia benar-benar ada setelah penyalinan.
-
-### 4 · Migrasi
+## Memperbarui aplikasi
 
 ```bash
-/opt/alt/php83/usr/bin/php "$APP/api/tugas/migrasi.php"
+/bin/bash /home/semestat/kg-salin.sh
+/opt/alt/php83/usr/bin/php /home/semestat/khongguan.semestateknologiutama.com/api/tugas/migrasi.php
 ```
 
-Mencatat berkas yang sudah dijalankan; aman diulang. Data contoh
-(`007_contoh.sql`) **tidak** dimuat kecuali diminta dengan `--contoh` — basis
-data produksi yang berisi data peragaan tidak dapat dibedakan dari yang berisi
-catatan sungguhan.
+`kg-salin.sh` mengecualikan `config.php`, jadi konfigurasi tidak tertimpa.
+Migrasi hanya menjalankan berkas yang belum tercatat.
 
-### 5 · Cron pemberitahuan
+## Menyalakan mode tersambung
 
-Perintahnya ditaruh di dalam berkas skrip, bukan di baris crontab: tanda persen
-pada crontab memotong perintahnya di tengah jalan.
+Prasyarat: rincian OIDC Khong Guan Group (penerbit, client_id,
+client_secret). Lalu:
 
-`/home/semestat/kg-cron.sh`:
+1. Isi bagian `oidc` pada `api/config.php` — tambahkan blok `'oidc' => [ … ]`
+   mengikuti `config.contoh.php`, dengan `'aktif' => true`.
+2. Ubah satu baris pada `assets/konfigurasi.js`:
 
-```bash
-#!/bin/bash
-/opt/alt/php83/usr/bin/php \
-  /home/semestat/khongguan.semestateknologiutama.com/api/tugas/pemberitahuan.php \
-  >> /home/semestat/kg-pemberitahuan.log 2>&1
-```
+   ```js
+   window.KG_KONFIG = Object.assign({ api: 'https://khongguan.semestateknologiutama.com', versi: '5' }, …
+   ```
 
-Crontab: `0 6,13 * * *  /bin/bash /home/semestat/kg-cron.sh`
+3. Naikkan `versi` supaya peramban mengambil berkas yang baru.
 
-Dua kali sehari cukup. Pemberitahuan yang datang setiap jam berhenti dibaca,
-dan yang benar-benar mendesak — kejadian berkeparahan Serius (AB-02) — dikirim
-seketika oleh modulnya, bukan menunggu jadwal ini.
-
-### 6 · Periksa
-
-```bash
-curl -s -H 'Host: khongguan.semestateknologiutama.com' \
-     http://127.0.0.1/api/v1/saya
-# diharapkan: {"galat":{"kode":"BELUM_MASUK",…}}  — artinya API hidup dan menjaga pintunya
-```
+Sebelum OIDC siap, **jangan** menyalakan `izinkan_masuk_demo` di alamat
+publik — lihat catatan keamanan di bawah.
 
 ## Catatan keamanan: mengapa `izinkan_masuk_demo` harus `false`
 
