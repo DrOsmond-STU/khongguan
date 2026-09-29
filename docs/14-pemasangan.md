@@ -49,10 +49,22 @@ PostgreSQL Databases. `config.php` tidak perlu disentuh.
 Kedua berkas rahasia pertama kali dibuat di **docroot**, bukan di
 `/home/semestat/`, dengan izin 644 — artinya selama ±3 menit keduanya dapat
 diunduh siapa pun lewat `https://khongguan.semestateknologiutama.com/kg-sandi.txt`.
-Dipindahkan dan ditutup begitu ketahuan. Tidak ada tanda diakses (log akses
-tidak menunjukkan permintaan ke jalur itu), domain belum diumumkan, dan
-basis data saat itu masih kosong. Risiko dinilai kecil; bila ingin nol,
-ganti sandinya mengikuti langkah di atas.
+Dipindahkan dan ditutup begitu ketahuan.
+
+**Apakah sempat diakses, tidak diketahui.** Log akses yang hidup tidak
+terjangkau dari sesi pemasangan (hanya alat berkas cPanel; tautan
+`access-logs` menunjuk jalur yang tidak ada), log arsip terakhir bertanggal
+sehari sebelumnya, dan statistik pengunjung kosong. Yang meringankan: domain
+belum diumumkan, nama berkasnya tidak tercantum di mana pun, dan basis data
+saat itu masih kosong. Yang memberatkan: sandinya tetap berlaku sampai
+sekarang, jadi bila memang ada yang mengambilnya, ia masih memegangnya.
+
+Untuk memastikan, salah satu dari dua: baca domlog lewat SSH
+(`grep kg-sandi /var/log/apache2/domlogs/semestat/khongguan.*` atau jalur
+setara di peladen ini) untuk jendela 29 Sep 16:12–16:15 WIB — atau, lebih
+sederhana dan pasti, ganti sandinya: isi baru di `kg-sandi.txt`, lalu
+sandi yang sama di cPanel → PostgreSQL Databases → Change Password untuk
+`semestat_kgapp`. Dua menit, dan pertanyaannya selesai.
 
 Pelajaran untuk runbook: **sebutkan folder tujuan dengan jalur penuh, dan
 minta orangnya membacakan jalur yang tampil di File Manager sebelum menyimpan.**
