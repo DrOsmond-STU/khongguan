@@ -67,7 +67,24 @@
 
   const SANDI = 'demo1234';
 
+  /* Tersambung ke peladen: masuk memakai akun sungguhan. Pada mode peragaan
+     seluruh jalur di bawah persis seperti purwarupa. */
+  const ALAMAT_API = ((window.KG_KONFIG || {}).api || '').replace(/\/$/, '');
+  const TERSAMBUNG = !!ALAMAT_API;
+  const KUNCI_PROFIL = 'kg-profil-lapangan';
+
+  /* Profil disimpan bersama token supaya aplikasi dapat dibuka tanpa sinyal:
+     petugas yang membuka aplikasi di gudang tanpa jaringan tetap harus dapat
+     melapor, dan antreannya terkirim begitu sinyal kembali. */
+  function profilTersimpan() {
+    try {
+      if (!localStorage.getItem('kg-token')) return null;
+      return JSON.parse(localStorage.getItem(KUNCI_PROFIL) || 'null');
+    } catch (e) { return null; }
+  }
+
   function muatSesi() {
+    if (TERSAMBUNG) return profilTersimpan();
     let email = null;
     try { email = sessionStorage.getItem('kg-session') || localStorage.getItem('kg-session'); } catch (e) {}
     if (!email) return null;
@@ -75,6 +92,7 @@
   }
   function boleh(id) {
     if (!sesi) return false;
+    if (sesi.modul) return sesi.modul.indexOf(id) !== -1;   /* dari peladen */
     const r = D.peran[sesi.peran];
     return !!r && r.modul.indexOf(id) !== -1;
   }
@@ -1314,6 +1332,7 @@
   function cobaMasuk() {
     const email = (document.getElementById('m-email').value || '').trim().toLowerCase();
     const sandi = document.getElementById('m-sandi').value || '';
+    if (TERSAMBUNG) { masukPeladen(email, sandi); return; }
     const u = D.pengguna.filter(function (x) { return x.email.toLowerCase() === email; })[0];
     if (!u || sandi !== SANDI) { galatMasuk('Email atau kata sandi tidak cocok.'); return; }
     if (u.status !== 'Aktif') { galatMasuk('Akun ini tidak aktif. Hubungi administrator sistem.'); return; }
@@ -1325,6 +1344,57 @@
        aplikasi ini harus tetap dapat dipakai tanpa sinyal, dan antrean yang
        belum terkirim tidak hilang karenanya. */
     ambilSesiPeladen(u.email);
+  }
+
+  /*
+   * Masuk dengan akun sungguhan. Sesi lapangan berumur panjang (30 hari):
+   * petugas tidak dapat diminta masuk ulang di tengah shift, dengan sarung
+   * tangan, di area tanpa sinyal.
+   */
+  function masukPeladen(email, sandi) {
+    if (!email || !sandi) { galatMasuk('Email dan kata sandi wajib diisi.'); return; }
+    if (navigator.onLine === false) {
+      galatMasuk('Tidak ada sinyal. Masuk pertama kali membutuhkan sambungan; setelah itu aplikasi tetap jalan tanpa sinyal.');
+      return;
+    }
+    const tombol = document.querySelector('#form-masuk [type=submit]');
+    if (tombol) tombol.disabled = true;
+    galatMasuk(null);
+    const json = function (r) {
+      return r.json().then(function (j) {
+        if (!r.ok) throw new Error((j.galat && j.galat.pesan) || ('HTTP ' + r.status));
+        return j;
+      });
+    };
+    fetch(ALAMAT_API + '/api/v1/sesi/masuk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ email: email, sandi: sandi, klien: 'lapangan' })
+    }).then(json).then(function (j) {
+      const token = j.data.token;
+      return fetch(ALAMAT_API + '/api/v1/saya', {
+        headers: { 'Accept': 'application/json', 'Authorization': 'Bearer ' + token }
+      }).then(json).then(function (s) {
+        const p = s.data;
+        const profil = { email: p.email, nama: p.nama, inisial: p.inisial, peran: p.peran.kode,
+                         lokasi: p.pabrik.nama, status: 'Aktif', modul: p.modul };
+        try {
+          localStorage.setItem('kg-token', token);
+          localStorage.setItem(KUNCI_PROFIL, JSON.stringify(profil));
+        } catch (e) {}
+        return profil;
+      });
+    }).then(function (profil) {
+      if (tombol) tombol.disabled = false;
+      document.getElementById('m-sandi').value = '';
+      sesi = profil;
+      tampilkanApp();
+      LAP.muatAcuan();
+    }).catch(function (e) {
+      if (tombol) tombol.disabled = false;
+      galatMasuk(e && e.message && !/^Failed to fetch|NetworkError/i.test(e.message)
+        ? e.message : 'Peladen tidak dapat dihubungi. Periksa sinyal, lalu coba lagi.');
+    });
   }
 
   function ambilSesiPeladen(email) {
@@ -1358,6 +1428,11 @@
   function tampilkanMasuk() {
     document.getElementById('app').hidden = true;
     document.getElementById('masuk').hidden = false;
+    if (TERSAMBUNG) {
+      /* Akun demo tidak berlaku di sistem sungguhan. */
+      const demo = document.querySelector('#masuk .masuk-demo');
+      if (demo) demo.hidden = true;
+    }
     galatMasuk(null);
     gambarAkun();
     terjemahkanCangkang(document.getElementById('masuk'));
@@ -1515,6 +1590,17 @@
     }
 
     if (t.closest('#tbl-keluar')) {
+      if (TERSAMBUNG) {
+        /* Sesi diakhiri di peladen juga, bukan hanya dilupakan di ponsel:
+           ponsel yang hilang tidak boleh membawa sesi yang masih hidup. */
+        let tok = null;
+        try { tok = localStorage.getItem('kg-token'); localStorage.removeItem(KUNCI_PROFIL); } catch (e) {}
+        if (tok) {
+          fetch(ALAMAT_API + '/api/v1/sesi/akhiri', {
+            method: 'POST', headers: { 'Authorization': 'Bearer ' + tok, 'Accept': 'application/json' }
+          }).catch(function () {});
+        }
+      }
       try {
         localStorage.removeItem('kg-session');
         sessionStorage.removeItem('kg-session');
@@ -1579,6 +1665,11 @@
   KGI18N.setLang(bahasaAwal);
   document.documentElement.lang = bahasaAwal;
 
+  if (TERSAMBUNG) {
+    /* Isian bawaan purwarupa (akun Agus, demo1234) tidak berlaku di sistem sungguhan. */
+    document.getElementById('m-email').value = '';
+    document.getElementById('m-sandi').value = '';
+  }
   sesi = muatSesi();
   if (sesi) tampilkanApp(); else tampilkanMasuk();
 

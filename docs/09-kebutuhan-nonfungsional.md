@@ -42,7 +42,7 @@ lapangan. Antrean di perangkat adalah lapisan yang membuat itu mungkin.
 | Kode | Kebutuhan |
 |---|---|
 | KNF-17 | Seluruh lalu lintas memakai TLS 1.2 ke atas; HTTP dialihkan ke HTTPS |
-| KNF-18 | Sistem tidak menyimpan kata sandi; autentikasi lewat direktori perusahaan |
+| KNF-18 | Kata sandi hanya disimpan sebagai hash; tidak seorang pun — termasuk administrator — dapat melihat atau menetapkan sandi orang lain. Autentikasi lewat sandi sistem ini atau direktori perusahaan (OIDC) |
 | KNF-19 | Sesi aplikasi meja berakhir setelah 12 jam tidak aktif |
 | KNF-20 | Sesi aplikasi lapangan berakhir setelah 30 hari |
 | KNF-21 | Penonaktifan akun di direktori mencabut akses paling lambat 15 menit |
@@ -56,9 +56,31 @@ lapangan. Antrean di perangkat adalah lapisan yang membuat itu mungkin.
 
 ### Bagaimana KNF-18 ditegakkan
 
-Autentikasi memakai OpenID Connect, alur *authorization code* dengan PKCE.
-Tidak ada kolom kata sandi pada basis data, dan tidak ada endpoint yang
-menerimanya.
+**Keputusan berubah, 29 September 2026.** Bunyi semula: *"Sistem tidak
+menyimpan kata sandi; autentikasi lewat direktori perusahaan."* Rincian OIDC
+dari Khong Guan Group belum tersedia, dan tanpa itu tidak ada satu pun cara
+masuk yang sah. STU memilih jalur masuk dengan sandi milik sistem ini lebih
+dulu, dan OIDC ditambahkan begitu direktorinya siap. Keduanya hidup
+berdampingan pada tabel pengguna yang sama.
+
+Yang dipertahankan dari maksud semula — bahwa sandi tidak boleh menjadi
+titik lemah:
+
+| Ketentuan | Cara |
+|---|---|
+| Sandi tidak pernah tersimpan | `password_hash` (bcrypt); yang disimpan hanya hash |
+| Tidak ada yang tahu sandi orang lain | Administrator membuat **tautan**, bukan sandi. Pemilik akun menyetel sandinya sendiri lewat tautan itu |
+| Tautan tidak dapat dipakai ulang | Sekali pakai; undangan 14 hari, atur ulang 24 jam; tautan baru membatalkan yang lama; hanya hash tokennya yang disimpan |
+| Menebak sandi tidak berhasil | 5 kali gagal per akun atau 20 per alamat IP dalam 15 menit → ditahan 15 menit |
+| Menebak alamat terdaftar tidak berhasil | Sandi salah, email tak terdaftar, dan akun tanpa sandi dijawab sama persis, dengan waktu jawab yang sama |
+| Sandi lemah ditolak | Minimal 10 aksara, maksimal 72 byte (batas bcrypt), bukan sandi umum, tidak memuat nama atau email |
+| Ganti sandi memutus perangkat lain | Seluruh sesi lain diakhiri seketika |
+| Penonaktifan seketika | Sesi diputus dan tautan dibatalkan saat itu juga — lebih cepat dari KNF-21 |
+
+Uji UJ-70 sampai UJ-79b membuktikan setiap baris di atas.
+
+Jalur OIDC di bawah tetap berlaku apa adanya bila dinyalakan: alur
+*authorization code* dengan PKCE.
 
 PKCE dipakai walaupun aplikasi ini punya *client secret*: kode otorisasi yang
 bocor pada log peladen perantara tetap tidak dapat ditukar tanpa *verifier*

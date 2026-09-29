@@ -77,11 +77,11 @@ function sama(mixed $harap, mixed $dapat, string $pesan): void
  * @param array<string,mixed> $badan
  * @return array{status:int, data:mixed, galat:?array}
  */
-function panggil(string $metode, string $jalur, array $badan = [], ?string $token = null): array
+function panggil(string $metode, string $jalur, array $badan = [], ?string $token = null, string $ip = ''): array
 {
     Sesi::lupakan();
     $kepala = $token === null ? [] : ['authorization' => 'Bearer ' . $token];
-    $p = new Permintaan($metode, $jalur, [], $badan === [] ? '' : json_encode($badan), $kepala);
+    $p = new Permintaan($metode, $jalur, [], $badan === [] ? '' : json_encode($badan), $kepala, $ip);
 
     $r = \KG\rute();
     $cocok = $r->cari($metode, $jalur);

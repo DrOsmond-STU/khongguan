@@ -159,5 +159,9 @@ dan sesi disimpan di `localStorage`. Cukup untuk memperagakan alur dan hak
 akses per peran, tetapi bukan pengamanan. **Jangan memakai kata sandi sungguhan
 di layar ini.**
 
-Pada mode tersambung, masuk memakai OpenID Connect ke direktori perusahaan;
-sistem tidak pernah menerima, menyimpan, atau memeriksa kata sandi.
+Pada mode tersambung, masuk memakai akun sungguhan: email dan kata sandi yang
+disetel pemiliknya sendiri lewat tautan undangan, dan hanya hash-nya yang
+disimpan. Administrator membuat akun dan tautan dari layar Pengguna, tetapi
+tidak pernah mengetahui sandi siapa pun. Masuk lewat direktori perusahaan
+(OIDC) dapat dinyalakan berdampingan — lihat
+[docs/09](docs/09-kebutuhan-nonfungsional.md#bagaimana-knf-18-ditegakkan).

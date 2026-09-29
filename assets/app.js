@@ -2656,7 +2656,18 @@
           </div>
         </div>
 
-        <div class="card">
+        <div class="card">${TERSAMBUNG ? `
+          <h3>Akun dan Sistem</h3>
+          <div class="card-sub">Tersambung ke peladen KG SafeGuard</div>
+          <dl class="kv">
+            <dt>Data</dt><dd>Catatan sungguhan dari basis data peladen, sesuai cakupan pabrik dan peran Anda.</dd>
+            <dt>Kata sandi</dt><dd>Disimpan sebagai hash; tidak seorang pun — termasuk administrator — dapat melihatnya. Menggantinya mengakhiri sesi Anda di perangkat lain.</dd>
+            <dt>Lupa sandi</dt><dd>Administrator dapat membuat tautan pengaturan ulang; lewat tautan itu Anda menyetel sandi baru sendiri.</dd>
+          </dl>
+          <div style="display:flex;gap:var(--space-3);margin-top:var(--space-5);flex-wrap:wrap">
+            <button class="btn btn--secondary btn--sm" data-act="ganti-sandi">Ganti Kata Sandi</button>
+            <button class="btn btn--primary btn--sm" data-act="simpan-preferensi">Simpan Preferensi</button>
+          </div>` : `
           <h3>Tentang Purwarupa</h3>
           <div class="card-sub">Batas yang perlu diketahui sebelum dipakai menilai</div>
           <dl class="kv">
@@ -2667,7 +2678,7 @@
           </dl>
           <div style="display:flex;gap:var(--space-3);margin-top:var(--space-5);flex-wrap:wrap">
             <button class="btn btn--primary btn--sm" data-act="simpan-preferensi">Simpan Preferensi</button>
-          </div>
+          </div>`}
         </div>
       </section>
     </div>`;
@@ -2717,6 +2728,8 @@
                 <tr class="${u.status === 'Menunggu' ? 'is-overdue' : ''}" ${infoAttr({
                   title: u.nama,
                   sub: `${D.peran[u.peran].nama} · ${u.lokasi}`,
+                  jenis: 'pengguna', idCatatan: u.id,
+                  tindakan: TERSAMBUNG ? window.KGSUMBER.aksiRincian('pengguna', u.id) : [],
                   body: chipRow([
                     `<span class="role-chip role-${u.peran}">${D.peran[u.peran].nama.toUpperCase()}</span>`,
                     chip(u.status.toUpperCase(), statusChip[u.status], true)
@@ -3540,7 +3553,12 @@
 
   const PASSWORD = 'demo1234';
 
+  /* Tersambung ke peladen: masuk, sesi, dan keluar ditangani peladen.
+     Pada mode peragaan seluruh jalur di bawah persis seperti purwarupa. */
+  const TERSAMBUNG = !!(window.KGSUMBER && window.KGSUMBER.tersambung && window.KGSUMBER.tersambung());
+
   function loadSession() {
+    if (TERSAMBUNG) return window.KGSUMBER.sesiDariSaya();
     let email = null;
     try { email = sessionStorage.getItem('kg-session') || localStorage.getItem('kg-session'); } catch (e) {}
     if (!email) return null;
@@ -3585,6 +3603,15 @@
     document.querySelector('.fab').hidden = true;
     const el = document.getElementById('login');
     el.hidden = false;
+    if (TERSAMBUNG) {
+      /* Akun demo dan sandi demo1234 tidak berlaku di sistem sungguhan.
+         Menampilkannya hanya membuat orang mencoba masuk dengan akun yang
+         tidak ada. */
+      const demo = el.querySelector('.login-demo');
+      if (demo) demo.hidden = true;
+      const pesan = window.KGSUMBER.pesanMasuk();
+      if (pesan) loginError(pesan);
+    }
     renderLoginAccounts();
     translateDom(el);
     syncSwitches();
@@ -3615,6 +3642,7 @@
     const remember = document.getElementById('login-remember').checked;
     if (!email) return loginError('Alamat email belum diisi.');
     if (!pass) return loginError('Kata sandi belum diisi.');
+    if (TERSAMBUNG) return attemptLoginPeladen(email, pass, remember);
     const u = D.pengguna.filter(function (x) {
       return x.email.toLowerCase() === email.toLowerCase() && x.status === 'Aktif';
     })[0];
@@ -3634,7 +3662,88 @@
     toast('Selamat datang, ' + u.nama.split(' ')[0] + '.');
   }
 
+  /* Masuk ke peladen. Tombolnya dikunci selama menunggu supaya dua klik
+     tidak menjadi dua percobaan — batas percobaan dihitung per percobaan. */
+  function attemptLoginPeladen(email, pass, remember) {
+    const tombol = document.querySelector('#login-form [type=submit]');
+    if (tombol) tombol.disabled = true;
+    loginError(null);
+    window.KGSUMBER.masukSandi(email, pass, remember).then(function (s) {
+      if (tombol) tombol.disabled = false;
+      if (!s) return loginError('Sesi terbuka tetapi profil tidak terbaca. Muat ulang halaman.');
+      document.getElementById('login-pass').value = '';
+      session = s;
+      showApp();
+      const start = firstAllowed();
+      if (location.hash === '#/' + start) route(); else location.hash = '#/' + start;
+      toast('Selamat datang, ' + s.nama.split(' ')[0] + '.');
+    }).catch(function (e) {
+      if (tombol) tombol.disabled = false;
+      loginError(e && e.message ? e.message : 'Peladen tidak dapat dihubungi. Coba lagi sebentar lagi.');
+    });
+  }
+
+  /*
+   * Menyetel sandi lewat tautan undangan atau atur ulang: #/sandi/<token>.
+   *
+   * Memakai kartu layar masuk yang sama, supaya orang yang baru diundang
+   * langsung mengenali tempat ia akan masuk setiap hari. Token berada di
+   * bagian # alamat, yang tidak pernah dikirim peramban ke peladen mana pun
+   * dan tidak tercatat di log akses.
+   */
+  function teksAman(t) {
+    const d = document.createElement('div');
+    d.textContent = t == null ? '' : String(t);
+    return d.innerHTML.replace(/"/g, '&quot;');
+  }
+
+  function showSetelSandi(tokenTautan) {
+    showLogin();
+    const form = document.getElementById('login-form');
+    const isi = function (html) { form.innerHTML = KGI18N.tr(html); };
+    isi('<h1>Memeriksa tautan…</h1><p class="login-sub">Sebentar.</p>');
+    window.KGSUMBER.periksaTautan(tokenTautan).then(function (t) {
+      form.dataset.setel = tokenTautan;
+      isi('<h1>' + (t.jenis === 'undangan' ? 'Selamat datang di KG SafeGuard' : 'Setel ulang kata sandi') + '</h1>'
+        + '<p class="login-sub">' + teksAman(t.nama) + ' · ' + teksAman(t.email) + '</p>'
+        + '<div class="field"><label for="setel-baru">Kata sandi baru</label>'
+        + '<input id="setel-baru" type="password" autocomplete="new-password">'
+        + '<span class="hint">Minimal 10 aksara. Kalimat pendek yang mudah Anda ingat lebih kuat '
+        + 'daripada kata pendek yang rumit.</span></div>'
+        + '<div class="field"><label for="setel-ulang">Ulangi kata sandi baru</label>'
+        + '<input id="setel-ulang" type="password" autocomplete="new-password"></div>'
+        + '<div id="login-error" class="login-error" hidden></div>'
+        + '<button type="submit" class="btn btn--hero login-submit">Simpan dan Masuk</button>');
+      const el = document.getElementById('setel-baru');
+      if (el) el.focus();
+    }).catch(function (e) {
+      isi('<h1>Tautan tidak berlaku</h1>'
+        + '<p class="login-sub">' + teksAman(e && e.message) + '</p>'
+        + '<a class="btn btn--hero login-submit" href="' + teksAman(location.pathname) + '">Ke halaman masuk</a>');
+    });
+  }
+
+  function setelSandi(tokenTautan) {
+    const baru = document.getElementById('setel-baru').value;
+    if (baru.length < 10) return loginError('Kata sandi minimal 10 aksara.');
+    if (baru !== document.getElementById('setel-ulang').value) {
+      return loginError('Kata sandi dan ulangannya tidak sama.');
+    }
+    const tombol = document.querySelector('#login-form [type=submit]');
+    if (tombol) tombol.disabled = true;
+    loginError(null);
+    window.KGSUMBER.pakaiTautan(tokenTautan, baru).then(function () {
+      /* Token dibuang dari alamat, lalu dimuat ulang: sesi sudah tersimpan,
+         jadi halaman berikutnya langsung masuk. */
+      location.replace(location.pathname + location.search);
+    }).catch(function (e) {
+      if (tombol) tombol.disabled = false;
+      loginError(e && e.message ? e.message : 'Peladen tidak dapat dihubungi. Coba lagi sebentar lagi.');
+    });
+  }
+
   function logout() {
+    if (TERSAMBUNG) { session = null; closeModal(); window.KGSUMBER.keluar(); return; }
     session = null;
     clearSession();
     closeModal();
@@ -3670,6 +3779,10 @@
   }
 
   function route() {
+    /* Tautan penyetel sandi yang ditempel di tab yang sedang terbuka hanya
+       mengubah bagian # alamat — tanpa ini tidak terjadi apa-apa. */
+    const tautan = TERSAMBUNG && (location.hash.match(/^#\/sandi\/([0-9a-f]{64})$/) || [])[1];
+    if (tautan) { showSetelSandi(tautan); return; }
     if (!session) { showLogin(); return; }
     const id = (location.hash || '#/').replace('#/', '');
     const target = (VIEWS[id] && allowed(id)) ? id : firstAllowed();
@@ -3694,7 +3807,7 @@
   function tombolTindakan(o) {
     if (!o.tindakan || !o.tindakan.length) return '';
     return o.tindakan.map(function (a) {
-      return '<button class="btn btn--primary" data-jalankan="' + a.kunci
+      return '<button class="btn btn--' + (a.gaya || 'primary') + '" data-jalankan="' + a.kunci
         + '" data-jenis="' + o.jenis + '" data-catatan="' + o.idCatatan + '"'
         + (a.tanya ? ' data-tanya="f-' + a.tanya.kunci + '" data-isi="' + a.tanya.kunci + '"' : '')
         + '>' + a.label + '</button>';
@@ -3731,6 +3844,7 @@
       (o.autosave ? '<span class="autosave">Draf tersimpan 08:42</span>' : ''),
       '      <button class="btn btn--ghost" data-close>' + (o.ok ? 'Batal' : 'Tutup') + '</button>',
       tombolTindakan(o),
+      (o.salin ? '<button class="btn btn--primary" data-salin="' + o.salin + '">Salin Tautan</button>' : ''),
       (o.unduh ? '<button class="btn btn--secondary" data-unduh="' + o.unduh + '" data-bentuk="cetak">'
         + 'Halaman cetak</button>'
         + '<button class="btn btn--primary" data-unduh="' + o.unduh + '" data-bentuk="xlsx">'
@@ -3756,6 +3870,7 @@
      komponen tampilan sendiri. Hanya dua: memberi pesan, dan mengeluarkan
      sesi yang sudah tidak berlaku. */
   window.KG_PESAN = function (msg) { toast(msg); };
+  window.KG_BUKA = function (o) { openModal(o); };
   window.KG_KELUAR = function () { logout(); };
 
   function toast(msg) {
@@ -3781,7 +3896,11 @@
 
   document.addEventListener('submit', function (e) {
     if (!e.target) return;
-    if (e.target.id === 'login-form') { e.preventDefault(); attemptLogin(); return; }
+    if (e.target.id === 'login-form') {
+      e.preventDefault();
+      if (e.target.dataset.setel) setelSandi(e.target.dataset.setel); else attemptLogin();
+      return;
+    }
     if (e.target.id === 'ai-form') { e.preventDefault(); aiJalankan(); }
   });
 
@@ -3837,7 +3956,7 @@
       const tersimpan = window.KGSUMBER && window.KGSUMBER.simpan
         ? window.KGSUMBER.simpan(submit.dataset.aksi || '') : null;
       closeModal();
-      if (tersimpan) { tersimpan.then(toast); return; }
+      if (tersimpan) { tersimpan.then(function (m) { if (m) toast(m); }); return; }
       if (submit.dataset.submit) toast(submit.dataset.submit);
       return;
     }
@@ -3857,7 +3976,8 @@
       const d = jalankan.dataset;
       closeModal();
       if (window.KGSUMBER && window.KGSUMBER.jalankanAksi) {
-        window.KGSUMBER.jalankanAksi(d.jenis, d.catatan, d.jalankan, isi).then(toast);
+        window.KGSUMBER.jalankanAksi(d.jenis, d.catatan, d.jalankan, isi)
+          .then(function (m) { if (m) toast(m); });
       }
       return;
     }
@@ -3894,7 +4014,27 @@
     }
 
     const act = e.target.closest('[data-act]');
-    if (act) { const a = ACTIONS[act.dataset.act]; if (a) openModal(Object.assign({ autosave: true, aksi: act.dataset.act }, a)); return; }
+    if (act) {
+      const a = (TERSAMBUNG && window.KGSUMBER.aksiTersambung(act.dataset.act)) || ACTIONS[act.dataset.act];
+      if (a) openModal(Object.assign({ autosave: true, aksi: act.dataset.act }, a));
+      return;
+    }
+
+    const salin = e.target.closest('[data-salin]');
+    if (salin) {
+      const el = document.getElementById(salin.dataset.salin);
+      if (!el) return;
+      el.select();
+      const selesai = function () { toast('Tautan disalin.'); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(el.value).then(selesai, function () {
+          try { document.execCommand('copy'); selesai(); } catch (x) { toast('Salin manual: tautan sudah tersorot.'); }
+        });
+      } else {
+        try { document.execCommand('copy'); selesai(); } catch (x) { toast('Salin manual: tautan sudah tersorot.'); }
+      }
+      return;
+    }
 
     const goto = e.target.closest('[data-goto]');
     if (goto && VIEWS[goto.dataset.goto]) {
@@ -3967,6 +4107,18 @@
   applyTheme(theme);
   translateDom(document.querySelector('.brand'));
 
-  session = loadSession();
-  if (session) { showApp(); route(); } else { showLogin(); }
+  if (TERSAMBUNG) {
+    /* Isian bawaan purwarupa (akun Fadli, demo1234) tidak berlaku di sistem
+       sungguhan. */
+    document.getElementById('login-email').value = '';
+    document.getElementById('login-pass').value = '';
+  }
+
+  const tautanSandi = TERSAMBUNG ? (location.hash.match(/^#\/sandi\/([0-9a-f]{64})$/) || [])[1] : null;
+  if (tautanSandi) {
+    showSetelSandi(tautanSandi);
+  } else {
+    session = loadSession();
+    if (session) { showApp(); route(); } else { showLogin(); }
+  }
 })();

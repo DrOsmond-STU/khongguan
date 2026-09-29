@@ -97,20 +97,57 @@ cPanel. Pola itu bekerja dan tidak perlu diubah; hanya perlu diingat untuk
 `kg-salin.sh` mengecualikan `config.php`, jadi konfigurasi tidak tertimpa.
 Migrasi hanya menjalankan berkas yang belum tercatat.
 
+## Administrator pertama
+
+Sistem yang baru terpasang belum punya pengguna, dan pengguna hanya dapat
+dibuat administrator. `api/tugas/buat-admin.php` memutus lingkaran itu,
+sekali:
+
+```bash
+/opt/alt/php83/usr/bin/php $APP/api/tugas/buat-admin.php \
+  --email=nama@perusahaan.co.id --nama="Nama Lengkap" \
+  --tautan-ke=/home/semestat/kg-tautan-admin.txt
+```
+
+Akunnya dibuat berstatus **Menunggu**, dan tautan undangannya ditulis ke
+berkas `--tautan-ke` dengan izin 600 — **tidak dicetak ke layar maupun log**.
+Orang yang akan menjadi administrator membuka berkas itu di File Manager,
+menyalin tautannya ke peramban, dan menyetel sandinya sendiri. Setelah
+tautannya dipakai, berkas itu tidak berguna lagi dan boleh dihapus.
+
+Skrip menolak berjalan bila sudah ada administrator aktif: administrator
+berikutnya dibuat dari layar Pengguna, di mana jejaknya tercatat atas nama
+orang yang membuatnya.
+
 ## Menyalakan mode tersambung
 
+Setelah administrator pertama berhasil masuk, satu baris pada
+`assets/konfigurasi.js`:
+
+```js
+window.KG_KONFIG = Object.assign({ api: 'https://khongguan.semestateknologiutama.com', versi: '5' }, …
+```
+
+Sejak saat itu situs menampilkan layar masuk sungguhan — akun demo dan
+`demo1234` tidak lagi tampil maupun berlaku — dan seluruh layar membaca serta
+menulis ke basis data. **Mode peragaan untuk klien hilang dari alamat ini.**
+Bila peragaan masih dibutuhkan, pasang salinan dengan `api: ''` di subdomain
+terpisah.
+
+Karyawan diundang dari layar **Pengguna → Tambah Pengguna**. Selama surel
+sistem belum dinyalakan, tautan undangan tampil di layar untuk diteruskan
+administrator sendiri (surel kantor atau pesan pribadi, bukan grup).
+
+## Menyalakan OIDC
+
 Prasyarat: rincian OIDC Khong Guan Group (penerbit, client_id,
-client_secret). Lalu:
+client_secret). Masuk dengan sandi tetap berlaku berdampingan. Lalu:
 
 1. Isi bagian `oidc` pada `api/config.php` — tambahkan blok `'oidc' => [ … ]`
    mengikuti `config.contoh.php`, dengan `'aktif' => true`.
-2. Ubah satu baris pada `assets/konfigurasi.js`:
-
-   ```js
-   window.KG_KONFIG = Object.assign({ api: 'https://khongguan.semestateknologiutama.com', versi: '5' }, …
-   ```
-
-3. Naikkan `versi` supaya peramban mengambil berkas yang baru.
+2. Tombol "Masuk dengan akun kantor" di layar masuk **belum dibangun**; sisi
+   peladennya sudah jadi dan teruji (UJ-40 sampai UJ-50). Itu pekerjaan
+   antarmuka yang tersisa sebelum OIDC dapat dipakai.
 
 Sebelum OIDC siap, **jangan** menyalakan `izinkan_masuk_demo` di alamat
 publik — lihat catatan keamanan di bawah.

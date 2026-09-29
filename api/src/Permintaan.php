@@ -16,7 +16,14 @@ final class Permintaan
         public readonly array $kueri = [],
         string $badanMentah = '',
         /** @var array<string,string> */
-        public readonly array $kepala = []
+        public readonly array $kepala = [],
+        /**
+         * Alamat pengirim. Dipakai untuk membatasi percobaan masuk per alamat.
+         * Diambil dari REMOTE_ADDR saja, bukan dari X-Forwarded-For: kepala
+         * itu dapat ditulis siapa pun, dan batas yang dapat dipalsukan
+         * pengirimnya sendiri bukan batas.
+         */
+        public readonly string $ip = ''
     ) {
         $urai = $badanMentah === '' ? [] : json_decode($badanMentah, true);
         $this->badan = is_array($urai) ? $urai : [];
@@ -36,7 +43,8 @@ final class Permintaan
             $jalur,
             array_map('strval', $_GET),
             file_get_contents('php://input') ?: '',
-            $kepala
+            $kepala,
+            (string) ($_SERVER['REMOTE_ADDR'] ?? '')
         );
     }
 

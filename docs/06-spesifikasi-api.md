@@ -19,8 +19,27 @@ tombol, dan tombol yang tersembunyi masih dapat dipanggil.
 
 ## Autentikasi
 
-Sesi dibuka lewat penyedia identitas perusahaan (OIDC). Sistem tidak pernah
-menerima atau menyimpan kata sandi.
+Sesi dibuka dengan email dan kata sandi, atau lewat penyedia identitas
+perusahaan (OIDC) bila dinyalakan. Yang disimpan hanya hash sandi; lihat
+[KNF-18](09-kebutuhan-nonfungsional.md#bagaimana-knf-18-ditegakkan).
+
+```
+POST /api/v1/sesi/masuk            {email, sandi, klien}      → {token}
+POST /api/v1/sesi/sandi            {sandi_lama, sandi_baru}   → ganti sandi sendiri
+POST /api/v1/sesi/tautan/periksa   {token}                    → {nama, email, jenis}
+POST /api/v1/sesi/tautan/pakai     {token, sandi}             → {token}; akun menjadi Aktif
+
+POST /api/v1/pengguna              {email, nama, peran_kode, pabrik_id} → akun Menunggu + tautan undangan
+POST /api/v1/pengguna/{id}/ubah    {nama?, peran_kode?, pabrik_id?}
+POST /api/v1/pengguna/{id}/status  {status: Aktif|Nonaktif}
+POST /api/v1/pengguna/{id}/tautan  → tautan undangan atau atur ulang
+```
+
+Sandi salah, email tak terdaftar, dan akun tanpa sandi dijawab sama:
+`401 SANDI_SALAH`. Terlalu banyak percobaan: `429 TERLALU_SERING`. Tautan
+tidak berlaku (bekas, kedaluwarsa, diganti): `410 TAUTAN_MATI`.
+
+Jalur OIDC:
 
 ```
 POST /api/v1/sesi/mulai      → mengarahkan ke penyedia identitas

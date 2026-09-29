@@ -78,11 +78,21 @@ window.KGSUMBER = (function () {
   };
 
   function token() {
-    try { return localStorage.getItem(KUNCI_TOKEN); } catch (e) { return null; }
+    try {
+      return sessionStorage.getItem(KUNCI_TOKEN) || localStorage.getItem(KUNCI_TOKEN);
+    } catch (e) { return null; }
   }
 
-  function simpanToken(t) {
-    try { t ? localStorage.setItem(KUNCI_TOKEN, t) : localStorage.removeItem(KUNCI_TOKEN); } catch (e) {}
+  /* "Ingat saya" dimatikan berarti sesi hilang begitu peramban ditutup:
+     tokennya disimpan di sessionStorage, bukan localStorage. Di komputer
+     bersama di pos satpam atau ruang produksi, itu bedanya antara akun yang
+     aman dan akun yang dipakai orang shift berikutnya. */
+  function simpanToken(t, ingat) {
+    try {
+      sessionStorage.removeItem(KUNCI_TOKEN);
+      localStorage.removeItem(KUNCI_TOKEN);
+      if (t) (ingat === false ? sessionStorage : localStorage).setItem(KUNCI_TOKEN, t);
+    } catch (e) {}
   }
 
   /* Benar setelah sesi pernah terbuka. Membedakan "belum masuk" dari "sesi
@@ -98,8 +108,7 @@ window.KGSUMBER = (function () {
        berarti menampilkan catatan rekaan sebagai catatan sungguhan. Pada
        sistem K3 itu kegagalan terburuk yang mungkin: orang mengambil
        keputusan dari angka yang tidak pernah ada. */
-    if (window.KG_PESAN) window.KG_PESAN('Sesi berakhir. Masuk kembali untuk melanjutkan.');
-    if (window.KG_KELUAR) window.KG_KELUAR();
+    keluar('Sesi berakhir. Masuk kembali untuk melanjutkan.');
   }
 
   function ambil(jalur) {
@@ -115,16 +124,19 @@ window.KGSUMBER = (function () {
     });
   }
 
-  function kirim(jalur, isi) {
+  /* tanpaSesi: untuk layar masuk dan penyetel sandi. Di sana 401 berarti
+     "sandi salah", bukan "sesi berakhir" — menafsirkannya sebagai sesi putus
+     membuang pesan yang justru harus dibaca orangnya. */
+  function kirim(jalur, isi, tanpaSesi) {
     var opsi = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(isi || {})
     };
-    var t = token();
+    var t = tanpaSesi ? null : token();
     if (t) opsi.headers['Authorization'] = 'Bearer ' + t;
     return fetch(API + '/api/v1' + jalur, opsi).then(function (r) {
-      if (r.status === 401) { sesiPutus(); throw new Error('sesi berakhir'); }
+      if (r.status === 401 && !tanpaSesi) { sesiPutus(); throw new Error('sesi berakhir'); }
       return r.json().then(function (j) {
         if (!r.ok) {
           var g = new Error((j.galat && j.galat.pesan) || ('HTTP ' + r.status));
@@ -382,12 +394,50 @@ window.KGSUMBER = (function () {
     },
     pengguna: function (r) {
       return {
+        /* Dikenali dengan uuid, bukan email: email boleh memuat tanda petik,
+           dan penanda ini ikut masuk ke atribut HTML tombol aksi. */
+        id: r.id, uuid: r.id, pabrikId: r.pabrik_id, adaSandi: r.ada_sandi === true,
+        tautanSampai: r.tautan_berlaku_sampai || null,
         email: r.email, nama: r.nama, inisial: r.inisial, peran: r.peran_kode,
         lokasi: r.pabrik.replace(/^Pabrik /, ''), status: r.status,
         masuk: r.masuk_terakhir ? tanggalPanjang(r.masuk_terakhir) + ', ' + jam(r.masuk_terakhir) : '\u2014'
       };
     }
   };
+
+  /*
+   * Semua teks dari peladen di-escape di sini, satu kali, sebelum sampai ke
+   * app.js.
+   *
+   * app.js merakit layar dari templat HTML dan menyisipkan nilai apa adanya —
+   * wajar untuk purwarupa yang datanya ditulis sendiri. Dengan pengguna
+   * sungguhan, isi laporan bahaya yang diketik operator akan dijalankan
+   * sebagai kode di peramban QHSE Supervisor yang membukanya, dan token
+   * sesinya dapat diambil. Menyisir ratusan templat satu per satu pasti ada
+   * yang terlewat; menyaring di satu pintu yang dilewati seluruh data tidak.
+   *
+   * Aman dilakukan di sini karena PETA hanya menghasilkan teks polos, tidak
+   * pernah HTML. Nilai yang sudah di-escape juga aman di dalam atribut, karena
+   * tanda petiknya ikut di-escape.
+   */
+  function amanHtml(x) {
+    if (typeof x === 'string') {
+      return x.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+    if (Array.isArray(x)) return x.map(amanHtml);
+    if (x && typeof x === 'object') {
+      var o = {};
+      for (var k in x) if (Object.prototype.hasOwnProperty.call(x, k)) o[k] = amanHtml(x[k]);
+      return o;
+    }
+    return x;
+  }
+
+  Object.keys(PETA).forEach(function (k) {
+    var asli = PETA[k];
+    PETA[k] = function (r) { return amanHtml(asli(r)); };
+  });
 
   function ikonIzin(jenis) {
     return { 'panas': 'hot', 'ruang-terbatas': 'conf', 'ketinggian': 'height', 'listrik': 'elec' }[jenis] || 'hot';
@@ -569,13 +619,46 @@ window.KGSUMBER = (function () {
       bila: function (r) { return r.status !== 'Selesai'; },
       jalur: function (r) { return '/audit/' + r.uuid + '/tutup'; },
       koleksi: ['audit', 'temuanAudit']
+    }],
+
+    /* Akun. Administrator tidak pernah menentukan sandi siapa pun: yang ia
+       buat hanya tautan, dan pemilik akun menyetel sandinya sendiri. */
+    pengguna: [{
+      kunci: 'ubah', label: 'Ubah', gaya: 'secondary', modul: 'users', wewenang: 'kelola',
+      bila: function (r) { return r.status !== 'Nonaktif'; },
+      buka: function (r) { formulirUbahPengguna(r); }
+    }, {
+      kunci: 'tautan', gaya: 'secondary', modul: 'users', wewenang: 'kelola',
+      label: function (r) { return r.adaSandi ? 'Atur Ulang Sandi' : 'Kirim Ulang Undangan'; },
+      bila: function (r) { return r.status !== 'Nonaktif'; },
+      jalur: function (r) { return '/pengguna/' + r.uuid + '/tautan'; },
+      koleksi: ['pengguna'],
+      hasil: function (d) { tampilkanTautan(d); return ''; }
+    }, {
+      kunci: 'nonaktifkan', label: 'Nonaktifkan', gaya: 'danger', modul: 'users', wewenang: 'kelola',
+      bila: function (r) { return r.status === 'Aktif'; },
+      /* Menonaktifkan diri sendiri ditolak peladen; tombolnya tidak ditawarkan. */
+      kecuali: function (r) { return !!window.KG_SAYA && r.uuid === window.KG_SAYA.id; },
+      jalur: function (r) { return '/pengguna/' + r.uuid + '/status'; },
+      isi: function () { return { status: 'Nonaktif' }; },
+      koleksi: ['pengguna'],
+      hasil: function (d) { return (d.email || 'Akun') + ' dinonaktifkan. Seluruh sesinya sudah diputus.'; }
+    }, {
+      kunci: 'aktifkan', label: 'Aktifkan Kembali', modul: 'users', wewenang: 'kelola',
+      /* Akun yang belum pernah menyetel sandi diaktifkan lewat undangan,
+         bukan tombol ini — Aktif tanpa sandi adalah akun yang tak bisa dipakai. */
+      bila: function (r) { return r.status === 'Nonaktif' && r.adaSandi; },
+      jalur: function (r) { return '/pengguna/' + r.uuid + '/status'; },
+      isi: function () { return { status: 'Aktif' }; },
+      koleksi: ['pengguna'],
+      hasil: function (d) { return (d.email || 'Akun') + ' aktif kembali.'; }
     }]
   };
 
   /* Koleksi window.KG tempat mencari catatan menurut jenis rincian. */
   var KOLEKSI_RINCIAN = {
     bahaya: 'bahaya', insiden: 'insiden', capa: 'capa',
-    izin: 'izin', jsa: 'jsa', audit: 'audit'
+    izin: 'izin', jsa: 'jsa', audit: 'audit', pengguna: 'pengguna'
   };
 
   function catatan(jenis, id) {
@@ -606,7 +689,11 @@ window.KGSUMBER = (function () {
       if (!berwenang(a.modul, a.wewenang) || !a.bila(r)) return false;
       return !a.kecuali || !a.kecuali(r);
     }).map(function (a) {
-      return { kunci: a.kunci, label: a.label, tanya: a.tanya ? a.tanya(r) : null };
+      return {
+        kunci: a.kunci, gaya: a.gaya || 'primary',
+        label: typeof a.label === 'function' ? a.label(r) : a.label,
+        tanya: a.tanya ? a.tanya(r) : null
+      };
     });
   }
 
@@ -616,7 +703,11 @@ window.KGSUMBER = (function () {
     var def = (AKSI[jenis] || []).filter(function (a) { return a.kunci === kunci; })[0];
     if (!r || !def) return Promise.resolve('Aksi tidak dikenal.');
 
-    return kirim(def.jalur(r), isi || {})
+    /* Aksi yang membuka formulir, bukan langsung mengirim. */
+    if (def.buka) { def.buka(r); return Promise.resolve(''); }
+
+    var badan = def.isi ? Object.assign(def.isi(r), isi || {}) : (isi || {});
+    return kirim(def.jalur(r), badan)
       .then(function (j) {
         var ikut = def.koleksi.slice();
         var modul = (window.KG_SAYA && window.KG_SAYA.modul) || [];
@@ -624,6 +715,7 @@ window.KGSUMBER = (function () {
         if (modul.indexOf('exec') !== -1) ikut = ikut.concat(['eksekutif']);
         if (modul.indexOf('notif') !== -1) ikut = ikut.concat(['notifikasi']);
         return segarkan(ikut).then(function () {
+          if (def.hasil) return def.hasil(j.data || {}, r);
           var st = j.data && j.data.status ? ' ' + j.data.status + '.' : '.';
           return id + st;
         });
@@ -965,10 +1057,196 @@ window.KGSUMBER = (function () {
           tinjau: keIso(nilai('d-tinjau')), status: 'Dalam Revisi'
         };
       }
+    },
+
+    /* Formulir "Tambah Pengguna" dari purwarupa, apa adanya. Peladen
+       membalas dengan tautan undangan, dan tautan itu yang ditampilkan —
+       selama surel sistem belum dinyalakan, administratorlah yang
+       meneruskannya. */
+    'tambah-pengguna': {
+      jalur: '/pengguna', segarkan: ['pengguna'],
+      isi: function () {
+        return {
+          nama: nilai('u-nama'), email: nilai('u-email'),
+          peran_kode: kodePeran(nilai('u-peran')),
+          pabrik_id: pabrikIdDariNama(nilai('u-lokasi'))
+        };
+      },
+      hasil: function (d) { tampilkanTautan(d); return ''; }
+    },
+
+    /* 'ubah-pengguna:<uuid>' — formulir yang sama, terisi, untuk satu akun. */
+    'ubah-pengguna': {
+      jalur: function (id) {
+        var r = catatan('pengguna', id);
+        if (!r) throw galatJelas('Pengguna tidak ditemukan pada daftar. Muat ulang halaman.');
+        return '/pengguna/' + r.uuid + '/ubah';
+      },
+      segarkan: ['pengguna'],
+      isi: function () {
+        return {
+          nama: nilai('u-nama'),
+          peran_kode: kodePeran(nilai('u-peran')),
+          pabrik_id: pabrikIdDariNama(nilai('u-lokasi'))
+        };
+      },
+      hasil: function (d) { return 'Perubahan untuk ' + (d.email || 'pengguna') + ' tersimpan.'; }
+    },
+
+    'ganti-sandi': {
+      jalur: '/sesi/sandi', segarkan: [],
+      isi: function () {
+        var baru = nilai('s-baru');
+        if (baru !== nilai('s-ulang')) throw galatJelas('Kata sandi baru dan ulangannya tidak sama.');
+        return { sandi_lama: nilai('s-lama'), sandi_baru: baru };
+      },
+      hasil: function () {
+        return 'Kata sandi diganti. Sesi di perangkat lain sudah diakhiri.';
+      }
     }
   };
 
   var D = window.KG || {};
+
+  /* ─────────────────────────────────────────────────────────────────
+     Akun: bantuan untuk formulir pengguna dan tautan
+     ───────────────────────────────────────────────────────────────── */
+
+  /* Galat yang pesannya sudah siap dibaca orang, tanpa awalan teknis. */
+  function galatJelas(pesan) {
+    var e = new Error(pesan);
+    e.jelas = true;
+    return e;
+  }
+
+  function esc(t) {
+    return String(t === null || t === undefined ? '' : t)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  /* Nama peran pada formulir purwarupa → kode peran peladen. */
+  function kodePeran(nama) {
+    var peran = (window.KG && window.KG.peran) || {};
+    for (var k in peran) if (peran[k].nama === nama) return k;
+    throw galatJelas('Peran "' + nama + '" tidak dikenal.');
+  }
+
+  /* "Pabrik Cibitung" → id pabrik. Pilihan purwarupa yang belum ada di
+     peladen ("Kantor Pusat") ditolak dengan menyebut namanya, bukan
+     disimpan ke pabrik lain. */
+  function pabrikIdDariNama(nama) {
+    var bersih = String(nama || '').replace(/^Pabrik\s+/, '');
+    var daftar = (ACUAN && ACUAN.pabrik) || [];
+    for (var i = 0; i < daftar.length; i++) {
+      if (daftar[i].nama === bersih || daftar[i].nama === nama) return daftar[i].id;
+    }
+    throw galatJelas('"' + nama + '" belum terdaftar sebagai pabrik di sistem.');
+  }
+
+  function namaPabrik(id) {
+    var daftar = (ACUAN && ACUAN.pabrik) || [];
+    for (var i = 0; i < daftar.length; i++) if (daftar[i].id === id) return daftar[i].nama;
+    return '';
+  }
+
+  function tanggalJam(nilaiIso) {
+    return nilaiIso ? tanggalPanjang(nilaiIso) + ', ' + jam(nilaiIso) + ' WIB' : '';
+  }
+
+  /**
+   * Menampilkan tautan undangan/atur ulang kepada administrator.
+   *
+   * Surel sistem belum dinyalakan, jadi tautannya belum sampai ke siapa pun
+   * — dan itu dikatakan terang-terangan. Modal yang berbunyi "undangan
+   * terkirim" padahal tidak ada yang terkirim membuat karyawan menunggu
+   * surel yang tidak akan pernah datang.
+   */
+  function tampilkanTautan(d) {
+    if (!window.KG_BUKA || !d || !d.tautan) return;
+    var undangan = d.jenis ? d.jenis === 'undangan' : true;
+    /* Peladen memberi alamat lengkap bila 'alamat_aplikasi' diisi. Bila
+       belum, alamat halaman ini yang dipakai — tautan relatif yang
+       diteruskan lewat WhatsApp tidak dapat dibuka siapa pun. */
+    if (!/^https?:\/\//.test(d.tautan)) {
+      d = Object.assign({}, d, { tautan: location.origin + location.pathname.replace(/[^/]*$/, '')
+        + d.tautan.replace(/^\/?/, '') });
+    }
+    window.KG_BUKA({
+      title: undangan ? 'Undangan Siap Dikirim' : 'Tautan Atur Ulang Siap',
+      sub: esc(d.nama || '') + ' · ' + esc(d.email || ''),
+      body: '<div class="field"><label for="tautan-sandi">Tautan untuk menyetel kata sandi</label>'
+        + '<input id="tautan-sandi" type="text" readonly value="' + esc(d.tautan) + '">'
+        + '<span class="hint">Berlaku sampai ' + esc(tanggalJam(d.kedaluwarsa))
+        + ' · hanya dapat dipakai sekali</span></div>'
+        + '<div class="tile-note">Surel sistem belum dinyalakan, jadi tautan ini <b>belum terkirim</b> '
+        + 'ke siapa pun. Salin dan kirimkan sendiri kepada ' + esc(d.nama || 'pemilik akun')
+        + ' — lewat surel kantor atau pesan pribadi, jangan ke grup. Siapa pun yang memegang '
+        + 'tautan ini dapat menyetel sandi akun tersebut.'
+        + (undangan ? '' : ' Sandi lamanya tetap berlaku sampai tautan ini dipakai.') + '</div>',
+      salin: 'tautan-sandi'
+    });
+  }
+
+  function formulirUbahPengguna(r) {
+    if (!window.KG_BUKA) return;
+    var peran = (window.KG && window.KG.peran) || {};
+    var opsiPeran = Object.keys(peran).map(function (k) {
+      return '<option' + (k === r.peran ? ' selected' : '') + '>' + esc(peran[k].nama) + '</option>';
+    }).join('');
+    var pabrikSaat = namaPabrik(r.pabrikId);
+    var opsiPabrik = ((ACUAN && ACUAN.pabrik) || []).map(function (pb) {
+      return '<option' + (pb.nama === pabrikSaat ? ' selected' : '') + '>Pabrik ' + esc(pb.nama) + '</option>';
+    }).join('');
+    window.KG_BUKA({
+      /* r.* sudah di-escape oleh PETA; di-escape lagi akan menampilkan &amp;. */
+      title: 'Ubah Pengguna', sub: r.email,
+      body: '<div class="field"><label for="u-nama">Nama lengkap <span class="req">*</span></label>'
+        + '<input id="u-nama" type="text" value="' + r.nama + '"></div>'
+        + '<div class="row2">'
+        + '<div class="field"><label for="u-peran">Peran <span class="req">*</span></label>'
+        + '<select id="u-peran">' + opsiPeran + '</select></div>'
+        + '<div class="field"><label for="u-lokasi">Pabrik <span class="req">*</span></label>'
+        + '<select id="u-lokasi">' + opsiPabrik + '</select></div>'
+        + '</div>'
+        + '<div class="tile-note">Alamat email tidak dapat diubah — ia penanda akun pada jejak audit. '
+        + 'Perubahan peran berlaku seketika, termasuk pada sesi yang sedang terbuka.</div>',
+      ok: 'Simpan Perubahan', aksi: 'ubah-pengguna:' + r.uuid
+    });
+  }
+
+  /**
+   * Pengganti isi modal purwarupa yang tidak lagi benar saat tersambung.
+   * Mengembalikan null untuk aksi lain — app.js lalu memakai modal aslinya.
+   */
+  function aksiTersambung(kunci) {
+    if (!API) return null;
+    if (kunci === 'lupa-sandi') {
+      return {
+        title: 'Lupa Kata Sandi', sub: 'Pengaturan ulang lewat administrator sistem',
+        body: '<div class="tile-note" style="border:0;padding:0">Hubungi administrator sistem di pabrik '
+          + 'Anda. Ia akan membuat tautan pengaturan ulang yang berlaku 24 jam; lewat tautan itu Anda '
+          + 'menyetel sandi baru sendiri. Administrator tidak pernah mengetahui sandi Anda, jadi jangan '
+          + 'pernah memberitahukannya kepada siapa pun — termasuk kepadanya.</div>',
+        ok: 'Mengerti', toast: ''
+      };
+    }
+    if (kunci === 'ganti-sandi') {
+      return {
+        title: 'Ganti Kata Sandi', sub: 'Sesi di perangkat lain akan diakhiri',
+        body: '<div class="field"><label for="s-lama">Kata sandi saat ini <span class="req">*</span></label>'
+          + '<input id="s-lama" type="password" autocomplete="current-password"></div>'
+          + '<div class="field"><label for="s-baru">Kata sandi baru <span class="req">*</span></label>'
+          + '<input id="s-baru" type="password" autocomplete="new-password">'
+          + '<span class="hint">Minimal 10 aksara. Kalimat pendek yang mudah Anda ingat lebih kuat '
+          + 'daripada kata pendek yang rumit.</span></div>'
+          + '<div class="field"><label for="s-ulang">Ulangi kata sandi baru <span class="req">*</span></label>'
+          + '<input id="s-ulang" type="password" autocomplete="new-password"></div>',
+        ok: 'Simpan Sandi', aksi: 'ganti-sandi'
+      };
+    }
+    return null;
+  }
 
   /**
    * Menyimpan isi formulir yang sedang terbuka.
@@ -979,18 +1257,26 @@ window.KGSUMBER = (function () {
    * ditampilkan.
    */
   function simpan(aksi) {
-    if (!API || !SIMPAN[aksi]) return null;
+    /* "ubah-pengguna:<uuid>" → aksi "ubah-pengguna" untuk satu catatan. */
+    var bagian = String(aksi || '').split(':');
+    var kunci = bagian.shift();
+    var param = bagian.join(':');
+    if (!API || !SIMPAN[kunci]) return null;
 
-    var def = SIMPAN[aksi];
-    var isi;
+    var def = SIMPAN[kunci];
+    var isi, jalur;
     try {
       isi = def.isi();
+      jalur = typeof def.jalur === 'function' ? def.jalur(param) : def.jalur;
     } catch (e) {
-      return Promise.resolve('Formulir belum dapat dibaca: ' + e.message);
+      return Promise.resolve(e.jelas ? e.message : 'Formulir belum dapat dibaca: ' + e.message);
     }
 
-    return kirim(def.jalur, isi)
+    return kirim(jalur, isi)
       .then(function (j) {
+        if (def.hasil) {
+          return segarkan(def.segarkan).then(function () { return def.hasil(j.data || {}); });
+        }
         var nomor = (j.data && (j.data.nomor || j.data.kode)) || '';
         /* Tren dan KPI ikut disegarkan: hampir setiap catatan masuk ke
            keduanya, dan papan yang menunjukkan delapan sementara grafiknya
@@ -1045,32 +1331,77 @@ window.KGSUMBER = (function () {
     });
   }
 
+  /* ─────────────────────────────────────────────────────────────────
+     Masuk, keluar, dan tautan penyetel sandi
+     ───────────────────────────────────────────────────────────────── */
+
   /**
-   * Membuka sesi peladen setelah pengguna masuk di aplikasi meja.
-   *
-   * Kegagalannya tidak menahan siapa pun masuk: aplikasi tetap berjalan
-   * dengan data yang sudah ada, dan pesannya muncul di konsol. Layar masuk
-   * yang menolak karena peladen sedang bermasalah menghentikan pekerjaan
-   * seluruh pabrik.
+   * Sesi dalam bentuk yang dikenal app.js — bentuk yang sama dengan akun
+   * purwarupa, supaya kartu pengguna, izin modul, dan seluruh layar bekerja
+   * tanpa ada yang perlu tahu dari mana sesinya datang.
    */
-  function masuk(email) {
-    if (!API) return Promise.resolve(false);
-    return kirim('/sesi/masuk-demo', { email: email, klien: 'meja' })
+  function sesiDariSaya() {
+    var s = window.KG_SAYA;
+    if (!s) return null;
+    return {
+      email: s.email, nama: s.nama, inisial: s.inisial, peran: s.peran.kode,
+      lokasi: s.pabrik.nama, status: 'Aktif'
+    };
+  }
+
+  /**
+   * Masuk dengan email dan kata sandi. Berhasil → janji berisi sesi;
+   * gagal → janji ditolak dengan pesan dari peladen, apa adanya.
+   */
+  function masukSandi(email, sandi, ingat) {
+    return kirim('/sesi/masuk', { email: email, sandi: sandi, klien: 'meja' }, true)
       .then(function (j) {
-        if (!j.data || !j.data.token) return false;
+        simpanToken(j.data.token, ingat);
         PERNAH_MASUK = true;
-        simpanToken(j.data.token);
-        return tersambung().then(function () {
-          try {
-            window.dispatchEvent(new HashChangeEvent('hashchange'));
-          } catch (e) {}
-          return true;
-        });
-      })
-      .catch(function (e) {
-        console.warn('[KG] sesi peladen tidak terbuka: ' + e.message);
-        return false;
+        return tersambung().then(sesiDariSaya);
       });
+  }
+
+  /**
+   * Keluar: sesi diakhiri di peladen, lalu halaman dimuat ulang.
+   *
+   * Dimuat ulang, bukan sekadar kembali ke layar masuk: catatan K3 orang
+   * sebelumnya masih ada di memori halaman ini. Di komputer bersama, orang
+   * berikutnya tidak boleh dapat menemukannya lewat konsol peramban.
+   */
+  function keluar(pesan) {
+    var t = token();
+    var akhiri = t
+      ? fetch(API + '/api/v1/sesi/akhiri', {
+          method: 'POST', headers: { 'Authorization': 'Bearer ' + t, 'Accept': 'application/json' }
+        }).catch(function () {})
+      : Promise.resolve();
+    return akhiri.then(function () {
+      simpanToken(null);
+      try { if (pesan) sessionStorage.setItem('kg-pesan-masuk', pesan); } catch (e) {}
+      location.replace(location.pathname + location.search);
+    });
+  }
+
+  /* Pesan yang dititipkan sebelum halaman dimuat ulang ("sesi berakhir"). */
+  function pesanMasuk() {
+    try {
+      var p = sessionStorage.getItem('kg-pesan-masuk');
+      sessionStorage.removeItem('kg-pesan-masuk');
+      return p;
+    } catch (e) { return null; }
+  }
+
+  function periksaTautan(t) {
+    return kirim('/sesi/tautan/periksa', { token: t }, true).then(function (j) { return j.data; });
+  }
+
+  /* Menyetel sandi lewat tautan; peladen langsung membuka sesi. */
+  function pakaiTautan(t, sandi) {
+    return kirim('/sesi/tautan/pakai', { token: t, sandi: sandi }, true).then(function (j) {
+      simpanToken(j.data.token, true);
+      return true;
+    });
   }
 
   function muatApp(selesai) {
@@ -1087,6 +1418,13 @@ window.KGSUMBER = (function () {
     return ambil('/saya').then(function (j) {
       var saya = j.data;
       window.KG_SAYA = saya;
+
+      /* Modul yang terbuka untuk peran ini ditentukan peladen. Daftar pada
+         data purwarupa hanya salinan; bila keduanya berbeda, navigasi yang
+         menawarkan modul yang lalu ditolak peladen adalah hasilnya. */
+      if (window.KG.peran && window.KG.peran[saya.peran.kode]) {
+        window.KG.peran[saya.peran.kode].modul = saya.modul.slice();
+      }
 
       var janji = [];
       var hidup = [];
@@ -1173,7 +1511,9 @@ window.KGSUMBER = (function () {
 
   return {
     ambil: ambil, kirim: kirim, token: token, simpanToken: simpanToken, api: API,
-    masuk: masuk, simpan: simpan, tersambung: function () { return !!API; },
+    simpan: simpan, tersambung: function () { return !!API; },
+    masukSandi: masukSandi, keluar: keluar, sesiDariSaya: sesiDariSaya, pesanMasuk: pesanMasuk,
+    periksaTautan: periksaTautan, pakaiTautan: pakaiTautan, aksiTersambung: aksiTersambung,
     aksiRincian: aksiRincian, jalankanAksi: jalankanAksi,
     ekspor: ekspor, unduh: unduh
   };

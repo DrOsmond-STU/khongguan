@@ -183,15 +183,15 @@ Perhatian dengan penentu "Tanpa catatan".
 
 ## Masuk
 
-Dua jalur, dan hanya satu yang hidup pada produksi.
-
 | Jalur | Kapan |
 |---|---|
-| `POST /sesi/oidc/mulai` lalu `/sesi/oidc/kembali` | Produksi. OpenID Connect, *authorization code* + PKCE |
+| `POST /sesi/masuk` | Produksi. Email dan kata sandi; hanya hash bcrypt yang disimpan |
+| `POST /sesi/oidc/mulai` lalu `/sesi/oidc/kembali` | Produksi, bila OIDC dinyalakan. *Authorization code* + PKCE |
 | `POST /sesi/masuk-demo` | Pengembangan dan pengujian saja; hidup hanya bila `izinkan_masuk_demo` bernilai benar |
 
-Tidak ada kolom kata sandi pada basis data, dan tidak ada endpoint yang
-menerimanya. Seluruh pemeriksaan `id_token` dan alasannya ada pada
+Aturan sandi, batas percobaan, dan tautan undangan ada di `src/Sandi.php` dan
+diuraikan pada [docs/09](../docs/09-kebutuhan-nonfungsional.md#bagaimana-knf-18-ditegakkan).
+Seluruh pemeriksaan `id_token` OIDC dan alasannya ada pada
 [docs/09](../docs/09-kebutuhan-nonfungsional.md#bagaimana-knf-18-ditegakkan);
 uji UJ-40 sampai UJ-50 membuktikannya terhadap penerbit tiruan yang kuncinya
 dibuat saat uji berjalan.

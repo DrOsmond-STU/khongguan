@@ -22,6 +22,10 @@ function rute(): Rute
     $r = new Rute();
 
     // Sesi
+    $r->post('/sesi/masuk',          [Modul\Masuk::class, 'sandi']);
+    $r->post('/sesi/sandi',          [Modul\Masuk::class, 'gantiSandi']);
+    $r->post('/sesi/tautan/periksa', [Modul\Masuk::class, 'tautanPeriksa']);
+    $r->post('/sesi/tautan/pakai',   [Modul\Masuk::class, 'tautanPakai']);
     $r->post('/sesi/masuk-demo', [Modul\Masuk::class, 'demo']);
     $r->post('/sesi/akhiri',     [Modul\Masuk::class, 'akhiri']);
     // Masuk lewat direktori perusahaan. Jalur ini yang dipakai pada produksi;
@@ -74,7 +78,11 @@ function rute(): Rute
     $r->post('/observasi', [Modul\Observasi::class, 'buat']);
 
     // Modul 24 · Pengguna
-    $r->get('/pengguna', [Modul\Pengguna::class, 'daftar']);
+    $r->get('/pengguna',               [Modul\Pengguna::class, 'daftar']);
+    $r->post('/pengguna',              [Modul\Pengguna::class, 'buat']);
+    $r->post('/pengguna/{id}/ubah',    [Modul\Pengguna::class, 'ubah']);
+    $r->post('/pengguna/{id}/status',  [Modul\Pengguna::class, 'status']);
+    $r->post('/pengguna/{id}/tautan',  [Modul\Pengguna::class, 'tautan']);
 
     // Modul 02 · Inspeksi
     $r->get('/inspeksi',             [Modul\Inspeksi::class, 'daftar']);

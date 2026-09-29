@@ -16,6 +16,14 @@
  * tetap yang dipakai mode peragaan. Membaca saja tidak membuktikan aplikasi
  * dapat dipakai bekerja.
  *
+ * Ia juga menjalankan alur akun dari ujung ke ujung — undangan, tautan,
+ * menyetel sandi, masuk — dan memastikan isi laporan yang berisi kode tidak
+ * dijalankan peramban orang yang membacanya.
+ *
+ * Persiapan basis data pengembangan (sekali):
+ *   php api/tugas/migrasi.php --contoh
+ *   php api/tugas/sandi-peragaan.php      akun contoh bersandi demo1234
+ *
  * Jalankan:
  *   node uji/layar.mjs [alamat]          bawaan http://127.0.0.1:8150
  *
@@ -86,7 +94,14 @@ const tok = await token();
   for (rute of RUTE) {
     await p.goto(`${ALAMAT}/#/${rute}`, { waitUntil: 'domcontentloaded' });
     await p.reload({ waitUntil: 'domcontentloaded' });
-    await p.waitForTimeout(700);
+    // Menunggu layarnya terisi, bukan menunggu waktu tetap: aplikasi baru
+    // menggambar setelah seluruh koleksi diambil, dan lamanya bergantung pada
+    // isi basis data. Penantian tetap membuat uji ini gagal karena lambat,
+    // bukan karena rusak — dan uji yang sering gagal palsu berhenti dipercaya.
+    await p.waitForFunction(
+      () => (document.querySelector('main') || document.body).innerText.trim().length >= 80,
+      null, { timeout: 10000 }
+    ).catch(() => {});
 
     // Layar yang kosong sama buruknya dengan layar yang melempar galat.
     const isi = await p.evaluate(() => (document.querySelector('main') || document.body).innerText.trim().length);
@@ -220,6 +235,94 @@ const tok = await token();
   await ctx.close();
 }
 
+/* ── Akun: undangan → tautan → setel sandi → masuk ──────────────────── */
+{
+  rute = 'akun/undangan';
+  const ctx = await peramban.newContext({ viewport: { width: 1440, height: 1000 } });
+  await ctx.addInitScript(([a, t]) => {
+    window.KG_KONFIG = { api: a, versi: '4' };
+    try { localStorage.setItem('kg-token', t); } catch (x) {}
+  }, [ALAMAT, tok]);
+  const p = await ctx.newPage();
+  p.on('pageerror', (e) => catat('akun', e.message));
+
+  await p.goto(`${ALAMAT}/#/users`, { waitUntil: 'domcontentloaded' });
+  await p.reload({ waitUntil: 'domcontentloaded' });
+  await p.waitForTimeout(1200);
+  await p.click('[data-act="tambah-pengguna"]');
+  await p.waitForTimeout(300);
+  const email = `uji.layar.${Date.now()}@khongguan.co.id`;
+  await p.fill('#u-nama', 'Uji Layar');
+  await p.fill('#u-email', email);
+  await p.selectOption('#u-peran', { label: 'Operator Produksi' });
+  await p.selectOption('#u-lokasi', { label: 'Pabrik Cibitung' });
+  await p.click('[data-submit]');
+  await p.waitForTimeout(1800);
+  const tautan = await p.evaluate(() => {
+    const i = document.getElementById('tautan-sandi');
+    return i ? i.value : null;
+  });
+  await ctx.close();
+
+  if (!tautan || !/^https?:\/\/.+#\/sandi\/[0-9a-f]{64}$/.test(tautan)) {
+    catat('akun', `tautan undangan tidak tampil sebagai alamat lengkap: ${tautan}`);
+  } else {
+    rute = 'akun/setel-sandi';
+    const c2 = await peramban.newContext({ viewport: { width: 1440, height: 1000 } });
+    await c2.addInitScript(([a]) => { window.KG_KONFIG = { api: a, versi: '4' }; }, [ALAMAT]);
+    const q = await c2.newPage();
+    q.on('pageerror', (e) => catat('akun', e.message));
+    await q.goto(tautan, { waitUntil: 'domcontentloaded' });
+    await q.waitForTimeout(1200);
+    await q.fill('#setel-baru', 'Oven-Biskuit-Line3');
+    await q.fill('#setel-ulang', 'Oven-Biskuit-Line3');
+    await q.click('#login-form [type=submit]');
+    await q.waitForTimeout(2500);
+    const saya = await q.evaluate(() => window.KG_SAYA && window.KG_SAYA.email);
+    if (saya !== email) catat('akun', `setelah menyetel sandi tidak masuk sebagai ${email} (sekarang: ${saya})`);
+    if (/#\/sandi\//.test(q.url())) catat('akun', 'token tautan tertinggal di alamat setelah dipakai');
+
+    await q.goto(tautan, { waitUntil: 'domcontentloaded' });
+    await q.waitForTimeout(1200);
+    const judul = await q.textContent('#login-form h1');
+    if (!/tidak berlaku/i.test(judul || '')) catat('akun', `tautan bekas masih diterima: "${judul}"`);
+    await c2.close();
+  }
+}
+
+/* ── Isi catatan yang berisi kode tidak dijalankan ──────────────────── */
+{
+  rute = 'keamanan/xss';
+  const hdr = { Authorization: 'Bearer ' + tok };
+  const acuan = await (await fetch(`${ALAMAT}/api/v1/acuan`, { headers: hdr })).json();
+  const saya = await (await fetch(`${ALAMAT}/api/v1/saya`, { headers: hdr })).json();
+  // Di pabrik akun uji sendiri: grafik tren dihitung per pabrik, dan
+  // pemeriksaan "papan sepakat dengan grafik" di atas hanya bermakna dalam
+  // cakupan satu pabrik.
+  const area = acuan.data.area.find((a) => a.pabrik_id === saya.data.pabrik.id) || acuan.data.area[0];
+  await fetch(`${ALAMAT}/api/v1/bahaya`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...hdr },
+    body: JSON.stringify({ area_id: area.id, isi: 'Uji <img src=x onerror="window.__xss=1"> Line 3' }),
+  });
+  const ctx = await peramban.newContext({ viewport: { width: 1440, height: 1000 } });
+  await ctx.addInitScript(([a, t]) => {
+    window.KG_KONFIG = { api: a, versi: '4' };
+    try { localStorage.setItem('kg-token', t); } catch (x) {}
+  }, [ALAMAT, tok]);
+  const p = await ctx.newPage();
+  await p.goto(`${ALAMAT}/#/hazard`, { waitUntil: 'domcontentloaded' });
+  await p.reload({ waitUntil: 'domcontentloaded' });
+  await p.waitForTimeout(1500);
+  if (await p.evaluate(() => window.__xss === 1)) {
+    catat('xss', 'kode di dalam isi laporan bahaya DIJALANKAN peramban pembacanya');
+  }
+  if (!(await p.evaluate(() => document.body.innerText.includes('<img src=x')))) {
+    catat('xss', 'isi laporan tidak tampil apa adanya');
+  }
+  await ctx.close();
+}
+
 /* ── Aplikasi lapangan ──────────────────────────────────────────────── */
 {
   rute = '/m/';
@@ -231,8 +334,13 @@ const tok = await token();
 
   await p.goto(`${ALAMAT}/m/`, { waitUntil: 'domcontentloaded' });
   await p.waitForTimeout(500);
+  await p.fill('#m-email', 'agus.prasetyo@khongguan.co.id');
+  await p.fill('#m-sandi', process.env.KG_UJI_SANDI || 'demo1234');
   await p.click('#form-masuk button[type=submit]');
-  await p.waitForTimeout(1200);
+  await p.waitForTimeout(1500);
+  if (await p.evaluate(() => document.getElementById('app').hidden)) {
+    catat('lapangan', 'tidak dapat masuk dengan akun peragaan');
+  }
 
   for (const tab of ['beranda', 'lapor', 'tugas', 'panduan', 'saya']) {
     rute = `/m/#${tab}`;
@@ -252,4 +360,5 @@ if (galat.length) {
   process.exit(1);
 }
 console.log(`\u001b[32m${RUTE.length + 6} layar dibuka dengan data sungguhan; satu laporan ditulis`
-  + ` lewat formulir, satu diverifikasi, dan satu berkas ekspor diunduh — tanpa galat.\u001b[0m`);
+  + ` lewat formulir, satu diverifikasi, satu berkas ekspor diunduh, satu akun diundang lalu`
+  + ` menyetel sandinya, dan kode di dalam laporan tidak dijalankan — tanpa galat.\u001b[0m`);

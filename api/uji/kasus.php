@@ -1353,3 +1353,325 @@ uji('UJ-53', 'Nomor tidak pernah kembar walau diminta berulang', function () {
     sama(25, count(array_unique($nomor)), 'seluruh nomor unik');
     benar(str_starts_with($nomor[0], 'CAPA-' . date('Y') . '-'), 'bentuk nomor sesuai');
 });
+
+echo "\nMasuk dengan kata sandi\n";
+
+/**
+ * Pengguna uji dengan sandi yang sudah disetel, dibuat langsung ke basis data.
+ * Setiap uji memakai surelnya sendiri supaya batas percobaan satu uji tidak
+ * menular ke uji lain.
+ */
+function penggunaBersandi(array $D, string $email, string $sandi, string $peran = 'qhse',
+                          string $status = 'Aktif'): string
+{
+    return (string) Db::nilai(
+        "INSERT INTO pengguna (email, nama, inisial, peran_kode, pabrik_id, status, sandi_hash)
+         VALUES (:e, 'Pengguna Uji', 'PU', :r, :p, :s, :h) RETURNING id",
+        [':e' => $email, ':r' => $peran, ':p' => $D['pabrik_cbt'], ':s' => $status,
+         ':h' => \KG\Sandi::hash($sandi)]
+    );
+}
+
+/** Token dari alamat tautan ".../#/sandi/<token>". */
+function tokenTautan(string $alamat): string
+{
+    benar((bool) preg_match('~#/sandi/([0-9a-f]{64})$~', $alamat, $c), 'bentuk alamat tautan');
+    return $c[1];
+}
+
+uji('UJ-70', 'Sandi yang benar membuka sesi yang sah', function () use ($D) {
+    penggunaBersandi($D, 'masuk1@kg.test', 'Pagar-Oven-Line3');
+    $h = panggil('POST', '/sesi/masuk', ['email' => 'Masuk1@KG.test', 'sandi' => 'Pagar-Oven-Line3']);
+    sama(200, $h['status'], 'status');
+    benar(strlen($h['data']['token'] ?? '') === 64, 'token diberikan');
+    $s = panggil('GET', '/saya', [], $h['data']['token']);
+    sama('masuk1@kg.test', $s['data']['email'], 'sesi milik pengguna yang benar');
+});
+
+uji('UJ-70b', 'Sandi salah, email tak terdaftar, dan akun tanpa sandi dijawab sama persis', function () use ($D) {
+    // Jawaban yang berbeda memberi tahu siapa pun alamat mana yang terdaftar.
+    penggunaBersandi($D, 'masuk2@kg.test', 'Pagar-Oven-Line3');
+    $salah  = panggil('POST', '/sesi/masuk', ['email' => 'masuk2@kg.test', 'sandi' => 'bukan-ini-sandinya']);
+    $takAda = panggil('POST', '/sesi/masuk', ['email' => 'tidak.ada@kg.test', 'sandi' => 'bukan-ini-sandinya']);
+    $tanpa  = panggil('POST', '/sesi/masuk', ['email' => 'qhse@kg.test', 'sandi' => 'bukan-ini-sandinya']);
+    foreach (['sandi salah' => $salah, 'tak terdaftar' => $takAda, 'tanpa sandi' => $tanpa] as $n => $h) {
+        sama(401, $h['status'], "$n: status");
+        sama('Email atau kata sandi salah.', $h['galat']['pesan'], "$n: pesan");
+    }
+});
+
+uji('UJ-70c', 'Akun nonaktif baru diungkap setelah sandinya terbukti benar', function () use ($D) {
+    penggunaBersandi($D, 'nonaktif1@kg.test', 'Pagar-Oven-Line3', 'qhse', 'Nonaktif');
+    $salah = panggil('POST', '/sesi/masuk', ['email' => 'nonaktif1@kg.test', 'sandi' => 'bukan-ini-sandinya']);
+    sama(401, $salah['status'], 'sandi salah: jawaban umum, tidak mengungkap status');
+    $benar = panggil('POST', '/sesi/masuk', ['email' => 'nonaktif1@kg.test', 'sandi' => 'Pagar-Oven-Line3']);
+    sama(403, $benar['status'], 'sandi benar: ditolak');
+    benar(str_contains($benar['galat']['pesan'], 'tidak aktif'), 'alasannya disebut');
+});
+
+uji('UJ-71', 'Lima kali gagal mengunci akun sementara, termasuk untuk sandi yang benar', function () use ($D) {
+    penggunaBersandi($D, 'kunci1@kg.test', 'Pagar-Oven-Line3');
+    penggunaBersandi($D, 'kunci2@kg.test', 'Pagar-Oven-Line3');
+    for ($i = 0; $i < \KG\Sandi::GAGAL_PER_AKUN; $i++) {
+        panggil('POST', '/sesi/masuk', ['email' => 'kunci1@kg.test', 'sandi' => "tebakan-ke-$i"]);
+    }
+    $h = panggil('POST', '/sesi/masuk', ['email' => 'kunci1@kg.test', 'sandi' => 'Pagar-Oven-Line3']);
+    sama(429, $h['status'], 'sandi benar pun ditahan selama terkunci');
+    $lain = panggil('POST', '/sesi/masuk', ['email' => 'kunci2@kg.test', 'sandi' => 'Pagar-Oven-Line3']);
+    sama(200, $lain['status'], 'akun lain tidak ikut terkunci');
+    $takAda = panggil('POST', '/sesi/masuk', ['email' => 'kunci1@kg.test', 'sandi' => 'apa-saja-lagi']);
+    sama($h['galat']['pesan'], $takAda['galat']['pesan'], 'pesan penguncian tidak membedakan apa pun');
+});
+
+uji('UJ-71b', 'Satu alamat IP yang mencoba banyak akun ditahan; alamat lain tidak', function () use ($D) {
+    for ($i = 0; $i < \KG\Sandi::GAGAL_PER_IP; $i++) {
+        panggil('POST', '/sesi/masuk', ['email' => "acak$i@kg.test", 'sandi' => 'tebakan-acak'], null, '10.9.9.9');
+    }
+    penggunaBersandi($D, 'korban.ip@kg.test', 'Pagar-Oven-Line3');
+    $h = panggil('POST', '/sesi/masuk', ['email' => 'korban.ip@kg.test', 'sandi' => 'Pagar-Oven-Line3'], null, '10.9.9.9');
+    sama(429, $h['status'], 'alamat penebak ditahan');
+    $h2 = panggil('POST', '/sesi/masuk', ['email' => 'korban.ip@kg.test', 'sandi' => 'Pagar-Oven-Line3'], null, '10.1.1.1');
+    sama(200, $h2['status'], 'pemilik akun dari alamat lain tetap dapat masuk');
+});
+
+uji('UJ-72', 'Yang tersimpan hanya hash; sandi tidak pernah ada di basis data', function () use ($D) {
+    $id = penggunaBersandi($D, 'hash1@kg.test', 'Pagar-Oven-Line3');
+    $h = (string) Db::nilai('SELECT sandi_hash FROM pengguna WHERE id = :i', [':i' => $id]);
+    benar(!str_contains($h, 'Pagar-Oven-Line3'), 'sandi tidak tersimpan apa adanya');
+    benar(password_verify('Pagar-Oven-Line3', $h), 'hash dapat dicocokkan');
+    $jejak = (string) Db::nilai("SELECT coalesce(string_agg(nilai_sesudah::text, ' '), '') FROM jejak_audit");
+    benar(!str_contains($jejak, 'Pagar-Oven-Line3') && !str_contains($jejak, '$2y$'),
+        'jejak audit tidak memuat sandi maupun hash');
+});
+
+uji('UJ-73', 'Sandi lemah ditolak dengan alasan yang dapat dibaca', function () {
+    $kasus = [
+        'pendek'        => ['Oven3!', 'minimal'],
+        'terlalu umum'  => ['khongguan123', 'terlalu umum'],
+        'memuat email'  => ['xx-budi.santoso-99', 'email'],
+        'memuat nama'   => ['Santoso-Line3-oke', 'nama'],
+        'seragam'       => ['aaaaaaaaaaab', 'seragam'],
+        'terlalu panjang' => [str_repeat('Ab3-', 20), 'terlalu panjang'],
+    ];
+    foreach ($kasus as $n => [$sandi, $sebut]) {
+        try {
+            \KG\Sandi::wajibLayak($sandi, 'budi.santoso@kg.test', 'Budi Santoso');
+            throw new \RuntimeException("$n: seharusnya ditolak");
+        } catch (\KG\Galat $g) {
+            benar(str_contains(mb_strtolower($g->getMessage()), $sebut), "$n: alasannya menyebut '$sebut'");
+        }
+    }
+    \KG\Sandi::wajibLayak('Pagar-Oven-Line3', 'budi.santoso@kg.test', 'Budi Santoso');
+});
+
+echo "\nKelola pengguna dan tautan undangan\n";
+
+uji('UJ-74', 'Undangan: akun Menunggu, tautan menyetel sandi sekali, lalu Aktif', function () use ($D, $T) {
+    $b = panggil('POST', '/pengguna', ['email' => 'Baru.Satu@KG.test', 'nama' => 'Baru Satu',
+        'peran_kode' => 'operator', 'pabrik_id' => $D['pabrik_cbt']], $T['admin']);
+    sama(201, $b['status'], 'dibuat');
+    sama('Menunggu', $b['data']['status'], 'berstatus Menunggu');
+    sama('baru.satu@kg.test', $b['data']['email'], 'email dinormalkan');
+    $token = tokenTautan($b['data']['tautan']);
+
+    $cek = panggil('POST', '/sesi/tautan/periksa', ['token' => $token]);
+    sama('Baru Satu', $cek['data']['nama'], 'tautan dikenali');
+    sama('undangan', $cek['data']['jenis'], 'jenisnya undangan');
+
+    $gagal = panggil('POST', '/sesi/masuk', ['email' => 'baru.satu@kg.test', 'sandi' => 'Pagar-Oven-Line3']);
+    sama(401, $gagal['status'], 'belum dapat masuk sebelum tautan dipakai');
+
+    $pakai = panggil('POST', '/sesi/tautan/pakai', ['token' => $token, 'sandi' => 'Pagar-Oven-Line3']);
+    sama(200, $pakai['status'], 'sandi disetel');
+    sama('baru.satu@kg.test', panggil('GET', '/saya', [], $pakai['data']['token'])['data']['email'],
+        'langsung masuk setelah menyetel');
+    sama('Aktif', Db::nilai('SELECT status FROM pengguna WHERE id = :i', [':i' => $b['data']['id']]), 'menjadi Aktif');
+
+    $ulang = panggil('POST', '/sesi/tautan/pakai', ['token' => $token, 'sandi' => 'Sandi-Lain-Sekali']);
+    sama(410, $ulang['status'], 'tautan yang sama tidak dapat dipakai dua kali');
+    sama(200, panggil('POST', '/sesi/masuk', ['email' => 'baru.satu@kg.test', 'sandi' => 'Pagar-Oven-Line3'])['status'],
+        'masuk dengan sandi baru');
+});
+
+uji('UJ-74b', 'Tautan kedaluwarsa, diganti, atau asal-asalan dijawab sama', function () use ($D, $T) {
+    $b = panggil('POST', '/pengguna', ['email' => 'baru.dua@kg.test', 'nama' => 'Baru Dua',
+        'peran_kode' => 'operator', 'pabrik_id' => $D['pabrik_cbt']], $T['admin']);
+    $lama = tokenTautan($b['data']['tautan']);
+    $baru = tokenTautan(panggil('POST', "/pengguna/{$b['data']['id']}/tautan", [], $T['admin'])['data']['tautan']);
+
+    sama(410, panggil('POST', '/sesi/tautan/periksa', ['token' => $lama])['status'], 'tautan lama batal begitu diganti');
+    sama(200, panggil('POST', '/sesi/tautan/periksa', ['token' => $baru])['status'], 'tautan baru berlaku');
+
+    Db::jalankan("UPDATE tautan_sandi SET kedaluwarsa = now() - interval '1 minute' WHERE token_hash = :h",
+        [':h' => hash('sha256', $baru)]);
+    sama(410, panggil('POST', '/sesi/tautan/pakai', ['token' => $baru, 'sandi' => 'Pagar-Oven-Line3'])['status'],
+        'tautan kedaluwarsa ditolak');
+    sama(410, panggil('POST', '/sesi/tautan/periksa', ['token' => str_repeat('ab', 32)])['status'], 'tautan karangan ditolak');
+    sama(410, panggil('POST', '/sesi/tautan/periksa', ['token' => "' OR 1=1 --"])['status'], 'masukan aneh ditolak');
+});
+
+uji('UJ-74c', 'Basis data hanya menyimpan hash token tautan', function () use ($D, $T) {
+    $b = panggil('POST', '/pengguna', ['email' => 'baru.tiga@kg.test', 'nama' => 'Baru Tiga',
+        'peran_kode' => 'operator', 'pabrik_id' => $D['pabrik_cbt']], $T['admin']);
+    $token = tokenTautan($b['data']['tautan']);
+    sama(0, (int) Db::nilai('SELECT count(*) FROM tautan_sandi WHERE token_hash = :t', [':t' => $token]),
+        'token mentah tidak tersimpan');
+    sama(1, (int) Db::nilai('SELECT count(*) FROM tautan_sandi WHERE token_hash = :t', [':t' => hash('sha256', $token)]),
+        'hashnya tersimpan');
+});
+
+uji('UJ-75', 'Hanya administrator yang mengelola pengguna', function () use ($D, $T) {
+    foreach (['qhse', 'manajemen', 'operator'] as $peran) {
+        $h = panggil('POST', '/pengguna', ['email' => "coba.$peran@kg.test", 'nama' => 'Coba',
+            'peran_kode' => 'admin', 'pabrik_id' => $D['pabrik_cbt']], $T[$peran]);
+        sama(403, $h['status'], "$peran tidak dapat membuat pengguna");
+        $u = panggil('POST', "/pengguna/{$D['operator']}/ubah", ['peran_kode' => 'admin'], $T[$peran]);
+        sama(403, $u['status'], "$peran tidak dapat mengubah peran");
+    }
+    $g = panggil('POST', '/pengguna', ['email' => 'QHSE@kg.test', 'nama' => 'Ganda',
+        'peran_kode' => 'qhse', 'pabrik_id' => $D['pabrik_cbt']], $T['admin']);
+    sama(409, $g['status'], 'email yang sudah terdaftar ditolak, tanpa peduli huruf besar-kecil');
+    $x = panggil('POST', '/pengguna', ['email' => 'bukan-email', 'nama' => 'X',
+        'peran_kode' => 'qhse', 'pabrik_id' => $D['pabrik_cbt']], $T['admin']);
+    sama(400, $x['status'], 'email tidak sah ditolak');
+});
+
+uji('UJ-76', 'Perubahan peran berlaku seketika pada sesi yang sedang berjalan', function () use ($D, $T) {
+    $id = penggunaBersandi($D, 'pindah1@kg.test', 'Pagar-Oven-Line3', 'operator');
+    $tok = panggil('POST', '/sesi/masuk', ['email' => 'pindah1@kg.test', 'sandi' => 'Pagar-Oven-Line3'])['data']['token'];
+    benar(!in_array('capa', panggil('GET', '/saya', [], $tok)['data']['modul'], true), 'operator tidak melihat CAPA');
+
+    $u = panggil('POST', "/pengguna/$id/ubah", ['peran_kode' => 'qhse', 'pabrik_id' => $D['pabrik_smg']], $T['admin']);
+    sama(200, $u['status'], 'diubah');
+    $saya = panggil('GET', '/saya', [], $tok)['data'];
+    benar(in_array('capa', $saya['modul'], true), 'sesi yang sama kini melihat CAPA');
+    sama($D['pabrik_smg'], $saya['pabrik']['id'], 'pabrik ikut berpindah');
+});
+
+uji('UJ-76b', 'Tidak ada yang dapat mengunci sistem dari administratornya sendiri', function () use ($D, $T) {
+    $sendiri = panggil('POST', "/pengguna/{$D['admin']}/ubah", ['peran_kode' => 'qhse'], $T['admin']);
+    sama(403, $sendiri['status'], 'admin tidak dapat menurunkan perannya sendiri');
+    $nonaktif = panggil('POST', "/pengguna/{$D['admin']}/status", ['status' => 'Nonaktif'], $T['admin']);
+    sama(403, $nonaktif['status'], 'admin tidak dapat menonaktifkan dirinya sendiri');
+
+    // Admin lain yang bersandi menjadi satu-satunya admin aktif yang dapat masuk.
+    $a2 = penggunaBersandi($D, 'admin.dua@kg.test', 'Pagar-Oven-Line3', 'admin');
+    $turun = panggil('POST', "/pengguna/$a2/ubah", ['peran_kode' => 'qhse'], $T['admin']);
+    sama(400, $turun['status'], 'admin bersandi terakhir tidak dapat diturunkan');
+    $mati = panggil('POST', "/pengguna/$a2/status", ['status' => 'Nonaktif'], $T['admin']);
+    sama(400, $mati['status'], 'admin bersandi terakhir tidak dapat dinonaktifkan');
+
+    penggunaBersandi($D, 'admin.tiga@kg.test', 'Pagar-Oven-Line3', 'admin');
+    sama(200, panggil('POST', "/pengguna/$a2/ubah", ['peran_kode' => 'qhse'], $T['admin'])['status'],
+        'dengan admin lain tersedia, penurunan diizinkan');
+});
+
+uji('UJ-77', 'Menonaktifkan memutus sesi seketika dan membatalkan tautan', function () use ($D, $T) {
+    $id = penggunaBersandi($D, 'keluar1@kg.test', 'Pagar-Oven-Line3', 'operator');
+    $tok = panggil('POST', '/sesi/masuk', ['email' => 'keluar1@kg.test', 'sandi' => 'Pagar-Oven-Line3'])['data']['token'];
+    $tautan = tokenTautan(panggil('POST', "/pengguna/$id/tautan", [], $T['admin'])['data']['tautan']);
+
+    sama(200, panggil('POST', "/pengguna/$id/status", ['status' => 'Nonaktif'], $T['admin'])['status'], 'dinonaktifkan');
+    sama(401, panggil('GET', '/saya', [], $tok)['status'], 'sesi yang sedang berjalan langsung mati');
+    sama(410, panggil('POST', '/sesi/tautan/pakai', ['token' => $tautan, 'sandi' => 'Sandi-Baru-Sekali'])['status'],
+        'tautan yang sempat dikirim ikut batal');
+
+    sama(200, panggil('POST', "/pengguna/$id/status", ['status' => 'Aktif'], $T['admin'])['status'], 'diaktifkan kembali');
+    sama(200, panggil('POST', '/sesi/masuk', ['email' => 'keluar1@kg.test', 'sandi' => 'Pagar-Oven-Line3'])['status'],
+        'masuk lagi dengan sandi lamanya');
+
+    $b = panggil('POST', '/pengguna', ['email' => 'belum.aktif@kg.test', 'nama' => 'Belum Aktif',
+        'peran_kode' => 'operator', 'pabrik_id' => $D['pabrik_cbt']], $T['admin']);
+    sama(400, panggil('POST', "/pengguna/{$b['data']['id']}/status", ['status' => 'Aktif'], $T['admin'])['status'],
+        'akun yang belum pernah menyetel sandi tidak dapat diaktifkan begitu saja');
+});
+
+uji('UJ-78', 'Ganti sandi sendiri: sandi lama wajib, perangkat lain terputus, yang ini tetap', function () use ($D) {
+    penggunaBersandi($D, 'ganti1@kg.test', 'Pagar-Oven-Line3');
+    $ini  = panggil('POST', '/sesi/masuk', ['email' => 'ganti1@kg.test', 'sandi' => 'Pagar-Oven-Line3'])['data']['token'];
+    $lain = panggil('POST', '/sesi/masuk', ['email' => 'ganti1@kg.test', 'sandi' => 'Pagar-Oven-Line3'])['data']['token'];
+
+    $salah = panggil('POST', '/sesi/sandi', ['sandi_lama' => 'bukan-ini', 'sandi_baru' => 'Mesin-Kemas-Baru7'], $ini);
+    // Bukan 401: 401 berarti sesi putus, dan antarmuka akan mengeluarkan
+    // orang yang hanya salah mengetik sandi lamanya.
+    sama(400, $salah['status'], 'sandi lama salah ditolak sebagai isian, bukan sesi putus');
+    sama(200, panggil('GET', '/saya', [], $ini)['status'], 'sesi tetap hidup setelah salah ketik');
+    $sama = panggil('POST', '/sesi/sandi', ['sandi_lama' => 'Pagar-Oven-Line3', 'sandi_baru' => 'Pagar-Oven-Line3'], $ini);
+    sama(400, $sama['status'], 'sandi baru yang sama dengan lama ditolak');
+
+    $ok = panggil('POST', '/sesi/sandi', ['sandi_lama' => 'Pagar-Oven-Line3', 'sandi_baru' => 'Mesin-Kemas-Baru7'], $ini);
+    sama(200, $ok['status'], 'diganti');
+    sama(200, panggil('GET', '/saya', [], $ini)['status'], 'sesi yang dipakai mengganti tetap hidup');
+    sama(401, panggil('GET', '/saya', [], $lain)['status'], 'sesi di perangkat lain diputus');
+    sama(401, panggil('POST', '/sesi/masuk', ['email' => 'ganti1@kg.test', 'sandi' => 'Pagar-Oven-Line3'])['status'],
+        'sandi lama tidak berlaku lagi');
+    sama(200, panggil('POST', '/sesi/masuk', ['email' => 'ganti1@kg.test', 'sandi' => 'Mesin-Kemas-Baru7'])['status'],
+        'sandi baru berlaku');
+});
+
+uji('UJ-78b', 'Atur ulang oleh admin tidak mengunci pemilik akun sebelum tautannya dipakai', function () use ($D, $T) {
+    $id = penggunaBersandi($D, 'lupa1@kg.test', 'Pagar-Oven-Line3');
+    $lama = panggil('POST', '/sesi/masuk', ['email' => 'lupa1@kg.test', 'sandi' => 'Pagar-Oven-Line3'])['data']['token'];
+
+    $t = panggil('POST', "/pengguna/$id/tautan", [], $T['admin']);
+    sama('atur-ulang', $t['data']['jenis'], 'akun bersandi mendapat tautan atur ulang');
+    sama(200, panggil('GET', '/saya', [], $lama)['status'], 'sesi lama masih hidup setelah tautan dibuat');
+    sama(200, panggil('POST', '/sesi/masuk', ['email' => 'lupa1@kg.test', 'sandi' => 'Pagar-Oven-Line3'])['status'],
+        'sandi lama masih berlaku sebelum tautan dipakai');
+
+    panggil('POST', '/sesi/tautan/pakai', ['token' => tokenTautan($t['data']['tautan']), 'sandi' => 'Mesin-Kemas-Baru7']);
+    sama(401, panggil('GET', '/saya', [], $lama)['status'], 'setelah dipakai, sesi lama diputus');
+    sama(200, panggil('POST', '/sesi/masuk', ['email' => 'lupa1@kg.test', 'sandi' => 'Mesin-Kemas-Baru7'])['status'],
+        'sandi baru berlaku');
+});
+
+uji('UJ-79', 'Setiap tindakan atas akun tercatat atas nama pelakunya', function () use ($D, $T) {
+    $b = panggil('POST', '/pengguna', ['email' => 'jejak.akun@kg.test', 'nama' => 'Jejak Akun',
+        'peran_kode' => 'operator', 'pabrik_id' => $D['pabrik_cbt']], $T['admin']);
+    $id = $b['data']['id'];
+    panggil('POST', "/pengguna/$id/ubah", ['peran_kode' => 'qhse'], $T['admin']);
+    panggil('POST', "/pengguna/$id/tautan", [], $T['admin']);
+    $aksi = array_column(Db::semua(
+        "SELECT aksi, pengguna_id FROM jejak_audit WHERE tabel = 'pengguna' AND baris_id = :i ORDER BY id",
+        [':i' => $id]), 'pengguna_id', 'aksi');
+    foreach (['buat', 'ubah', 'kirim_tautan'] as $a) {
+        benar(array_key_exists($a, $aksi), "aksi '$a' tercatat");
+        sama($D['admin'], $aksi[$a] ?? null, "aksi '$a' atas nama admin");
+    }
+});
+
+uji('UJ-79b', 'Admin pertama: tautan ditulis ke berkas 600 dan tidak pernah dicetak', function () {
+    $dir = sys_get_temp_dir() . '/kg-uji-admin-' . bin2hex(random_bytes(4));
+    mkdir($dir, 0700);
+    $berkas = "$dir/tautan.txt";
+    $pembungkus = "$dir/jalan.php";
+    // Konfigurasi uji dipaksakan di proses anak supaya skrip menulis ke
+    // basis data uji, bukan ke basis data yang ditunjuk config.php.
+    file_put_contents($pembungkus, '<?php require ' . var_export(dirname(__DIR__) . '/src/muat.php', true) . ";\n"
+        . 'KG\\Konfigurasi::paksa(' . var_export(\KG\Konfigurasi::ambil(), true) . ");\n"
+        . 'require ' . var_export(dirname(__DIR__) . '/tugas/buat-admin.php', true) . ";\n");
+
+    $jalan = static fn (string $email): string => [
+        shell_exec(sprintf('%s %s --email=%s --nama=%s --tautan-ke=%s 2>&1; echo "keluar=$?"',
+            escapeshellarg(PHP_BINARY), escapeshellarg($pembungkus), escapeshellarg($email),
+            escapeshellarg('Admin Pertama'), escapeshellarg($berkas))) ?? '',
+    ][0];
+
+    // Belum ada admin bersandi di data uji (admin@kg.test masuk lewat demo).
+    Db::jalankan("UPDATE pengguna SET sandi_hash = NULL WHERE peran_kode = 'admin'");
+    $keluar = $jalan('pertama@kg.test');
+    benar(str_contains($keluar, 'keluar=0'), 'berhasil: ' . trim($keluar));
+    benar(!str_contains($keluar, '#/sandi/'), 'tautan tidak tercetak');
+    sama('0600', substr(sprintf('%o', fileperms($berkas)), -4), 'berkas berizin 600');
+    $isi = (string) file_get_contents($berkas);
+    $token = tokenTautan(trim(substr($isi, (int) strrpos($isi, "\n", -2))));
+    sama('pertama@kg.test', panggil('POST', '/sesi/tautan/periksa', ['token' => $token])['data']['email'],
+        'tautan di berkas berlaku');
+
+    panggil('POST', '/sesi/tautan/pakai', ['token' => $token, 'sandi' => 'Pagar-Oven-Line3']);
+    $lagi = $jalan('kedua@kg.test');
+    benar(str_contains($lagi, 'keluar=1') && str_contains($lagi, 'sudah ada'),
+        'menolak bila sudah ada admin aktif bersandi');
+
+    @unlink($berkas); @unlink($pembungkus); @rmdir($dir);
+});

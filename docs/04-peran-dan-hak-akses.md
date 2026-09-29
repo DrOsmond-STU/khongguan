@@ -131,14 +131,19 @@ daftar kosong tidak dapat dibedakan dari "memang tidak ada data".
 
 | Hal | Ketentuan |
 |---|---|
-| Sumber identitas | Direktori perusahaan (SSO/LDAP). Sistem tidak menyimpan kata sandi |
-| Pemetaan peran | Grup direktori dipetakan ke peran oleh Administrator Sistem |
+| Sumber identitas | Akun sistem ini dengan kata sandi (berlaku sekarang), dan direktori perusahaan lewat OIDC begitu tersedia. Keduanya pada tabel pengguna yang sama |
+| Kata sandi | Hanya hash yang disimpan. Administrator tidak pernah menetapkan sandi siapa pun; ia membuat tautan undangan/atur ulang, dan pemilik akun menyetel sandinya sendiri |
+| Pembuatan akun | Hanya Administrator Sistem. Akun baru berstatus **Menunggu** sampai tautan undangannya dipakai |
+| Penonaktifan | Seketika: sesi diputus dan tautan dibatalkan. Akun tidak pernah dihapus — penghapusan memutus nama pelapor dan verifikator dari catatan yang sudah ada |
+| Pengaman | Administrator tidak dapat mengubah perannya sendiri atau menonaktifkan dirinya, dan administrator aktif terakhir tidak dapat diturunkan |
+| Pemetaan peran | Grup direktori dipetakan ke peran oleh Administrator Sistem (saat OIDC dinyalakan) |
 | Sesi | Berakhir setelah 12 jam tidak aktif pada aplikasi meja |
 | Sesi lapangan | Berakhir setelah 30 hari, supaya pekerja tidak perlu masuk ulang di tengah shift |
 | Pencabutan | Penonaktifan akun di direktori mencabut akses pada sinkronisasi berikutnya, paling lambat 15 menit |
 
-Pada purwarupa, akun dan kata sandi tertulis di dalam kode. Ini **harus**
-diganti sebelum sistem dipakai dengan data sungguhan.
+Pada mode peragaan, akun dan kata sandi `demo1234` tertulis di dalam kode.
+Pada mode tersambung keduanya tidak berlaku: layar masuk menyembunyikan
+daftar akun demo, dan peladen hanya menerima sandi yang disetel pemilik akun.
 
 ## Jejak audit hak akses
 

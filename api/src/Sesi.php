@@ -6,10 +6,9 @@ namespace KG;
 /**
  * Sesi dan pengguna yang sedang masuk.
  *
- * Pada produksi identitas datang dari direktori perusahaan (OIDC); sistem
- * tidak pernah menerima atau menyimpan kata sandi. Jalur masuk demo hanya
- * hidup bila konfigurasi 'izinkan_masuk_demo' dinyalakan, dan dipakai untuk
- * pengembangan serta pengujian.
+ * Sesi dibuka oleh salah satu jalur masuk (Modul\Masuk untuk kata sandi,
+ * Modul\MasukOidc untuk direktori perusahaan). Kelas ini tidak peduli jalur
+ * mana; yang disimpannya hanya hash token, tidak pernah tokennya.
  */
 final class Sesi
 {
@@ -80,6 +79,13 @@ final class Sesi
         $baris['kewenangan'] = Wewenang::kewenangan($baris['peran_kode']);
 
         return self::$pengguna = $baris;
+    }
+
+    /** Hash token sesi pada permintaan ini, atau null bila tidak ada. */
+    public static function tokenHash(Permintaan $p): ?string
+    {
+        $kepala = $p->kepala('authorization') ?? '';
+        return preg_match('/^Bearer\s+([0-9a-f]{64})$/i', $kepala, $c) ? hash('sha256', $c[1]) : null;
     }
 
     /** Dipakai pengujian untuk mengosongkan keadaan antar-permintaan. */
