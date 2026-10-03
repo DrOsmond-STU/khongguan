@@ -7,7 +7,7 @@ Untuk cPanel dengan PHP 8.3 dan PostgreSQL 16 — lingkungan
 
 | Hal | Keadaan |
 |---|---|
-| Berkas aplikasi | Terpasang dari komit `2d10809`: `api/`, `assets/`, `m/`, `index.html`. `api/uji/` sengaja tidak ikut |
+| Berkas aplikasi | Terpasang dari komit `b3d780d`: `api/`, `assets/`, `m/`, `index.html`. `api/uji/` sengaja tidak ikut |
 | Pengguna `semestat_kgapp` | Dibuat dari sandi yang disediakan manusia; hak ALL pada `semestat_kgsafe` |
 | `api/config.php` | Terpasang, izin 600, **tanpa rahasia** — lihat "Rahasia dari berkas" |
 | Migrasi | 001, 002, 004, 006, 008, 009, 010 tercatat; 007 (data contoh) tidak dimuat |
@@ -18,7 +18,7 @@ Untuk cPanel dengan PHP 8.3 dan PostgreSQL 16 — lingkungan
 | Catatan | Kosong, sebagaimana mestinya untuk basis data produksi baru |
 | `/home/semestat/kg-berkas` | Ada, izin 700, di luar docroot |
 | Cron pemberitahuan | `0 6,13 * * *  /bin/bash /home/semestat/kg-cron.sh` |
-| Peragaan untuk klien | `khongguan-demo.semestateknologiutama.com`, antarmuka saja, data contoh |
+| Peragaan untuk klien | `https://khongguan-demo.semestateknologiutama.com` (SSL Let's Encrypt), antarmuka saja, data contoh, diperbarui bersama situs utama |
 | `assets/konfigurasi.js` | **Mode tersambung**, dari `/home/semestat/kg-konfigurasi.js` — lihat "Menyalakan mode tersambung" |
 | Log galat domain | Bersih untuk `api/` |
 
