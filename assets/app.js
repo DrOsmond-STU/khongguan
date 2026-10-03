@@ -780,7 +780,7 @@
               <thead><tr><th>NO.</th><th>KLAUSUL / ELEMEN</th><th>KATEGORI</th><th>PJ</th><th>TENGGAT</th></tr></thead>
               <tbody>
                 ${D.temuanAudit.map(t => `
-                  <tr class="${t.kategori === 'Major' ? 'is-overdue' : ''}" ${infoAttr({
+                  <tr class="${t.kategori === 'Major' ? 'is-overdue' : ''}" ${infoAttr({ ...rinci('temuan', t.id),
                     title: t.id,
                     sub: `Temuan ${t.kategori} · ${t.klausul}`,
                     body: chipRow([
@@ -842,7 +842,7 @@
         <h3>${b.judul}</h3>
         <div class="card-sub">${b.sub}</div>
         ${b.param.map(p => `
-          <div class="param is-clickable" ${infoAttr({
+          <div class="param is-clickable" ${infoAttr({ ...rinci('parameter', p.uuid),
             title: p.nama,
             sub: `${b.judul} · ${b.sub}`,
             body: `<div class="info-num" style="color:var(--signal-${p.ok ? 'low' : 'critical'})">${p.nilai}${p.satuan ? `<span class="tile-unit">${p.satuan}</span>` : ''}</div>`

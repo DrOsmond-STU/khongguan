@@ -36,13 +36,13 @@ final class Lingkungan
 
         $per = [];
         foreach (Db::semua(
-            'SELECT pemantauan_id, nama, nilai, satuan, ambang, memenuhi
+            'SELECT id, pemantauan_id, nama, nilai, satuan, ambang, memenuhi
                FROM parameter_lingkungan
               WHERE pemantauan_id IN (' . implode(',', $tanda) . ')
               ORDER BY urutan', $ids
         ) as $r) {
             $per[$r['pemantauan_id']][] = [
-                'nama' => $r['nama'], 'nilai' => $r['nilai'], 'satuan' => $r['satuan'],
+                'id' => $r['id'], 'nama' => $r['nama'], 'nilai' => $r['nilai'], 'satuan' => $r['satuan'],
                 'ambang' => $r['ambang'], 'memenuhi' => $r['memenuhi'] === true,
             ];
         }
@@ -141,15 +141,36 @@ final class Lingkungan
                 $id = $lama['id'];
                 Db::jalankan('UPDATE pemantauan_lingkungan SET sub = :s, acuan = :a WHERE id = :i',
                     [':s' => $sub, ':a' => $acuan, ':i' => $id]);
-                Db::jalankan('DELETE FROM parameter_lingkungan WHERE pemantauan_id = :i', [':i' => $id]);
                 $aksi = 'ubah';
             }
+
+            // Uji ulang memperbarui parameter yang sama (menurut namanya),
+            // bukan menghapus lalu membuat baru: CAPA yang lahir dari
+            // parameter yang melewati baku mutu menunjuk barisnya, dan
+            // rujukan itu tidak boleh putus justru saat hasil perbaikannya
+            // diuji. Parameter lama yang tidak diuji ulang dibuang hanya bila
+            // tidak menjadi sumber CAPA.
+            $ada = [];
+            foreach (Db::semua('SELECT id, nama FROM parameter_lingkungan WHERE pemantauan_id = :i', [':i' => $id]) as $r) {
+                $ada[mb_strtolower($r['nama'])] = $r['id'];
+            }
             foreach ($bersih as $i => $r) {
-                Db::jalankan(
-                    'INSERT INTO parameter_lingkungan (pemantauan_id, urutan, nama, nilai, satuan, ambang, memenuhi)
-                     VALUES (:p, :u, :n, :v, :s, :a, :m)',
-                    [':p' => $id, ':u' => $i + 1, ':n' => $r['nama'], ':v' => $r['nilai'], ':s' => $r['satuan'],
-                     ':a' => $r['ambang'], ':m' => $r['memenuhi'] ? 'true' : 'false']);
+                $isi = [':u' => $i + 1, ':n' => $r['nama'], ':v' => $r['nilai'], ':s' => $r['satuan'],
+                        ':a' => $r['ambang'], ':m' => $r['memenuhi'] ? 'true' : 'false'];
+                $kunci = mb_strtolower($r['nama']);
+                if (isset($ada[$kunci])) {
+                    Db::jalankan('UPDATE parameter_lingkungan SET urutan = :u, nama = :n, nilai = :v, satuan = :s,
+                                         ambang = :a, memenuhi = :m WHERE id = :id', $isi + [':id' => $ada[$kunci]]);
+                    unset($ada[$kunci]);
+                } else {
+                    Db::jalankan('INSERT INTO parameter_lingkungan (pemantauan_id, urutan, nama, nilai, satuan, ambang, memenuhi)
+                                  VALUES (:p, :u, :n, :v, :s, :a, :m)', $isi + [':p' => $id]);
+                }
+            }
+            foreach ($ada as $sisaId) {
+                Db::jalankan("DELETE FROM parameter_lingkungan WHERE id = :i
+                               AND NOT EXISTS (SELECT 1 FROM capa WHERE sumber_jenis = 'Lingkungan' AND sumber_id = :j)",
+                    [':i' => $sisaId, ':j' => $sisaId]);
             }
             $lewat = array_values(array_map(fn($r) => $r['nama'], array_filter($bersih, fn($r) => !$r['memenuhi'])));
             Jejak::catat('pemantauan_lingkungan', $id, $aksi, null,

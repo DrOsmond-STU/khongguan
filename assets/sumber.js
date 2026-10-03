@@ -291,7 +291,7 @@ window.KGSUMBER = (function () {
     },
     temuanAudit: function (r) {
       return {
-        id: r.nomor, audit: r.audit, klausul: r.klausul, kategori: r.kategori,
+        id: r.nomor, uuid: r.id, audit: r.audit, klausul: r.klausul, kategori: r.kategori,
         isi: r.isi, pj: r.pj || '\u2014', tenggat: tanggalPanjang(r.tenggat), status: r.status
       };
     },
@@ -397,7 +397,7 @@ window.KGSUMBER = (function () {
           judul: o[k].judul, sub: o[k].sub, acuan: o[k].acuan,
           param: (o[k].param || []).map(function (v) {
             return { nama: v.nama, nilai: v.nilai, satuan: v.satuan,
-                     ambang: v.ambang, ok: v.memenuhi === true };
+                     ambang: v.ambang, ok: v.memenuhi === true, uuid: v.id };
           })
         };
       });
@@ -1122,16 +1122,72 @@ window.KGSUMBER = (function () {
     });
   }
 
+  /* ─────────────────────────────────────────────────────────────────
+     Buat CAPA dari sumbernya (AB-01)
+
+     CAPA tidak pernah berdiri sendiri, jadi tidak ada tombol "CAPA baru"
+     di layar CAPA. Ia dibuat dari rincian sumbernya, dan sumbernya terisi
+     sendiri — orang tidak perlu menyalin nomor kejadian ke formulir.
+     ───────────────────────────────────────────────────────────────── */
+
+  var SUMBER_CAPA = {
+    insiden:   { jenis: 'Insiden',    bila: function (r) { return r.status !== 'Selesai'; } },
+    temuan:    { jenis: 'Audit',      bila: function (r) { return r.status !== 'Selesai'; } },
+    inspeksi:  { jenis: 'Inspeksi',   bila: function () { return true; } },
+    hiradc:    { jenis: 'HIRADC',     bila: function (r) { return r.status !== 'Selesai'; } },
+    observasi: { jenis: 'Observasi',  bila: function (r) { return Number(r.berisiko) > 0; } },
+    parameter: { jenis: 'Lingkungan', bila: function (r) { return !r.ok; } }
+  };
+
+  Object.keys(SUMBER_CAPA).forEach(function (jenis) {
+    var s = SUMBER_CAPA[jenis];
+    AKSI[jenis] = (AKSI[jenis] || []).concat([{
+      kunci: 'capa', label: 'Buat CAPA', gaya: 'secondary', modul: 'capa', wewenang: 'isi',
+      bila: s.bila,
+      buka: function (r) { formulirCapa(s.jenis, r); }
+    }]);
+  });
+
+  function formulirCapa(sumberJenis, r) {
+    if (!window.KG_BUKA) return;
+    var orang = ((ACUAN && ACUAN.penanggung_jawab) || []).map(function (o) {
+      return [o.id, esc(o.nama)];
+    });
+    var tenggat = new Date(Date.now() + 14 * 86400000);
+    var iso = tenggat.getFullYear() + '-' + String(tenggat.getMonth() + 1).padStart(2, '0') + '-' + String(tenggat.getDate()).padStart(2, '0');
+    window.KG_BUKA({
+      title: 'Buat CAPA', sub: 'Sumber: ' + sumberJenis + ' · ' + (r.nama && sumberJenis === 'Lingkungan' ? r.nama : r.id),
+      body: isian('judul', 'Tindakan perbaikan', '', true)
+        + pilihanNilai('pj_id', 'Penanggung jawab', [['', '— Pilih —']].concat(orang), '', true)
+        + '<div class="row2">' + isian('tenggat', 'Tenggat', iso, true, 'date')
+        + pilihan('prioritas', 'Prioritas', ['Rendah', 'Sedang', 'Tinggi'], 'Sedang') + '</div>'
+        + '<div class="tile-note">Penanggung jawab tidak dapat memverifikasi CAPA-nya sendiri (AB-17). Penuaan CAPA dihitung dari hari ini.</div>',
+      ok: 'Buat CAPA', aksi: 'capa-baru:' + sumberJenis + ':' + r.uuid
+    });
+  }
+
   /* Koleksi window.KG tempat mencari catatan menurut jenis rincian. */
   var KOLEKSI_RINCIAN = {
     bahaya: 'bahaya', insiden: 'insiden', capa: 'capa',
     izin: 'izin', jsa: 'jsa', audit: 'audit', pengguna: 'pengguna',
     observasi: 'observasi', apd: 'observasiAPD', inspeksi: 'inspeksi', checklist: 'checklistHarian',
     hiradc: 'hiradc', risiko: 'risikoRegister', induksi: 'induksi', regulasi: 'regulasi',
-    kegiatan: 'kegiatan', pelatihan: 'pelatihan', dokint: 'dokInternal', dokext: 'dokEksternal'
+    kegiatan: 'kegiatan', pelatihan: 'pelatihan', dokint: 'dokInternal', dokext: 'dokEksternal',
+    temuan: 'temuanAudit'
   };
 
   function catatan(jenis, id) {
+    /* Parameter lingkungan tidak punya nomor sendiri; dikenali dengan uuid-nya
+       di dalam hasil uji per domain. */
+    if (jenis === 'parameter') {
+      var o = (window.KG && window.KG.lingkungan) || {}, hasil = null;
+      Object.keys(o).forEach(function (k) {
+        (o[k].param || []).forEach(function (v) {
+          if (v.uuid && v.uuid === id) hasil = Object.assign({ id: v.uuid, judulDomain: o[k].judul }, v);
+        });
+      });
+      return hasil;
+    }
     var nama = KOLEKSI_RINCIAN[jenis];
     var arr = nama ? (window.KG[nama] || []) : [];
     for (var i = 0; i < arr.length; i++) if (arr[i].id === id) return arr[i];
@@ -1591,6 +1647,19 @@ window.KGSUMBER = (function () {
           + (d.mengganti ? ' (menggantikan hasil bulan ini)' : '') + '.';
         return d.melewati && d.melewati.length ? m + ' Melewati baku mutu: ' + d.melewati.join(', ') + '.' : m + ' Seluruhnya memenuhi baku mutu.';
       }
+    },
+    /* "capa-baru:<SumberJenis>:<uuid>" — dari rincian sumbernya. */
+    'capa-baru': {
+      jalur: '/capa',
+      segarkan: ['capa', 'insiden', 'temuanAudit', 'inspeksi'],
+      isi: function (param) {
+        var b = String(param || '').split(':');
+        var isi = bacaIsian();
+        isi.sumber_jenis = b[0];
+        isi.sumber_id = b[1];
+        return isi;
+      },
+      hasil: function (d) { return 'CAPA ' + d.nomor + ' dibuat dari ' + d.sumber_nomor + '.'; }
     },
     'compliance-baru': {
       jalur: '/dokumen/eksternal', segarkan: ['dokEksternal'],
@@ -2352,7 +2421,7 @@ window.KGSUMBER = (function () {
     var def = SIMPAN[kunci];
     var isi, jalur, segar;
     try {
-      isi = def.isi();
+      isi = def.isi(param);
       jalur = typeof def.jalur === 'function' ? def.jalur(param) : def.jalur;
       segar = typeof def.segarkan === 'function' ? def.segarkan(param) : def.segarkan;
     } catch (e) {

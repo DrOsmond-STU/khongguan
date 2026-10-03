@@ -480,6 +480,39 @@ const tok = await token();
     if (salah) catat('tambah', `${aksi}: ${salah}`);
   }
 
+  // CAPA dibuat dari rincian sumbernya. Tombolnya ada di rincian kejadian,
+  // dan formulirnya membawa sumber tanpa disalin orang.
+  rute = 'tambah/capa-dari-sumber';
+  await p.goto(`${ALAMAT}/#/incident`, { waitUntil: 'domcontentloaded' });
+  await p.reload({ waitUntil: 'domcontentloaded' });
+  await p.waitForTimeout(1500);
+  const terbuka = await p.evaluate(() => { const i = (window.KG.insiden || []).find((x) => x.status !== 'Selesai'); return i && i.id; });
+  if (terbuka) {
+    await p.click(`[data-detail="insiden:${terbuka}"]`);
+    await p.waitForTimeout(300);
+    if (!(await p.$('[data-jalankan="capa"]'))) catat('tambah', `rincian ${terbuka} tidak menawarkan Buat CAPA`);
+    await p.click('[data-close]');
+  }
+  await p.goto(`${ALAMAT}/#/audit`, { waitUntil: 'domcontentloaded' });
+  await p.reload({ waitUntil: 'domcontentloaded' });
+  await p.waitForTimeout(1500);
+  const temuan = await p.evaluate(() => {
+    const t = (window.KG.temuanAudit || []).find((x) => window.KGSUMBER.aksiRincian('temuan', x.id).some((a) => a.kunci === 'capa'));
+    return t && t.id;
+  });
+  if (!temuan) {
+    catat('tambah', 'tidak ada temuan audit yang menawarkan Buat CAPA');
+  } else {
+    await p.evaluate((n) => window.KGSUMBER.jalankanAksi('temuan', n, 'capa'), temuan);
+    await p.waitForTimeout(300);
+    await p.fill('#e-judul', tanda + ' capa');
+    await p.selectOption('#e-pj_id', { index: 1 });
+    await p.click('[data-submit]');
+    await p.waitForTimeout(1800);
+    const m = await pesan();
+    if (!new RegExp('CAPA .* dibuat dari ' + temuan).test(m)) catat('tambah', `CAPA dari temuan: "${m}"`);
+  }
+
   await ctx.close();
 }
 

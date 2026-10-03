@@ -2103,3 +2103,50 @@ uji('UJ-98', 'Audit bertemuan tidak dihapus; kegiatan tanpa kolom pengubah tetap
     $j = array_values(array_filter(jejakDari('kegiatan', $k), fn($r) => $r['aksi'] === 'ubah'));
     sama(1, count($j), 'jejak tetap tercatat');
 });
+
+echo "\nCAPA dari setiap sumbernya\n";
+
+uji('UJ-99', 'AB-01 · CAPA dari keenam sumber, termasuk temuan audit dan parameter lingkungan', function () use ($D, $T) {
+    $tenggat = date('Y-m-d', strtotime('+14 days'));
+    $a = catatanUji($D, $T, 'audit');
+    $t = panggil('POST', "/audit/$a/temuan", ['klausul' => '8.1', 'kategori' => 'Major', 'isi' => 'APAR kedaluwarsa'], $T['qhse']);
+    $l = panggil('POST', '/lingkungan', ['kode' => 'pppu', 'tanggal' => date('Y-m-d'), 'lab' => 'Lab',
+        'parameter' => [['nama' => 'NO2', 'nilai' => '450', 'ambang' => '≤ 400']]], $T['qhse']);
+    $param = panggil('GET', '/lingkungan', [], $T['qhse'])['data']['pppu']['param'][0]['id'];
+    $o = catatanUji($D, $T, 'observasi');
+    $sumber = [
+        'Insiden'    => panggil('POST', '/insiden', ['area_id' => $D['area_cbt'], 'jenis' => 'Nearmiss', 'keparahan' => 'Ringan',
+                                                      'ringkas' => 'Sumber CAPA'], $T['qhse'])['data']['id'],
+        'Audit'      => $t['data']['id'],
+        'Inspeksi'   => catatanUji($D, $T, 'inspeksi'),
+        'HIRADC'     => catatanUji($D, $T, 'hiradc'),
+        'Observasi'  => $o,
+        'Lingkungan' => $param,
+    ];
+    foreach ($sumber as $jenis => $id) {
+        $h = panggil('POST', '/capa', ['judul' => "Perbaikan dari $jenis", 'sumber_jenis' => $jenis, 'sumber_id' => $id,
+            'pj_id' => $D['operator'], 'tenggat' => $tenggat], $T['qhse']);
+        sama(201, $h['status'], "CAPA dari $jenis: " . json_encode($h['galat']));
+        benar($h['data']['sumber_nomor'] !== '', "$jenis membawa nomor sumber");
+    }
+    sama(409, panggil('POST', '/capa', ['judul' => 'x', 'sumber_jenis' => 'Audit', 'sumber_id' => 'bukan-uuid',
+        'pj_id' => $D['operator'], 'tenggat' => $tenggat], $T['qhse'])['status'], 'sumber rusak → AB-01, bukan galat basis data');
+
+    // Uji ulang lingkungan tidak memutus CAPA yang menunjuk parameternya.
+    panggil('POST', '/lingkungan', ['kode' => 'pppu', 'tanggal' => date('Y-m-d'), 'lab' => 'Lab',
+        'parameter' => [['nama' => 'NO2', 'nilai' => '310', 'ambang' => '≤ 400']]], $T['qhse']);
+    $p2 = panggil('GET', '/lingkungan', [], $T['qhse'])['data']['pppu']['param'][0];
+    sama($param, $p2['id'], 'parameter yang sama diperbarui, bukan diganti');
+    sama(true, $p2['memenuhi'], 'hasil uji ulang memenuhi');
+});
+
+uji('UJ-99b', 'CAPA: penanggung jawab aktif, tenggat sah, prioritas dikenal', function () use ($D, $T) {
+    $i = panggil('POST', '/insiden', ['area_id' => $D['area_cbt'], 'jenis' => 'Nearmiss', 'keparahan' => 'Ringan',
+        'ringkas' => 'Sumber CAPA'], $T['qhse'])['data']['id'];
+    $dasar = ['judul' => 'x', 'sumber_jenis' => 'Insiden', 'sumber_id' => $i, 'pj_id' => $D['operator'],
+              'tenggat' => date('Y-m-d', strtotime('+7 days'))];
+    sama(400, panggil('POST', '/capa', ['pj_id' => 'bukan-uuid'] + $dasar, $T['qhse'])['status'], 'pj rusak');
+    sama(400, panggil('POST', '/capa', ['tenggat' => '2026-02-30'] + $dasar, $T['qhse'])['status'], 'tenggat mustahil');
+    sama(400, panggil('POST', '/capa', ['tenggat' => date('Y-m-d', strtotime('-1 day'))] + $dasar, $T['qhse'])['status'], 'tenggat lampau');
+    sama(400, panggil('POST', '/capa', ['prioritas' => 'Darurat'] + $dasar, $T['qhse'])['status'], 'prioritas asing');
+});

@@ -8,14 +8,27 @@ use KG\{Aturan, Db, Galat, Jawab, Jejak, Nomor, Permintaan, Sesi, Wewenang};
 /** Modul 10 · CAPA. */
 final class Capa
 {
-    /** Modul sumber yang sah dan tabel tempat memeriksanya (AB-01). */
+    /**
+     * Modul sumber yang sah dan cara memeriksanya (AB-01): id, nomor yang
+     * dibaca orang, dan pabriknya.
+     *
+     * Satu kueri per sumber, bukan satu pola untuk semua: temuan audit
+     * mengambil pabriknya dari auditnya, dan parameter lingkungan tidak
+     * punya nomor sendiri. Pola "SELECT id, nomor, pabrik_id FROM <tabel>"
+     * yang sempat dipakai membuat CAPA dari temuan audit dan dari parameter
+     * lingkungan selalu gagal dengan galat basis data.
+     */
     private const SUMBER = [
-        'Insiden'    => 'insiden',
-        'Inspeksi'   => 'inspeksi',
-        'Audit'      => 'temuan_audit',
-        'Lingkungan' => 'parameter_lingkungan',
-        'Observasi'  => 'observasi',
-        'HIRADC'     => 'hiradc',
+        'Insiden'    => 'SELECT id, nomor, pabrik_id FROM insiden WHERE id = :i AND dihapus_pada IS NULL',
+        'Inspeksi'   => 'SELECT id, nomor, pabrik_id FROM inspeksi WHERE id = :i AND dihapus_pada IS NULL',
+        'Audit'      => 'SELECT t.id, t.nomor, a.pabrik_id FROM temuan_audit t JOIN audit a ON a.id = t.audit_id
+                          WHERE t.id = :i AND a.dihapus_pada IS NULL',
+        'Lingkungan' => "SELECT pr.id, upper(pl.kode) || ' ' || to_char(pl.periode, 'YYYY-MM') || ' · ' || pr.nama AS nomor,
+                                pl.pabrik_id
+                           FROM parameter_lingkungan pr JOIN pemantauan_lingkungan pl ON pl.id = pr.pemantauan_id
+                          WHERE pr.id = :i",
+        'Observasi'  => 'SELECT id, nomor, pabrik_id FROM observasi WHERE id = :i AND dihapus_pada IS NULL',
+        'HIRADC'     => 'SELECT id, nomor, pabrik_id FROM hiradc WHERE id = :i AND dihapus_pada IS NULL',
     ];
 
     public static function daftar(Permintaan $p): never
@@ -64,8 +77,8 @@ final class Capa
                 ['pilihan' => array_keys(self::SUMBER)]);
         }
 
-        $tabel  = self::SUMBER[$jenis];
-        $sumber = Db::baris("SELECT id, nomor, pabrik_id FROM $tabel WHERE id = :i", [':i' => $sid]);
+        $sumber = preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', (string) $sid)
+            ? Db::baris(self::SUMBER[$jenis], [':i' => $sid]) : null;
         if ($sumber === null) {
             throw Galat::aturan('AB-01', "Catatan sumber tidak ditemukan pada modul $jenis.",
                 ['sumber_jenis' => $jenis, 'sumber_id' => $sid]);
@@ -75,8 +88,22 @@ final class Capa
         $judul  = $p->wajibTeks('judul');
         $pjId   = $p->wajibTeks('pj_id');
         $tenggat = $p->wajibTeks('tenggat');
+        $prioritas = (string) $p->isi('prioritas', 'Sedang');
+        if (!in_array($prioritas, ['Rendah', 'Sedang', 'Tinggi'], true)) {
+            throw Galat::isian('Prioritas harus Rendah, Sedang, atau Tinggi.', ['kolom' => 'prioritas']);
+        }
+        if (Db::nilai("SELECT 1 FROM pengguna WHERE id::text = :i AND status = 'Aktif'", [':i' => $pjId]) === null) {
+            throw Galat::isian('Penanggung jawab harus akun yang aktif.', ['kolom' => 'pj_id']);
+        }
+        $tg = \DateTimeImmutable::createFromFormat('!Y-m-d', $tenggat);
+        if ($tg === false || $tg->format('Y-m-d') !== $tenggat) {
+            throw Galat::isian("Isian 'tenggat' harus tanggal YYYY-MM-DD.", ['kolom' => 'tenggat']);
+        }
+        if ($tenggat < date('Y-m-d')) {
+            throw Galat::isian('Tenggat tidak boleh sebelum hari ini.', ['kolom' => 'tenggat']);
+        }
 
-        $rec = Db::transaksi(function () use ($u, $sumber, $jenis, $judul, $pjId, $tenggat, $p) {
+        $rec = Db::transaksi(function () use ($u, $sumber, $jenis, $judul, $pjId, $tenggat, $prioritas) {
             $nomor = Nomor::berikut('capa');
             $id = (string) Db::nilai(
                 'INSERT INTO capa (nomor, pabrik_id, judul, sumber_jenis, sumber_id, sumber_nomor,
@@ -85,7 +112,7 @@ final class Capa
                 [':n' => $nomor, ':pb' => $sumber['pabrik_id'], ':j' => $judul,
                  ':sj' => $jenis, ':si' => $sumber['id'], ':sn' => $sumber['nomor'],
                  ':pj' => $pjId, ':tg' => $tenggat,
-                 ':pr' => (string) $p->isi('prioritas', 'Sedang'), ':o' => $u['id']]
+                 ':pr' => $prioritas, ':o' => $u['id']]
             );
             Jejak::catat('capa', $id, 'buat', null,
                 ['nomor' => $nomor, 'sumber' => $jenis . ':' . $sumber['nomor']], $u['id']);
