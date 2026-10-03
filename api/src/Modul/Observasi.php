@@ -22,13 +22,14 @@ final class Observasi
 
         $baris = Db::semua(
             "SELECT o.id, o.nomor, o.nomor_asal, o.tanggal, o.kategori, o.aman, o.berisiko,
-                    o.catatan, o.tindakan,
+                    o.catatan, o.tindakan, o.area_id,
+                    (o.dibuat_oleh IS NOT DISTINCT FROM :saya::uuid) AS milik_saya,
                     a.nama AS area, pg.nama AS pengamat
                FROM observasi o
                JOIN area a ON a.id = o.area_id
                JOIN pengguna pg ON pg.id = o.pengamat_id
               WHERE o.dihapus_pada IS NULL AND $saring
-              ORDER BY o.tanggal DESC, o.nomor DESC", $par
+              ORDER BY o.tanggal DESC, o.nomor DESC", $par + [':saya' => $u['id']]
         );
         Jawab::daftar($baris, 1, count($baris), count($baris));
     }

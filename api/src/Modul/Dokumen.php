@@ -15,7 +15,7 @@ final class Dokumen
         [$saring, $par] = Wewenang::saringCakupan($u, 'd');
 
         $baris = Db::semua(
-            "SELECT d.kode, d.level, d.jenis, d.judul, d.revisi, d.terbit, d.tinjau,
+            "SELECT d.id, d.kode, d.level, d.jenis, d.judul, d.revisi, d.terbit, d.tinjau,
                     d.pemilik, d.status
                FROM dokumen_internal d
               WHERE d.dihapus_pada IS NULL AND $saring
@@ -36,7 +36,7 @@ final class Dokumen
         [$saring, $par] = Wewenang::saringCakupan($u, 'd');
 
         $baris = Db::semua(
-            "SELECT d.kode, d.jenis, d.judul, d.penerbit, d.nomor, d.terbit, d.berlaku,
+            "SELECT d.id, d.kode, d.jenis, d.judul, d.penerbit, d.nomor, d.terbit, d.berlaku,
                     (d.berlaku - current_date) AS sisa
                FROM dokumen_eksternal d
               WHERE d.dihapus_pada IS NULL AND $saring

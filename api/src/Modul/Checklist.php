@@ -23,6 +23,8 @@ final class Checklist
 
         $baris = Db::semua(
             "SELECT c.id, c.nomor, c.nama, c.frekuensi, c.shift, c.tanggal, c.waktu, c.status,
+                    c.lokasi AS lokasi_teks,
+                    (c.dibuat_oleh IS NOT DISTINCT FROM :saya::uuid) AS milik_saya,
                     coalesce(a.nama, c.lokasi) AS area, pg.nama AS pj,
                     up.kode AS unit_kode, up.nama AS unit, up.status AS unit_status,
                     (SELECT count(*) FROM checklist_butir b WHERE b.checklist_id = c.id) AS butir,
@@ -35,7 +37,7 @@ final class Checklist
           LEFT JOIN pengguna pg ON pg.id = c.pj_id
           LEFT JOIN unit_periksa up ON up.id = c.unit_id
               WHERE c.dihapus_pada IS NULL AND $saring
-              ORDER BY c.tanggal DESC, c.waktu DESC NULLS LAST", $par
+              ORDER BY c.tanggal DESC, c.waktu DESC NULLS LAST", $par + [':saya' => $u['id']]
         );
         Jawab::daftar($baris, 1, count($baris), count($baris));
     }

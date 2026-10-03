@@ -269,7 +269,7 @@ const tok = await token();
   const p = await ctx.newPage();
   p.on('pageerror', (e) => catat('ubah', e.message));
   p.on('console', (m) => { if (m.type() === 'error') catat('ubah konsol', m.text()); });
-  const pesan = () => p.evaluate(() => { const t = document.querySelector('.toast'); return t ? t.textContent : ''; });
+  const pesan = () => p.evaluate(() => { const t = document.querySelectorAll('.toast'); return t.length ? t[t.length - 1].textContent : ''; });
 
   await p.goto(`${ALAMAT}/#/hazard`, { waitUntil: 'domcontentloaded' });
   await p.reload({ waitUntil: 'domcontentloaded' });
@@ -312,6 +312,27 @@ const tok = await token();
     await p.waitForTimeout(1500);
     const pjSesudah = await p.evaluate((n) => ((window.KG.capa || []).find((x) => x.id === n) || {}).pjId, ca.data.nomor);
     if (pjSesudah !== pjBaru) catat('ubah', `penanggung jawab CAPA tidak berpindah (${pjSesudah} ≠ ${pjBaru})`);
+  }
+
+  // Modul lainnya: formulir ubah setiap jenis terisi utuh. Diambil catatan
+  // pertama yang menawarkan Ubah; menyimpannya tanpa disentuh = tidak berubah.
+  for (const jenis of ['observasi', 'apd', 'inspeksi', 'checklist', 'hiradc', 'risiko', 'induksi',
+                       'regulasi', 'kegiatan', 'pelatihan', 'dokint', 'dokext', 'audit']) {
+    rute = `tindakan/ubah-tanpa-perubahan/${jenis}`;
+    const nomor = await p.evaluate((j) => {
+      const koleksi = { observasi: 'observasi', apd: 'observasiAPD', inspeksi: 'inspeksi', checklist: 'checklistHarian',
+        hiradc: 'hiradc', risiko: 'risikoRegister', induksi: 'induksi', regulasi: 'regulasi', kegiatan: 'kegiatan',
+        pelatihan: 'pelatihan', dokint: 'dokInternal', dokext: 'dokEksternal', audit: 'audit' }[j];
+      const r = (window.KG[koleksi] || []).find((x) => window.KGSUMBER.aksiRincian(j, x.id).some((a) => a.kunci === 'ubah'));
+      return r ? r.id : null;
+    }, jenis);
+    if (!nomor) { catat('ubah', `${jenis}: tidak ada catatan yang menawarkan Ubah`); continue; }
+    await p.evaluate(([j, n]) => window.KGSUMBER.jalankanAksi(j, n, 'ubah'), [jenis, nomor]);
+    await p.waitForTimeout(300);
+    await p.click('[data-submit]');
+    await p.waitForTimeout(1500);
+    const m = await pesan();
+    if (!/Tidak ada yang berubah/.test(m)) catat('ubah', `${jenis} ${nomor}: formulir yang tidak disentuh — "${m}"`);
   }
 
   // Jalur lengkap lewat modal rincian: ubah, lalu hapus.
@@ -363,7 +384,7 @@ const tok = await token();
   const p = await ctx.newPage();
   p.on('pageerror', (e) => catat('tambah', e.message));
   p.on('console', (m) => { if (m.type() === 'error') catat('tambah konsol', m.text()); });
-  const pesan = () => p.evaluate(() => { const t = document.querySelector('.toast'); return t ? t.textContent : ''; });
+  const pesan = () => p.evaluate(() => { const t = document.querySelectorAll('.toast'); return t.length ? t[t.length - 1].textContent : ''; });
   const tanda = 'Uji-' + Date.now().toString(36);
 
   const kasus = [

@@ -23,6 +23,7 @@ final class Inspeksi
 
         $baris = Db::semua(
             "SELECT i.id, i.nomor, i.jenis, i.area, i.tanggal, i.jadwal, i.status,
+                    (i.dibuat_oleh IS NOT DISTINCT FROM :saya::uuid) AS milik_saya,
                     pg.nama AS petugas,
                     (SELECT count(*) FROM inspeksi_butir b WHERE b.inspeksi_id = i.id) AS butir,
                     (SELECT count(*) FROM inspeksi_butir b WHERE b.inspeksi_id = i.id
@@ -32,7 +33,7 @@ final class Inspeksi
                FROM inspeksi i
           LEFT JOIN pengguna pg ON pg.id = i.petugas_id
               WHERE i.dihapus_pada IS NULL AND $saring
-              ORDER BY i.tanggal DESC, i.nomor DESC", $par
+              ORDER BY i.tanggal DESC, i.nomor DESC", $par + [':saya' => $u['id']]
         );
         Jawab::daftar($baris, 1, count($baris), count($baris));
     }

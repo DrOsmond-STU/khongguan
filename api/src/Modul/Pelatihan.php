@@ -15,7 +15,7 @@ final class Pelatihan
         [$saring, $par] = Wewenang::saringCakupan($u, 't');
 
         $baris = Db::semua(
-            "SELECT t.nomor, t.nama, t.jenis, t.target, t.rencana_tanggal, t.rencana_peserta,
+            "SELECT t.id, t.nomor, t.nama, t.jenis, t.target, t.rencana_tanggal, t.rencana_peserta,
                     t.aktual_tanggal, t.aktual_peserta, t.penyelenggara, t.biaya_juta, t.status
                FROM pelatihan t
               WHERE t.dihapus_pada IS NULL AND $saring

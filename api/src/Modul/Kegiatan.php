@@ -21,7 +21,7 @@ final class Kegiatan
         [$saring, $par] = Wewenang::saringCakupan($u, 'k');
 
         $baris = Db::semua(
-            "SELECT k.nomor, k.jenis, k.judul, k.tanggal, k.peserta, k.durasi_jam, k.foto,
+            "SELECT k.id, k.nomor, k.jenis, k.judul, k.tanggal, k.peserta, k.durasi_jam, k.foto, k.lokasi AS lokasi_teks,
                     coalesce(a.nama, k.lokasi) AS lokasi
                FROM kegiatan k
           LEFT JOIN area a ON a.id = k.area_id

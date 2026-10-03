@@ -22,7 +22,7 @@ final class Risiko
             "SELECT r.id, r.nomor, r.proses, r.ancaman, r.penyebab, r.dampak,
                     r.kemungkinan, r.keparahan, r.kemungkinan_sisa, r.keparahan_sisa,
                     r.opsi, r.mitigasi, r.target, r.reviu, r.status, r.skor_awal, r.skor_sisa,
-                    pj.nama AS pj
+                    pj.nama AS pj, r.pj_id
                FROM risiko r
           LEFT JOIN pengguna pj ON pj.id = r.pj_id
               WHERE r.dihapus_pada IS NULL AND $saring

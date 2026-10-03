@@ -1975,3 +1975,131 @@ uji('UJ-92', 'Tandai semua terbaca: hanya kotak masuk sendiri, pengingat tidak b
     sama(null, Db::nilai("SELECT dibaca_pada FROM notifikasi WHERE judul = 'Uji 2'"), 'milik orang lain tidak tersentuh');
     sama(null, Db::nilai("SELECT selesai_pada FROM notifikasi WHERE judul = 'Uji 1'"), 'tidak menutup (AB-31)');
 });
+
+echo "\nUbah dan hapus modul lainnya\n";
+
+/** Satu catatan baru per modul, dibuat lewat API yang sama dengan antarmuka. */
+function catatanUji(array $D, array $T, string $jenis): string
+{
+    $hari = date('Y-m-d');
+    $buat = [
+        'observasi' => ['/observasi', ['area_id' => $D['area_cbt'], 'aman' => 5, 'berisiko' => 0, 'catatan' => 'Uji ubah'], 'qhse'],
+        'observasi-apd' => ['/observasi-apd', ['area_id' => $D['area_cbt'], 'diamati' => 5, 'patuh' => 4, 'catatan' => 'Uji ubah'], 'qhse'],
+        'inspeksi' => ['/inspeksi', ['jenis' => 'APAR', 'area' => 'Gudang', 'butir' => [['butir' => 'Tekanan normal']]], 'qhse'],
+        'checklist' => ['/checklist', ['nama' => 'P2H Forklift', 'frekuensi' => 'Harian', 'butir' => [['butir' => 'Rem']]], 'qhse'],
+        'hiradc' => ['/hiradc', ['proses' => 'Oven', 'aktivitas' => 'Bersih', 'bahaya' => 'Panas', 'risiko' => 'Luka bakar',
+                                 'korban' => 'Operator', 'kemungkinan' => 3, 'keparahan' => 3, 'kategori' => 'Fisik'], 'qhse'],
+        'risiko' => ['/risiko', ['proses' => 'Kompresor', 'ancaman' => 'Bocor', 'penyebab' => 'Seal', 'dampak' => 'Henti',
+                                 'kemungkinan' => 2, 'keparahan' => 3, 'mitigasi' => 'Ganti seal'], 'qhse'],
+        'induksi' => ['/induksi', ['nama' => 'Peserta Uji', 'jenis' => 'Kontraktor', 'tanggal' => $hari, 'nilai' => 90], 'qhse'],
+        'regulasi' => ['/regulasi', ['nomor' => 'PP Uji ' . uniqid(), 'judul' => 'Uji', 'penerbit' => 'Pemerintah', 'bidang' => 'K3 Umum',
+                                     'pasal' => '1', 'penerapan' => 'Diterapkan'], 'qhse'],
+        'kegiatan' => ['/kegiatan', ['jenis' => 'Safety Talk', 'judul' => 'Uji', 'peserta' => 10], 'qhse'],
+        'pelatihan' => ['/pelatihan', ['nama' => 'Uji', 'jenis' => 'Internal', 'target' => 10, 'rencana_tanggal' => 'Nov 2026',
+                                       'penyelenggara' => 'Internal'], 'qhse'],
+        'dokumen/internal' => ['/dokumen/internal', ['judul' => 'Prosedur Uji', 'jenis' => 'Prosedur', 'level' => 2], 'qhse'],
+        'dokumen/eksternal' => ['/dokumen/eksternal', ['jenis' => 'Izin Peralatan', 'judul' => 'SKLO Uji', 'penerbit' => 'Disnaker',
+                                                       'berlaku' => '2027-12-31'], 'qhse'],
+    ];
+    if ($jenis === 'audit') {
+        return (string) Db::nilai("INSERT INTO audit (nomor, pabrik_id, standar, lingkup, auditor, mulai)
+            VALUES (:n, :p, 'ISO 45001', 'Seluruh pabrik', 'Auditor Uji', current_date) RETURNING id",
+            [':n' => 'AUD-UJI-' . uniqid(), ':p' => $D['pabrik_cbt']]);
+    }
+    [$jalur, $isi, $siapa] = $buat[$jenis];
+    $h = panggil('POST', $jalur, $isi, $T[$siapa]);
+    if ($h['status'] !== 201) throw new \RuntimeException("membuat $jenis: " . json_encode($h['galat']));
+    return $h['data']['id'];
+}
+
+uji('UJ-93', 'Seluruh modul lainnya: ubah satu kolom, kolom asing ditolak, hapus beralasan', function () use ($D, $T) {
+    $ubah = [
+        'observasi' => ['catatan', 'Catatan diperbaiki'], 'observasi-apd' => ['catatan', 'Catatan diperbaiki'],
+        'inspeksi' => ['area', 'Gudang Bahan Baku'], 'checklist' => ['lokasi', 'FL-05'],
+        'hiradc' => ['korban', 'Operator dan teknisi'], 'risiko' => ['mitigasi', 'Ganti seal tiap 6 bulan'],
+        'induksi' => ['asal', 'PT Kontraktor Uji'], 'regulasi' => ['pasal', 'Pasal 2'],
+        'kegiatan' => ['durasi_jam', '1,5'], 'pelatihan' => ['status', 'Tertunda'],
+        'dokumen/internal' => ['pemilik', 'QHSE Manager'], 'dokumen/eksternal' => ['nomor', '560/999'],
+        'audit' => ['auditor', 'Auditor Lain'],
+    ];
+    foreach ($ubah as $jenis => [$kolom, $nilai]) {
+        $id = catatanUji($D, $T, $jenis);
+        $siapa = $jenis === 'audit' ? 'admin' : 'qhse';
+        $h = panggil('POST', "/$jenis/$id/ubah", [$kolom => $nilai], $T[$siapa]);
+        sama(200, $h['status'], "$jenis ubah " . json_encode($h['galat']));
+        sama([$kolom], $h['data']['berubah'], "$jenis kolom berubah");
+        sama(400, panggil('POST', "/$jenis/$id/ubah", ['pabrik_id' => $D['pabrik_smg']], $T[$siapa])['status'], "$jenis kolom asing");
+        sama(400, panggil('POST', "/$jenis/$id/hapus", [], $T['admin'])['status'], "$jenis hapus tanpa alasan");
+        sama(200, panggil('POST', "/$jenis/$id/hapus", ['alasan' => 'Catatan percobaan'], $T['admin'])['status'], "$jenis hapus");
+        sama(404, panggil('POST', "/$jenis/$id/ubah", [$kolom => $nilai], $T['admin'])['status'], "$jenis sesudah dihapus");
+    }
+});
+
+uji('UJ-94', 'AB-23/24 · mengubah nilai induksi menghitung ulang status dan masa berlaku', function () use ($D, $T) {
+    $id = catatanUji($D, $T, 'induksi');
+    $h = panggil('POST', "/induksi/$id/ubah", ['nilai' => 40], $T['qhse']);
+    sama(200, $h['status'], 'diubah');
+    $r = Db::baris('SELECT status, berlaku FROM induksi WHERE id = :i', [':i' => $id]);
+    sama('Tidak Lulus', $r['status'], 'tidak lulus');
+    sama(null, $r['berlaku'], 'tanpa masa berlaku');
+    benar(in_array('status', $h['data']['berubah'], true), 'perubahan status tercatat');
+    panggil('POST', "/induksi/$id/ubah", ['nilai' => 85, 'jenis' => 'Tamu'], $T['qhse']);
+    $r = Db::baris('SELECT status, berlaku FROM induksi WHERE id = :i', [':i' => $id]);
+    sama(date('Y-m-d', strtotime('+3 months')), $r['berlaku'], 'tamu berlaku 3 bulan');
+});
+
+uji('UJ-95', 'AB-22 dan AB-20 tetap berlaku saat mengubah', function () use ($D, $T) {
+    $reg = catatanUji($D, $T, 'regulasi');
+    $h = panggil('POST', "/regulasi/$reg/ubah", ['status' => 'Terpenuhi'], $T['qhse']);
+    sama(409, $h['status'], 'Terpenuhi tanpa bukti ditolak');
+    sama('AB-22', $h['galat']['aturan'] ?? null, 'kode aturan');
+    sama(200, panggil('POST', "/regulasi/$reg/ubah", ['status' => 'Terpenuhi', 'bukti' => 'Laporan riksa uji 2026'], $T['qhse'])['status'],
+        'dengan bukti diterima');
+    sama(409, panggil('POST', "/regulasi/$reg/ubah", ['bukti' => ''], $T['qhse'])['status'], 'bukti tidak dapat dikosongkan sesudahnya');
+
+    $dok = catatanUji($D, $T, 'dokumen/internal');
+    $h = panggil('POST', "/dokumen/internal/$dok/ubah", ['status' => 'Berlaku', 'tinjau' => ''], $T['qhse']);
+    sama('AB-20', $h['galat']['aturan'] ?? null, 'Berlaku tanpa tanggal tinjau ditolak');
+});
+
+uji('UJ-96', 'Observasi: perilaku berisiko wajib berkategori; HIRADC: sisa tidak lewat sini', function () use ($D, $T) {
+    $o = catatanUji($D, $T, 'observasi');
+    sama(400, panggil('POST', "/observasi/$o/ubah", ['berisiko' => 2], $T['qhse'])['status'], 'berisiko tanpa kategori');
+    sama(200, panggil('POST', "/observasi/$o/ubah", ['berisiko' => 2, 'kategori' => 'apd'], $T['qhse'])['status'], 'dengan kategori');
+    sama(400, panggil('POST', "/observasi/$o/ubah", ['aman' => 0, 'berisiko' => 0], $T['qhse'])['status'], 'tanpa pengamatan');
+
+    $h = catatanUji($D, $T, 'hiradc');
+    sama(400, panggil('POST', "/hiradc/$h/ubah", ['kemungkinan_sisa' => 1], $T['qhse'])['status'], 'sisa ditolak (AB-15)');
+    sama(400, panggil('POST', "/hiradc/$h/ubah", ['kemungkinan' => 6], $T['qhse'])['status'], 'skala di luar 1–5');
+    sama(400, panggil('POST', "/hiradc/$h/ubah", ['kategori' => 'Tidak Ada'], $T['qhse'])['status'], 'sumber bahaya asing');
+    sama(200, panggil('POST', "/hiradc/$h/ubah", ['status' => 'Selesai'], $T['qhse'])['status'], 'ditutup');
+    sama(409, panggil('POST', "/hiradc/$h/ubah", ['korban' => 'x'], $T['qhse'])['status'], 'yang Selesai terkunci');
+});
+
+uji('UJ-97', 'Siapa boleh: pengisi mengubah daftar bersama; HIRADC dihapus Plant Manager', function () use ($D, $T) {
+    $reg = catatanUji($D, $T, 'regulasi');
+    sama(200, panggil('POST', "/regulasi/$reg/ubah", ['pasal' => 'Pasal 3'], $T['lingkungan'])['status'],
+        'petugas lingkungan (Isi) mengubah peraturan yang dibuat QHSE');
+    sama(403, panggil('POST', "/regulasi/$reg/ubah", ['pasal' => 'Pasal 4'], $T['manajemen'])['status'], 'manajemen (Baca) tidak');
+    sama(403, panggil('POST', "/regulasi/$reg/ubah", ['pasal' => 'Pasal 5'], $T['qhse_smg'])['status'], 'pabrik lain tidak');
+
+    $h = catatanUji($D, $T, 'hiradc');
+    sama(403, panggil('POST', "/hiradc/$h/hapus", ['alasan' => 'Ganda dengan baris lain'], $T['qhse'])['status'], 'QHSE (Isi) tidak menghapus HIRADC');
+    sama(200, panggil('POST', "/hiradc/$h/hapus", ['alasan' => 'Ganda dengan baris lain'], $T['manajemen'])['status'], 'Plant Manager boleh');
+
+    $obs = catatanUji($D, $T, 'observasi');
+    sama(403, panggil('POST', "/observasi/$obs/ubah", ['catatan' => 'x'], $T['operator'])['status'], 'operator bukan pembuatnya');
+});
+
+uji('UJ-98', 'Audit bertemuan tidak dihapus; kegiatan tanpa kolom pengubah tetap dapat diubah', function () use ($D, $T) {
+    $a = catatanUji($D, $T, 'audit');
+    panggil('POST', "/audit/$a/temuan", ['klausul' => '6.1.2', 'kategori' => 'Minor', 'isi' => 'Temuan uji'], $T['qhse']);
+    $h = panggil('POST', "/audit/$a/hapus", ['alasan' => 'Salah input'], $T['admin']);
+    sama(409, $h['status'], 'audit bertemuan ditahan');
+
+    $k = catatanUji($D, $T, 'kegiatan');
+    sama(200, panggil('POST', "/kegiatan/$k/ubah", ['peserta' => 25], $T['qhse'])['status'], 'kegiatan diubah');
+    sama('25', (string) Db::nilai('SELECT peserta FROM kegiatan WHERE id = :i', [':i' => $k]), 'tersimpan');
+    $j = array_values(array_filter(jejakDari('kegiatan', $k), fn($r) => $r['aksi'] === 'ubah'));
+    sama(1, count($j), 'jejak tetap tercatat');
+});

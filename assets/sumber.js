@@ -445,6 +445,22 @@ window.KGSUMBER = (function () {
     return x;
   }
 
+  /* Koleksi yang dapat diubah dari rinciannya membawa penanda catatan (uuid)
+     dan baris peladen apa adanya (mentah) — formulir ubah membaca nama kolom
+     peladen dari sana, bukan nama purwarupa yang sudah diformat untuk layar
+     ("18 Sep 2026", "—"). Ikut di-escape bersama bidang lainnya. */
+  ['observasi', 'observasiAPD', 'inspeksi', 'checklistHarian', 'hiradc', 'risikoRegister', 'induksi',
+   'regulasi', 'kegiatan', 'pelatihan', 'dokInternal', 'dokEksternal', 'audit'].forEach(function (k) {
+    var asli = PETA[k];
+    PETA[k] = function (r) {
+      var o = asli(r);
+      o.uuid = r.id;
+      o.milikSaya = r.milik_saya === true;
+      o.mentah = r;
+      return o;
+    };
+  });
+
   Object.keys(PETA).forEach(function (k) {
     var asli = PETA[k];
     PETA[k] = function (r) { return amanHtml(asli(r)); };
@@ -686,28 +702,58 @@ window.KGSUMBER = (function () {
     izin:    { modul: 'permit',   nama: 'Izin kerja', ubah: ['Menunggu Supervisor', 'Menunggu QHSE'],
                hapus: ['Menunggu Supervisor', 'Menunggu QHSE', 'Ditolak'], segarkan: ['izin', 'jsa'] },
     jsa:     { modul: 'jsa',      nama: 'JSA', ubah: ['Draf', 'Menunggu Pengesahan'],
-               hapus: ['Draf', 'Menunggu Pengesahan'], segarkan: ['jsa', 'izin'] }
+               hapus: ['Draf', 'Menunggu Pengesahan'], segarkan: ['jsa', 'izin'] },
+
+    /* Modul lainnya. ubah/hapus null: tidak berstatus, selalu dapat.
+       ubahMin/hapusMin: daftar bersama tanpa pemilik — siapa pun yang
+       berwenang mengisi modulnya. Sama dengan peladen (Catatan::LAINNYA). */
+    observasi: { modul: 'bbs', nama: 'Observasi perilaku', ubah: null, hapus: null, segarkan: ['observasi'] },
+    apd:       { modul: 'bbs', nama: 'Observasi APD', jalur: 'observasi-apd', ubah: null, hapus: null,
+                 segarkan: ['observasiAPD'] },
+    inspeksi:  { modul: 'inspection', nama: 'Inspeksi', ubah: ['Terbuka', 'Dalam Proses'],
+                 hapus: ['Terbuka', 'Dalam Proses'], segarkan: ['inspeksi'] },
+    checklist: { modul: 'checklist', nama: 'Checklist', ubah: ['Terbuka', 'Dalam Proses'],
+                 hapus: ['Terbuka', 'Dalam Proses'], segarkan: ['checklistHarian'] },
+    hiradc:    { modul: 'hiradc', nama: 'Baris HIRADC', ubahMin: 'isi', ubah: ['Terbuka', 'Dalam Proses'],
+                 hapus: ['Terbuka', 'Dalam Proses'], segarkan: ['hiradc'] },
+    risiko:    { modul: 'risk', nama: 'Risiko', ubahMin: 'isi', ubah: ['Terbuka', 'Dalam Proses'],
+                 hapus: ['Terbuka', 'Dalam Proses'], segarkan: ['risikoRegister'] },
+    induksi:   { modul: 'induksi', nama: 'Induksi', ubahMin: 'isi', hapusMin: 'isi', ubah: null, hapus: null,
+                 segarkan: ['induksi'] },
+    regulasi:  { modul: 'regulasi', nama: 'Peraturan', ubahMin: 'isi', hapusMin: 'isi', ubah: null, hapus: null,
+                 segarkan: ['regulasi'] },
+    kegiatan:  { modul: 'activity', nama: 'Kegiatan', ubahMin: 'isi', hapusMin: 'isi', ubah: null, hapus: null,
+                 segarkan: ['kegiatan'] },
+    pelatihan: { modul: 'training', nama: 'Program pelatihan', ubahMin: 'isi', hapusMin: 'isi', ubah: null, hapus: null,
+                 segarkan: ['pelatihan'] },
+    dokint:    { modul: 'docint', nama: 'Dokumen', jalur: 'dokumen/internal', ubahMin: 'isi', hapusMin: 'isi',
+                 ubah: null, hapus: null, segarkan: ['dokInternal'] },
+    dokext:    { modul: 'docext', nama: 'Dokumen kepatuhan', jalur: 'dokumen/eksternal', ubahMin: 'isi', hapusMin: 'isi',
+                 ubah: null, hapus: null, segarkan: ['dokEksternal'] },
+    audit:     { modul: 'audit', nama: 'Audit', ubahMin: 'isi', hapusMin: 'isi', ubah: ['Terbuka', 'Dalam Proses'],
+                 hapus: ['Terbuka', 'Dalam Proses'], segarkan: ['audit', 'temuanAudit'] }
   };
 
   /* Verifikator modulnya, atau pembuat catatan yang masih berwenang mengisi.
      Laporan anonim tidak pernah "milik saya" — peladen tidak tahu pengirimnya. */
   function bolehUbahCatatan(jenis, r) {
     var c = CATATAN[jenis];
-    if (c.ubah.indexOf(r.status) === -1) return false;
+    if (c.ubah && c.ubah.indexOf(r.status) === -1) return false;
+    if (c.ubahMin) return berwenang(c.modul, c.ubahMin);
     return berwenang(c.modul, 'verifikasi') || (r.milikSaya === true && berwenang(c.modul, 'isi'));
   }
 
   Object.keys(CATATAN).forEach(function (jenis) {
     var c = CATATAN[jenis];
     AKSI[jenis] = [{
-      kunci: 'hapus', label: 'Hapus', gaya: 'secondary', modul: c.modul, wewenang: 'verifikasi',
-      bila: function (r) { return c.hapus.indexOf(r.status) !== -1; },
+      kunci: 'hapus', label: 'Hapus', gaya: 'secondary', modul: c.modul, wewenang: c.hapusMin || 'verifikasi',
+      bila: function (r) { return !c.hapus || c.hapus.indexOf(r.status) !== -1; },
       buka: function (r) { formulirHapusCatatan(jenis, r); }
     }, {
       kunci: 'ubah', label: 'Ubah', gaya: 'secondary', modul: c.modul, wewenang: 'isi',
       bila: function (r) { return bolehUbahCatatan(jenis, r); },
       buka: function (r) { formulirUbahCatatan(jenis, r); }
-    }].concat(AKSI[jenis]);
+    }].concat(AKSI[jenis] || []);
   });
 
   /* ─────────────────────────────────────────────────────────────────
@@ -1079,7 +1125,10 @@ window.KGSUMBER = (function () {
   /* Koleksi window.KG tempat mencari catatan menurut jenis rincian. */
   var KOLEKSI_RINCIAN = {
     bahaya: 'bahaya', insiden: 'insiden', capa: 'capa',
-    izin: 'izin', jsa: 'jsa', audit: 'audit', pengguna: 'pengguna'
+    izin: 'izin', jsa: 'jsa', audit: 'audit', pengguna: 'pengguna',
+    observasi: 'observasi', apd: 'observasiAPD', inspeksi: 'inspeksi', checklist: 'checklistHarian',
+    hiradc: 'hiradc', risiko: 'risikoRegister', induksi: 'induksi', regulasi: 'regulasi',
+    kegiatan: 'kegiatan', pelatihan: 'pelatihan', dokint: 'dokInternal', dokext: 'dokEksternal'
   };
 
   function catatan(jenis, id) {
@@ -1558,7 +1607,7 @@ window.KGSUMBER = (function () {
        yang menentukan mana yang sungguh berubah, dan hanya itu yang masuk
        jejak audit. */
     'ubah-catatan': {
-      jalur: function (param) { var b = param.split(':'); return '/' + b[0] + '/' + b[1] + '/ubah'; },
+      jalur: function (param) { var b = param.split(':'); return '/' + (CATATAN[b[0]].jalur || b[0]) + '/' + b[1] + '/ubah'; },
       segarkan: function (param) { return CATATAN[param.split(':')[0]].segarkan; },
       isi: function () {
         var isi = {};
@@ -1587,7 +1636,7 @@ window.KGSUMBER = (function () {
 
     /* "hapus-catatan:<jenis>:<uuid>" — selalu lunak, selalu beralasan. */
     'hapus-catatan': {
-      jalur: function (param) { var b = param.split(':'); return '/' + b[0] + '/' + b[1] + '/hapus'; },
+      jalur: function (param) { var b = param.split(':'); return '/' + (CATATAN[b[0]].jalur || b[0]) + '/' + b[1] + '/hapus'; },
       segarkan: function (param) { return CATATAN[param.split(':')[0]].segarkan; },
       isi: function () {
         var alasan = nilai('e-alasan');
@@ -1838,11 +1887,130 @@ window.KGSUMBER = (function () {
     }
   };
 
+  /* Pilihan dengan nilai (value) berbeda dari teksnya: [[nilai, teks], …]. */
+  function pilihanNilai(kolom, label, opsi, nilai, wajib) {
+    var ada = opsi.some(function (o) { return String(o[0]) === String(nilai); });
+    var daftar = (ada || nilai === null || nilai === undefined || nilai === '' ? [] : [[nilai, nilai]]).concat(opsi);
+    return bidang(kolom, label, '<select' + atribut(kolom, label, wajib) + '>' + daftar.map(function (o) {
+      return '<option value="' + o[0] + '"' + (String(o[0]) === String(nilai) ? ' selected' : '') + '>' + o[1] + '</option>';
+    }).join('') + '</select>', wajib);
+  }
+  function v(m, k) { return m[k] === null || m[k] === undefined ? '' : m[k]; }
+
+  var FORMULIR_UBAH_LAIN = {
+    observasi: function (r, m) {
+      var kat = [['', '— Tidak ada perilaku berisiko —']].concat(((ACUAN && ACUAN.kategori_observasi) || []).map(function (k) {
+        return [esc(k.kode), esc(k.nama)]; }));
+      return pilihanArea({ areaId: m.area_id }) + isian('tanggal', 'Tanggal', v(m, 'tanggal'), true, 'date')
+        + '<div class="row2">' + isian('aman', 'Perilaku aman', v(m, 'aman'), true, 'number')
+        + isian('berisiko', 'Perilaku berisiko', v(m, 'berisiko'), true, 'number') + '</div>'
+        + pilihanNilai('kategori', 'Kategori perilaku berisiko', kat, v(m, 'kategori'), false)
+        + paragraf('catatan', 'Catatan', v(m, 'catatan'), true) + paragraf('tindakan', 'Tindakan', v(m, 'tindakan'), false);
+    },
+    apd: function (r, m) {
+      return pilihanArea({ areaId: m.area_id }) + isian('tanggal', 'Tanggal', v(m, 'tanggal'), true, 'date')
+        + paragraf('catatan', 'Catatan', v(m, 'catatan'), true)
+        + '<div class="tile-note">Jumlah diamati dan patuh terikat pada rincian per jenis APD. Bila salah hitung, hapus catatan ini lalu catat ulang.</div>';
+    },
+    inspeksi: function (r, m) {
+      return isian('jenis', 'Jenis inspeksi', v(m, 'jenis'), true) + isian('area', 'Area', v(m, 'area'), true)
+        + '<div class="row2">' + isian('tanggal', 'Tanggal', v(m, 'tanggal'), true, 'date')
+        + pilihan('jadwal', 'Jadwal', ['Harian', 'Mingguan', 'Bulanan', 'Triwulanan', 'Tahunan'], v(m, 'jadwal')) + '</div>';
+    },
+    checklist: function (r, m) {
+      return isian('nama', 'Jenis checklist', v(m, 'nama'), true)
+        + '<div class="row2">' + isian('frekuensi', 'Frekuensi', v(m, 'frekuensi'), true) + isian('shift', 'Shift', v(m, 'shift'), false) + '</div>'
+        + '<div class="row2">' + isian('lokasi', 'Unit / area', v(m, 'lokasi_teks'), false) + isian('tanggal', 'Tanggal', v(m, 'tanggal'), true, 'date') + '</div>';
+    },
+    hiradc: function (r, m) {
+      var kat = (window.KG.hiradcKategori || []).map(function (k) { return [esc(k), esc(k)]; });
+      return isian('proses', 'Proses', v(m, 'proses'), true) + isian('aktivitas', 'Aktivitas', v(m, 'aktivitas'), true)
+        + '<div class="row2">' + pilihan('sifat', 'Sifat', ['Rutin', 'Non-rutin', 'Darurat'], v(m, 'sifat'))
+        + pilihanNilai('kategori', 'Sumber bahaya', kat, v(m, 'kategori'), true) + '</div>'
+        + paragraf('bahaya', 'Bahaya', v(m, 'bahaya'), true)
+        + '<div class="row2">' + isian('risiko', 'Risiko (akibatnya)', v(m, 'risiko'), true) + isian('korban', 'Yang dapat terdampak', v(m, 'korban'), true) + '</div>'
+        + '<div class="row2">' + skala('kemungkinan', 'Kemungkinan awal', Number(m.kemungkinan), KATA_K) + skala('keparahan', 'Keparahan awal', Number(m.keparahan), KATA_S) + '</div>'
+        + paragraf('kendali_ada', 'Pengendalian yang ada', v(m, 'kendali_ada'), false)
+        + paragraf('kendali_tambahan', 'Pengendalian tambahan', v(m, 'kendali_tambahan'), false)
+        + '<div class="row2">' + pilihanNilai('hierarki', 'Hierarki pengendalian', [['', '—'], ['Eliminasi', 'Eliminasi'], ['Substitusi', 'Substitusi'],
+            ['Rekayasa', 'Rekayasa'], ['Administratif', 'Administratif'], ['APD', 'APD']], v(m, 'hierarki'), false)
+        + isian('target', 'Target selesai', v(m, 'target'), false, 'date') + '</div>'
+        + pilihan('status', 'Status', ['Terbuka', 'Dalam Proses', 'Selesai'], v(m, 'status'))
+        + '<div class="tile-note">Penilaian sisa diturunkan lewat jalurnya sendiri setelah pengendalian tambahan terpasang (AB-15).</div>';
+    },
+    risiko: function (r, m) {
+      return isian('proses', 'Proses / area', v(m, 'proses'), true) + isian('ancaman', 'Ancaman', v(m, 'ancaman'), true)
+        + paragraf('penyebab', 'Penyebab', v(m, 'penyebab'), true) + paragraf('dampak', 'Dampak', v(m, 'dampak'), true)
+        + '<div class="row2">' + skala('kemungkinan', 'Kemungkinan awal', Number(m.kemungkinan), KATA_K) + skala('keparahan', 'Keparahan awal', Number(m.keparahan), KATA_S) + '</div>'
+        + '<div class="row2">' + skala('kemungkinan_sisa', 'Kemungkinan sisa', Number(m.kemungkinan_sisa), KATA_K) + skala('keparahan_sisa', 'Keparahan sisa', Number(m.keparahan_sisa), KATA_S) + '</div>'
+        + pilihan('opsi', 'Opsi penanganan', ['Hindari', 'Kurangi', 'Transfer', 'Terima'], v(m, 'opsi'))
+        + paragraf('mitigasi', 'Rencana mitigasi', v(m, 'mitigasi'), true)
+        + '<div class="row2">' + isian('target', 'Target', v(m, 'target'), false, 'date') + isian('reviu', 'Reviu berikutnya', v(m, 'reviu'), false, 'date') + '</div>'
+        + pilihan('status', 'Status', ['Terbuka', 'Dalam Proses', 'Selesai'], v(m, 'status'));
+    },
+    induksi: function (r, m) {
+      return isian('nama', 'Nama atau nama rombongan', v(m, 'nama'), true)
+        + '<div class="row2">' + pilihan('jenis', 'Jenis peserta', ['Pekerja Baru', 'Kontraktor', 'Tamu'], v(m, 'jenis'))
+        + isian('tanggal', 'Tanggal induksi', v(m, 'tanggal'), true, 'date') + '</div>'
+        + '<div class="row2">' + isian('asal', 'Asal atau keperluan', v(m, 'asal'), false) + isian('pemandu', 'Pemandu', v(m, 'pemandu'), false) + '</div>'
+        + isian('nilai', 'Nilai ujian (0–100)', v(m, 'nilai'), false, 'number')
+        + '<div class="tile-note">Status kartu dan masa berlakunya dihitung ulang dari nilai, jenis peserta, dan tanggal (AB-23, AB-24).</div>';
+    },
+    regulasi: function (r, m) {
+      return isian('nomor', 'Nomor peraturan', v(m, 'nomor'), true) + isian('judul', 'Judul', v(m, 'judul'), true)
+        + '<div class="row2">' + isian('penerbit', 'Penerbit', v(m, 'penerbit'), true) + isian('bidang', 'Bidang', v(m, 'bidang'), true) + '</div>'
+        + isian('pasal', 'Pasal yang relevan', v(m, 'pasal'), true)
+        + paragraf('penerapan', 'Cara Khong Guan memenuhinya', v(m, 'penerapan'), true)
+        + paragraf('bukti', 'Bukti pemenuhan', v(m, 'bukti'), false)
+        + '<div class="row2">' + pilihan('status', 'Status', ['Terpenuhi', 'Terpenuhi Sebagian', 'Tidak Terpenuhi'], v(m, 'status'))
+        + isian('evaluasi', 'Evaluasi berikutnya', v(m, 'evaluasi'), false, 'date') + '</div>'
+        + '<div class="tile-note">Status Terpenuhi menuntut bukti (AB-22).</div>';
+    },
+    kegiatan: function (r, m) {
+      return pilihan('jenis', 'Jenis kegiatan', ['Safety Talk', 'Safety Patrol', 'Simulasi Tanggap Darurat', 'Pelatihan', 'Rapat P2K3',
+          'Kampanye K3', 'Audit Internal', 'Kegiatan Lingkungan'], v(m, 'jenis'))
+        + isian('judul', 'Judul kegiatan', v(m, 'judul'), true)
+        + '<div class="row2">' + isian('tanggal', 'Tanggal', v(m, 'tanggal'), true, 'date') + isian('lokasi', 'Lokasi', v(m, 'lokasi_teks'), false) + '</div>'
+        + '<div class="row2">' + isian('peserta', 'Jumlah peserta', v(m, 'peserta'), true, 'number')
+        + isian('durasi_jam', 'Durasi (jam)', String(v(m, 'durasi_jam')).replace('.', ','), true) + '</div>';
+    },
+    pelatihan: function (r, m) {
+      return isian('nama', 'Program pelatihan', v(m, 'nama'), true)
+        + '<div class="row2">' + pilihan('jenis', 'Jenis', ['Wajib Regulasi', 'Internal', 'Refreshment'], v(m, 'jenis'))
+        + isian('penyelenggara', 'Penyelenggara', v(m, 'penyelenggara'), true) + '</div>'
+        + '<div class="row2">' + isian('rencana_tanggal', 'Jadwal rencana', v(m, 'rencana_tanggal'), true)
+        + isian('rencana_peserta', 'Rencana peserta', v(m, 'rencana_peserta'), true, 'number') + '</div>'
+        + '<div class="row2">' + isian('aktual_tanggal', 'Tanggal aktual', v(m, 'aktual_tanggal'), false)
+        + isian('aktual_peserta', 'Peserta aktual', v(m, 'aktual_peserta'), false, 'number') + '</div>'
+        + '<div class="row2">' + isian('target', 'Target peserta', v(m, 'target'), true, 'number')
+        + isian('biaya_juta', 'Biaya (juta Rp)', String(v(m, 'biaya_juta')).replace('.', ','), false) + '</div>'
+        + pilihan('status', 'Status', ['Terjadwal', 'Tertunda', 'Selesai'], v(m, 'status'));
+    },
+    dokint: function (r, m) {
+      return isian('judul', 'Judul dokumen', v(m, 'judul'), true)
+        + '<div class="row2">' + isian('revisi', 'Revisi', v(m, 'revisi'), true, 'number') + isian('pemilik', 'Pemilik dokumen', v(m, 'pemilik'), true) + '</div>'
+        + '<div class="row2">' + isian('terbit', 'Terbit', v(m, 'terbit'), true, 'date') + isian('tinjau', 'Tinjau ulang', v(m, 'tinjau'), false, 'date') + '</div>'
+        + pilihan('status', 'Status', ['Berlaku', 'Dalam Revisi', 'Kedaluwarsa'], v(m, 'status'))
+        + '<div class="tile-note">Dokumen berstatus Berlaku menuntut tanggal tinjau ulang (AB-20). Tingkat dan jenisnya terkandung dalam kode, jadi tidak diubah di sini.</div>';
+    },
+    dokext: function (r, m) {
+      return pilihan('jenis', 'Jenis', ['Sertifikat Sistem', 'Izin Lingkungan', 'Izin Peralatan', 'Pelaporan Wajib'], v(m, 'jenis'))
+        + isian('judul', 'Nama dokumen', v(m, 'judul'), true)
+        + '<div class="row2">' + isian('penerbit', 'Penerbit', v(m, 'penerbit'), true) + isian('nomor', 'Nomor dokumen', v(m, 'nomor'), true) + '</div>'
+        + '<div class="row2">' + isian('terbit', 'Terbit', v(m, 'terbit'), false, 'date') + isian('berlaku', 'Berlaku sampai', v(m, 'berlaku'), true, 'date') + '</div>';
+    },
+    audit: function (r, m) {
+      return isian('standar', 'Standar', v(m, 'standar'), true) + isian('lingkup', 'Lingkup', v(m, 'lingkup'), true)
+        + isian('auditor', 'Auditor', v(m, 'auditor'), true)
+        + '<div class="row2">' + isian('mulai', 'Mulai', v(m, 'mulai'), true, 'date') + isian('selesai', 'Selesai', v(m, 'selesai'), false, 'date') + '</div>';
+    }
+  };
+
   function formulirUbahCatatan(jenis, r) {
     if (!window.KG_BUKA) return;
     window.KG_BUKA({
-      title: 'Ubah ' + CATATAN[jenis].nama, sub: r.id + ' · ' + r.status,
-      body: FORMULIR_UBAH[jenis](r)
+      title: 'Ubah ' + CATATAN[jenis].nama, sub: r.id + (r.status ? ' · ' + r.status : ''),
+      body: (FORMULIR_UBAH[jenis] ? FORMULIR_UBAH[jenis](r) : FORMULIR_UBAH_LAIN[jenis](r, r.mentah || {}))
         + '<div class="tile-note">Setiap perubahan tercatat di jejak audit: siapa, kapan, nilai lama dan '
         + 'nilai barunya. Setelah diverifikasi, catatan ini tidak dapat diubah lagi.</div>',
       ok: 'Simpan Perubahan', aksi: 'ubah-catatan:' + jenis + ':' + r.uuid
@@ -1851,7 +2019,9 @@ window.KGSUMBER = (function () {
 
   function formulirHapusCatatan(jenis, r) {
     if (!window.KG_BUKA) return;
-    var ringkas = r.isi || r.ringkas || r.judul || r.pekerjaan || '';
+    var ringkas = r.isi || r.ringkas || r.judul || r.pekerjaan || r.nama || r.aktivitas || r.ancaman
+      || r.catatan || r.standar || '';
+    if (typeof ringkas !== 'string') ringkas = '';
     window.KG_BUKA({
       title: 'Hapus ' + CATATAN[jenis].nama, sub: r.id,
       body: (ringkas ? '<div class="tile-note" style="border:0;padding:0;margin-bottom:var(--space-4)">'

@@ -22,7 +22,7 @@ final class Regulasi
         [$saring, $par] = Wewenang::saringCakupan($u, 'r');
 
         $baris = Db::semua(
-            "SELECT r.kode, r.nomor, r.judul, r.penerbit, r.bidang, r.pasal, r.penerapan,
+            "SELECT r.id, r.kode, r.nomor, r.judul, r.penerbit, r.bidang, r.pasal, r.penerapan, r.pj_id,
                     r.bukti, r.evaluasi, r.status, pj.nama AS pj
                FROM regulasi r
           LEFT JOIN pengguna pj ON pj.id = r.pj_id

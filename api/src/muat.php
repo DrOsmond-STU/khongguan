@@ -64,9 +64,9 @@ function rute(): Rute
     $r->post('/jsa',             [Modul\Jsa::class, 'buat']);
     $r->post('/jsa/{id}/sahkan', [Modul\Jsa::class, 'sahkan']);
 
-    // Ubah dan hapus lunak untuk kelima modul catatan K3. Satu penangan,
+    // Ubah dan hapus lunak untuk seluruh modul catatan. Satu penangan,
     // satu kumpulan aturan — lihat Modul\Catatan.
-    foreach (['bahaya', 'insiden', 'capa', 'izin', 'jsa'] as $jenis) {
+    foreach (Modul\Catatan::jenis() as $jenis) {
         $r->post("/$jenis/{id}/ubah",  fn($p, $par) => Modul\Catatan::ubah($p, $par, $jenis));
         $r->post("/$jenis/{id}/hapus", fn($p, $par) => Modul\Catatan::hapus($p, $par, $jenis));
     }

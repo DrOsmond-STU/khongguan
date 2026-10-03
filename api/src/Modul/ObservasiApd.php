@@ -21,14 +21,15 @@ final class ObservasiApd
         [$saring, $par] = Wewenang::saringCakupan($u, 'o');
 
         $baris = Db::semua(
-            "SELECT o.id, o.nomor, o.nomor_asal, o.tanggal, o.diamati, o.patuh, o.catatan,
+            "SELECT o.id, o.nomor, o.nomor_asal, o.tanggal, o.diamati, o.patuh, o.catatan, o.area_id,
+                    (o.dibuat_oleh IS NOT DISTINCT FROM :saya::uuid) AS milik_saya,
                     a.nama AS area, pg.nama AS pengamat,
                     round(o.patuh::numeric * 100 / o.diamati) AS kepatuhan
                FROM observasi_apd o
                JOIN area a ON a.id = o.area_id
                JOIN pengguna pg ON pg.id = o.pengamat_id
               WHERE o.dihapus_pada IS NULL AND $saring
-              ORDER BY o.tanggal DESC", $par
+              ORDER BY o.tanggal DESC", $par + [':saya' => $u['id']]
         );
 
         // Rincian per jenis APD dibawa serta: tanpa itu layar hanya dapat

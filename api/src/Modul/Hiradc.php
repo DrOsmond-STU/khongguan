@@ -18,7 +18,7 @@ final class Hiradc
                        h.risiko, h.korban, h.kemungkinan, h.keparahan, h.kendali_ada,
                        h.kemungkinan_sisa, h.keparahan_sisa, h.kendali_tambahan,
                        h.hierarki, h.target, h.status, h.skor_awal, h.skor_sisa,
-                       kb.nama AS kategori_nama, pj.nama AS pj
+                       kb.nama AS kategori_nama, pj.nama AS pj, h.pj_id
                   FROM hiradc h
              LEFT JOIN kategori_bahaya kb ON kb.kode = h.kategori
              LEFT JOIN pengguna pj ON pj.id = h.pj_id

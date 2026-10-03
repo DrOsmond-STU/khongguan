@@ -148,6 +148,12 @@
   let infoSeq = 0;
   function resetInfo() { INFO = Object.create(null); infoSeq = 0; }
   function regInfo(o) { const k = 'i' + (++infoSeq); INFO[k] = o; return k; }
+  /* Tombol tindakan (ubah, hapus, …) pada modal rincian yang dibuka lewat
+     infoAttr. Kosong pada peragaan, jadi modalnya tetap seperti purwarupa. */
+  function rinci(jenis, id) {
+    return TERSAMBUNG ? { jenis: jenis, idCatatan: id, tindakan: window.KGSUMBER.aksiRincian(jenis, id) } : {};
+  }
+
   /* Dipakai di dalam template: `<tr ${infoAttr({...})}>` */
   function infoAttr(o) {
     const label = String(o.title || 'data').replace(/<[^>]*>/g, '').replace(/"/g, '&quot;');
@@ -1800,7 +1806,7 @@
             <tbody>
               ${D.pelatihan.map(p => {
                 const d = p.aktualPeserta - p.rencanaPeserta;
-                return `<tr class="${p.status === 'Tertunda' ? 'is-overdue' : ''}" ${infoAttr({
+                return `<tr class="${p.status === 'Tertunda' ? 'is-overdue' : ''}" ${infoAttr({ ...rinci('pelatihan', p.id),
                   title: p.id,
                   sub: `${p.nama} · ${p.penyelenggara}`,
                   body: chipRow([
@@ -1974,7 +1980,7 @@
               ${R.map(r => {
                 const a = r.L * r.S, b = r.sisaL * r.sisaS;
                 const opsiChip = { 'Kurangi': 'medium', 'Hindari': 'low', 'Transfer': 'info', 'Terima': 'neutral' };
-                return `<tr class="${a >= 15 ? 'is-overdue' : ''}" ${infoAttr({
+                return `<tr class="${a >= 15 ? 'is-overdue' : ''}" ${infoAttr({ ...rinci('risiko', r.id),
                   title: r.id,
                   sub: `${r.proses} · reviu berikutnya ${r.reviu}`,
                   body: chipRow([
@@ -2079,7 +2085,7 @@
               <th>TERBIT</th><th>TINJAU ULANG</th><th>PEMILIK</th><th>STATUS</th></tr></thead>
             <tbody>
               ${L.map(d => `
-                <tr class="${d.status === 'Kedaluwarsa' ? 'is-overdue' : ''}" ${infoAttr({
+                <tr class="${d.status === 'Kedaluwarsa' ? 'is-overdue' : ''}" ${infoAttr({ ...rinci('dokint', d.id),
                   title: d.id,
                   sub: `${d.jenis} · tingkat L${d.level} · revisi ${d.rev}`,
                   body: chipRow([
@@ -2142,7 +2148,7 @@
               <th>BERLAKU SAMPAI</th><th>SISA</th><th>STATUS</th></tr></thead>
             <tbody>
               ${L.slice().sort((a, b) => a.sisa - b.sisa).map(d => `
-                <tr class="${d.sisa < 0 ? 'is-overdue' : ''}" ${infoAttr({
+                <tr class="${d.sisa < 0 ? 'is-overdue' : ''}" ${infoAttr({ ...rinci('dokext', d.id),
                   title: d.judul,
                   sub: `${d.jenis} · diterbitkan ${d.penerbit}`,
                   body: `<div class="info-num">${d.sisa < 0 ? '−' + Math.abs(d.sisa) : d.sisa}<span class="tile-unit">${d.sisa < 0 ? 'hari lewat' : 'hari tersisa'}</span></div>`
@@ -2227,7 +2233,7 @@
             <tbody>
               ${L.map(c => {
                 const pct = Math.round(c.selesai / c.butir * 100);
-                return `<tr class="${c.status === 'Terbuka' ? 'is-overdue' : ''}" ${infoAttr({
+                return `<tr class="${c.status === 'Terbuka' ? 'is-overdue' : ''}" ${infoAttr({ ...rinci('checklist', c.id),
                   title: c.id,
                   sub: `${c.nama} · ${c.area} · ${c.shift}`,
                   body: chipRow([
@@ -2419,7 +2425,7 @@
       <section class="section">
         <div class="section-head"><h2>Observasi Terbaru</h2><span class="sub">Lima catatan terakhir dari 302 bulan ini</span></div>
         ${D.observasi.map(o => `
-          <article class="card obs-card is-clickable" ${infoAttr({
+          <article class="card obs-card is-clickable" ${infoAttr({ ...rinci('observasi', o.id),
             title: o.id,
             sub: `${o.area} · pengamat ${o.observer} · ${o.tanggal}`,
             body: chipRow([
