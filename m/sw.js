@@ -21,14 +21,15 @@
    v5: masuk dengan akun sungguhan; profil disimpan untuk dibuka tanpa sinyal.
    v6: mode tersambung di peladen produksi; konfigurasi.js berisi alamat API.
    v7: penanggung jawab CAPA dapat dipindahkan dari formulir ubah.
+   v8: ubin dan formulir lengkap saat tersambung; ubah dan hapus seluruh modul.
 
    Penanda ?v= pada alamat di bawah harus sama persis dengan yang tertulis di
    index.html. Berkas yang sama dengan penanda berbeda adalah dua alamat yang
    berbeda bagi simpanan — itulah yang membuat pembaruan benar-benar sampai,
    dan itu pula yang membuat ketidakcocokan menjadi salinan ganda yang
    diam-diam memenuhi penyimpanan perangkat. */
-const TANDA = '?v=7';
-const VERSI = 'kg-lapangan-v7';
+const TANDA = '?v=8';
+const VERSI = 'kg-lapangan-v8';
 const INTI = [
   './',
   './index.html',
