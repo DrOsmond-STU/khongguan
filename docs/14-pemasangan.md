@@ -3,22 +3,22 @@
 Untuk cPanel dengan PHP 8.3 dan PostgreSQL 16 — lingkungan
 `khongguan.semestateknologiutama.com` pada akun `semestat`.
 
-## Keadaan · 29 September 2026 — terpasang dan terverifikasi
+## Keadaan · 3 Oktober 2026 — tersambung, menunggu administrator pertama
 
 | Hal | Keadaan |
 |---|---|
-| Berkas aplikasi | Terpasang dari komit `0c0607f`: `api/`, `assets/`, `m/`, `index.html`. `api/uji/` sengaja tidak ikut |
+| Berkas aplikasi | Terpasang dari komit `2d10809`: `api/`, `assets/`, `m/`, `index.html`. `api/uji/` sengaja tidak ikut |
 | Pengguna `semestat_kgapp` | Dibuat dari sandi yang disediakan manusia; hak ALL pada `semestat_kgsafe` |
 | `api/config.php` | Terpasang, izin 600, **tanpa rahasia** — lihat "Rahasia dari berkas" |
 | Migrasi | 001, 002, 004, 006, 008, 009, 010 tercatat; 007 (data contoh) tidak dimuat |
 | Skema | 54 tabel, 2 fungsi/pemicu — sama dengan basis data pengembangan |
 | Masuk dengan sandi (komit `85cd1a7`) | Terpasang. Diperiksa dari dalam peladen: `/sesi/masuk` hidup, `masuk-demo` mati, `config.php` dijawab 403 |
-| Pengguna | **Belum ada.** Administrator pertama dibuat dengan `buat-admin.php` — lihat di bawah |
+| Pengguna | Satu: administrator pertama `osmondconsulting@gmail.com`, berstatus **Menunggu** sampai tautannya dipakai. Tautan di `/home/semestat/kg-tautan-admin.txt` (izin 600, berlaku sampai 17 Oktober 2026), tidak pernah dicetak ke log |
 | Acuan | 4 pabrik, 5 peran, 48 area, 5 jenis izin, 12 kategori bahaya |
 | Catatan | Kosong, sebagaimana mestinya untuk basis data produksi baru |
 | `/home/semestat/kg-berkas` | Ada, izin 700, di luar docroot |
 | Cron pemberitahuan | `0 6,13 * * *  /bin/bash /home/semestat/kg-cron.sh` |
-| `assets/konfigurasi.js` | `api: ''` — situs berjalan pada mode peragaan |
+| `assets/konfigurasi.js` | **Mode tersambung**, dari `/home/semestat/kg-konfigurasi.js` — lihat "Menyalakan mode tersambung" |
 | Log galat domain | Bersih untuk `api/` |
 
 Situs **belum** disambungkan ke API (`api: ''`). Itu disengaja: masuk-demo
@@ -83,7 +83,9 @@ sandi membacanya dari berkas dan menyaringnya dari log.
 | `kg-perancah.php` | Mencatat `008` sebagai sudah dijalankan **hanya bila** dua tabel yang pernah dibuat manual identik dengan yang akan dibuat `008`. Tidak menghapus apa pun. Sudah bekerja; tidak akan berbuat apa-apa lagi |
 | `kg-periksa.php` | Cetak migrasi tercatat, jumlah tabel, isi acuan dan catatan |
 | `kg-cron.sh` | Pemberitahuan dua kali sehari; diam bila `config.php` belum ada |
-| `kg-perbarui.sh` | `kg-salin.sh` lalu `kg-selesaikan.sh`, sekali jalan per penanda. Untuk pembaruan berikutnya, ganti `PENANDA` di dalamnya lalu jalankan. Log: `kg-perbarui.log` |
+| `kg-konfigurasi.js` | Konfigurasi mode tersambung peladen ini; `kg-salin.sh` menimpakannya ke `assets/konfigurasi.js` |
+| `kg-admin-pertama.sh` | Sekali jalan: `buat-admin.php` untuk administrator pertama. Sudah berjalan 3 Oktober 2026. Log: `kg-admin-pertama.log` (tanpa tautan) |
+| `kg-perbarui.sh` | `kg-salin.sh`, `kg-selesaikan.sh`, lalu `kg-admin-pertama.sh`; sekali jalan per penanda. Untuk pembaruan berikutnya, ganti `PENANDA` di dalamnya lalu jalankan. Log: `kg-perbarui.log` |
 | `kg-periksa-api.sh` | Memeriksa API dari dalam peladen (lewat HTTP lokal; HTTPS tidak terikat ke 127.0.0.1 di hosting ini). Log: `kg-periksa-api.log` |
 
 Skrip dijalankan lewat cron sekali-jalan (`* * * * *`, lalu dihapus) karena
