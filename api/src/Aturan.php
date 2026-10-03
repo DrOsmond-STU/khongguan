@@ -42,7 +42,8 @@ final class Aturan
                 ['izin' => $izin['nomor']]);
         }
 
-        $jsa = Db::baris('SELECT nomor, status FROM jsa WHERE id = :i', [':i' => $izin['jsa_id']]);
+        $jsa = Db::baris('SELECT nomor, status FROM jsa WHERE id = :i AND dihapus_pada IS NULL',
+            [':i' => $izin['jsa_id']]);
         if ($jsa === null || $jsa['status'] !== 'Disahkan') {
             throw Galat::aturan('AB-09',
                 'Izin tidak dapat diterbitkan: JSA ' . ($jsa['nomor'] ?? '?') . ' berstatus '

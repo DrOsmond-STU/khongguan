@@ -64,6 +64,13 @@ function rute(): Rute
     $r->post('/jsa',             [Modul\Jsa::class, 'buat']);
     $r->post('/jsa/{id}/sahkan', [Modul\Jsa::class, 'sahkan']);
 
+    // Ubah dan hapus lunak untuk kelima modul catatan K3. Satu penangan,
+    // satu kumpulan aturan — lihat Modul\Catatan.
+    foreach (['bahaya', 'insiden', 'capa', 'izin', 'jsa'] as $jenis) {
+        $r->post("/$jenis/{id}/ubah",  fn($p, $par) => Modul\Catatan::ubah($p, $par, $jenis));
+        $r->post("/$jenis/{id}/hapus", fn($p, $par) => Modul\Catatan::hapus($p, $par, $jenis));
+    }
+
     // Modul 07 · HIRADC K3
     $r->get('/hiradc',                     [Modul\Hiradc::class, 'daftar']);
     $r->post('/hiradc',                    [Modul\Hiradc::class, 'buat']);

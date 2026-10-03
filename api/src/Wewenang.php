@@ -52,6 +52,18 @@ final class Wewenang
     }
 
     /**
+     * Seperti wajib(), tetapi menjawab ya/tidak — untuk aturan yang punya
+     * lebih dari satu jalan masuk, misalnya "verifikator, atau pembuatnya".
+     *
+     * @param array<string,mixed> $pengguna
+     */
+    public static function punya(array $pengguna, string $modul, string $minimal): bool
+    {
+        $punya = $pengguna['kewenangan'][$modul] ?? null;
+        return $punya !== null && self::URUTAN[$punya] >= self::URUTAN[$minimal];
+    }
+
+    /**
      * Memastikan catatan berada dalam cakupan pabrik pengguna.
      *
      * Ditolak dengan 403, bukan dijawab daftar kosong: daftar kosong tidak

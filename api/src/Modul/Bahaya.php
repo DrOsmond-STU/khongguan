@@ -15,7 +15,8 @@ final class Bahaya
         [$saring, $par] = Wewenang::saringCakupan($u, 'b');
 
         $sql = "SELECT b.id, b.nomor, b.nomor_asal, b.kategori, b.isi, b.risiko, b.status,
-                       b.anonim, b.dibuat_pada, b.diverifikasi_pada,
+                       b.anonim, b.dibuat_pada, b.diverifikasi_pada, b.area_id,
+                       (b.dibuat_oleh IS NOT DISTINCT FROM :saya::uuid) AS milik_saya,
                        a.nama AS area, pb.nama AS pabrik,
                        CASE WHEN b.anonim THEN NULL ELSE pl.nama END AS pelapor
                   FROM bahaya b
@@ -23,6 +24,7 @@ final class Bahaya
                   JOIN pabrik pb ON pb.id = b.pabrik_id
              LEFT JOIN pengguna pl ON pl.id = b.pelapor_id
                  WHERE b.dihapus_pada IS NULL AND $saring";
+        $par[':saya'] = $u['id'];
 
         if (isset($p->kueri['status'])) { $sql .= ' AND b.status = :status'; $par[':status'] = $p->kueri['status']; }
 
@@ -64,12 +66,18 @@ final class Bahaya
                     ':lat' => is_array($k) ? ($k['lat'] ?? null) : null,
                     ':lon' => is_array($k) ? ($k['lon'] ?? null) : null,
                     ':ak'  => is_array($k) ? ($k['akurasi_m'] ?? null) : null,
-                    ':o' => $u['id'],
+                    // AB-04 berlaku pada setiap kolom, bukan hanya pelapor_id:
+                    // dibuat_oleh dan jejak audit yang berisi akun pengirim
+                    // sama saja dengan menyimpan identitasnya.
+                    ':o' => $anonim ? null : $u['id'],
                 ]
             );
             $lampiran = $p->isi('lampiran_id');
             Berkas::kaitkan(is_string($lampiran) ? $lampiran : null, 'bahaya', $id);
-            Jejak::catat('bahaya', $id, 'buat', null, ['nomor' => $nomor, 'isi' => $isi], $u['id']);
+            if ($anonim && is_string($lampiran)) {
+                Db::jalankan('UPDATE lampiran SET dibuat_oleh = NULL WHERE id = :l', [':l' => $lampiran]);
+            }
+            Jejak::catat('bahaya', $id, 'buat', null, ['nomor' => $nomor, 'isi' => $isi], $anonim ? null : $u['id']);
             return ['id' => $id, 'nomor' => $nomor];
         });
 

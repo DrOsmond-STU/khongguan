@@ -118,7 +118,8 @@ Pola sama untuk seluruh modul transaksi; contoh memakai insiden.
 GET    /api/v1/insiden               daftar
 POST   /api/v1/insiden               buat
 GET    /api/v1/insiden/{id}          rincian
-PATCH  /api/v1/insiden/{id}          ubah
+POST   /api/v1/insiden/{id}/ubah     ubah kolom isian (lihat "Ubah dan hapus")
+POST   /api/v1/insiden/{id}/hapus    hapus lunak, wajib beralasan
 POST   /api/v1/insiden/{id}/verifikasi
 POST   /api/v1/insiden/{id}/tutup    ditolak bila CAPA belum selesai (AB-03)
 GET    /api/v1/insiden/{id}/capa     CAPA turunannya
@@ -149,6 +150,53 @@ GET  /api/v1/ekspor/{modul}?format=pdf|xlsx
 
 `GET /api/v1/acuan` dipakai aplikasi lapangan untuk mengisi simpanan luringnya
 dalam satu panggilan, bukan belasan.
+
+`GET /api/v1/kpi/tren` bagi Administrator yang tidak menyebut `pabrik_id`
+menjumlahkan seluruh pabrik — cakupan yang sama dengan daftar yang ia lihat.
+TRIR gabungannya dihitung dari jumlah kejadian dan jumlah jam, bukan rata-rata
+TRIR per pabrik. Titik yang sebagian dari rekaman dan sebagian dari rekap awal
+bersumber `campuran`.
+
+### Ubah dan hapus
+
+Berlaku untuk `bahaya`, `insiden`, `capa`, `izin`, dan `jsa`. Ditulis sebagai
+`POST …/ubah` dan `POST …/hapus`, bukan `PATCH` dan `DELETE`, sama dengan
+tindakan lain (`…/verifikasi`, `…/terbitkan`): sebagian peladen bersama dan
+penapis permintaan menolak kedua metode itu, dan aplikasi yang hanya gagal di
+satu lingkungan sulit ditelusuri.
+
+```
+POST /api/v1/{jenis}/{id}/ubah    { "<kolom>": "<nilai>", … }
+POST /api/v1/{jenis}/{id}/hapus   { "alasan": "…" }
+```
+
+| Jenis | Kolom yang dapat diubah | Dapat diubah selama | Dapat dihapus selama |
+|---|---|---|---|
+| `bahaya` | `area_id`, `kategori`, `isi`, `risiko` | Terbuka | Terbuka |
+| `insiden` | `area_id`, `jenis`, `keparahan`, `tanggal`, `waktu`, `ringkas`, `kronologi`, `dampak`, `akar`, `cedera`, `hari_kerja_hilang` | belum Selesai | belum Selesai, tanpa CAPA |
+| `capa` | `judul`, `pj_id`, `tenggat`, `prioritas` | belum Selesai | belum Selesai |
+| `izin` | `judul`, `pelaksana`, `pekerja`, `pengawas`, `mulai`, `durasi` | Menunggu Supervisor/QHSE | Menunggu, atau Ditolak |
+| `jsa` | `area_id`, `pekerjaan`, `jenis` | belum Disahkan | belum Disahkan, tidak terlampir pada izin |
+
+- **Kolom di luar daftar ditolak `400`**, tidak diabaikan. Status, nomor,
+  pabrik, dan verifikator hanya berubah lewat jalurnya sendiri, yang
+  menegakkan aturan bisnisnya.
+- **Di luar status di atas: `409 TERKUNCI`.** Isi yang sudah diverifikasi
+  adalah isi yang ditandatangani verifikatornya.
+- **Yang boleh mengubah:** pemegang kewenangan Verifikasi modulnya, atau
+  pembuat catatan selama ia berwenang Isi. Pengirim laporan anonim tidak dapat
+  mengubahnya — perubahannya akan tercatat atas namanya (AB-04).
+- **Yang boleh menghapus:** hanya pemegang kewenangan Verifikasi.
+- **Area** harus area aktif di pabrik yang sama; pindah pabrik ditolak.
+- **Catatan yang menjadi pijakan catatan lain** (kejadian dengan CAPA, JSA yang
+  terlampir pada izin) dijawab `409 MASIH_DIPAKAI` dengan nomor penahannya.
+- Balasan `ubah` memuat `berubah`: kolom yang sungguh berubah. Hanya kolom itu
+  yang masuk jejak audit, beserta nilai lama dan barunya. Kenaikan keparahan
+  kejadian menjadi Serius memuat `pemberitahuan_ke`, sama seperti laporan baru
+  (AB-02).
+- `hapus` mengisi `dihapus_pada`; barisnya tetap ada. Jejak audit mencatat
+  `hapus_lunak` beserta alasannya. Catatan terhapus hilang dari daftar, KPI,
+  ekspor, dan pemberitahuan.
 
 ## Sinkronisasi aplikasi lapangan
 

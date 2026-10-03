@@ -712,6 +712,26 @@ uji('UJ-25b', 'Tren 12 bulan menyebut sumber tiap titik', function () use ($T) {
     }
 });
 
+uji('UJ-25c', 'Tren administrator menjumlahkan seluruh pabrik, seperti daftarnya', function () use ($D, $T) {
+    panggil('POST', '/bahaya', ['area_id' => $D['area_smg'], 'isi' => 'Bahaya di Semarang'], $T['qhse_smg']);
+    panggil('POST', '/bahaya', ['area_id' => $D['area_cbt'], 'isi' => 'Bahaya di Cibitung'], $T['qhse']);
+
+    $periode = \KG\Kpi::periode();
+    $harap = ['bahaya' => 0, 'insiden' => 0];
+    foreach (Db::semua('SELECT id FROM pabrik WHERE aktif') as $pb) {
+        $m = \KG\Kpi::mentah($pb['id'], $periode);
+        $harap['bahaya'] += $m['bahaya'];
+        $harap['insiden'] += $m['insiden'];
+    }
+    $admin = panggil('GET', '/kpi/tren', [], $T['admin'])['data'];
+    $akhir = $admin[count($admin) - 1];
+    sama($harap['bahaya'], $akhir['bahaya'], 'bahaya bulan ini = jumlah seluruh pabrik');
+    sama($harap['insiden'], $akhir['insiden'], 'insiden bulan ini = jumlah seluruh pabrik');
+
+    $qhse = panggil('GET', '/kpi/tren', [], $T['qhse'])['data'];
+    benar($qhse[11]['bahaya'] < $akhir['bahaya'], 'QHSE tetap melihat pabriknya sendiri saja');
+});
+
 echo "\nHak akses\n";
 
 uji('UJ-21', 'Operator tidak dapat membuka HIRADC', function () use ($T) {
@@ -1674,4 +1694,213 @@ uji('UJ-79b', 'Admin pertama: tautan ditulis ke berkas 600 dan tidak pernah dice
         'menolak bila sudah ada admin aktif bersandi');
 
     @unlink($berkas); @unlink($pembungkus); @rmdir($dir);
+});
+
+echo "\nUbah dan hapus catatan K3\n";
+
+/** Jejak audit satu baris, urut waktu. */
+function jejakDari(string $tabel, string $id): array
+{
+    return Db::semua(
+        'SELECT aksi, pengguna_id, nilai_sebelum, nilai_sesudah FROM jejak_audit
+          WHERE tabel = :t AND baris_id = :i ORDER BY id', [':t' => $tabel, ':i' => $id]);
+}
+
+uji('UJ-80', 'Pelapor mengubah laporannya sendiri; jejak hanya memuat yang berubah', function () use ($D, $T) {
+    $b = panggil('POST', '/bahaya', ['area_id' => $D['area_cbt'], 'isi' => 'Lantai licin dekat oven'], $T['operator']);
+    $id = $b['data']['id'];
+    $u = panggil('POST', "/bahaya/$id/ubah", ['isi' => 'Lantai licin oli dekat oven 3', 'risiko' => 'Tinggi',
+                                              'kategori' => 'Unsafe Condition'], $T['operator']);
+    sama(200, $u['status'], 'status');
+    sama(['isi', 'risiko'], $u['data']['berubah'], 'hanya kolom yang sungguh berubah');
+
+    $lagi = panggil('POST', "/bahaya/$id/ubah", ['isi' => 'Lantai licin oli dekat oven 3'], $T['operator']);
+    sama([], $lagi['data']['berubah'], 'kiriman ulang yang sama tidak mengubah apa pun');
+
+    $j = array_values(array_filter(jejakDari('bahaya', $id), fn($r) => $r['aksi'] === 'ubah'));
+    sama(1, count($j), 'satu jejak ubah, bukan dua');
+    sama($D['operator'], $j[0]['pengguna_id'], 'atas nama pengubah');
+    sama(['isi' => 'Lantai licin oli dekat oven 3', 'risiko' => 'Tinggi'],
+        json_decode($j[0]['nilai_sesudah'], true), 'nilai sesudah');
+    sama(['isi' => 'Lantai licin dekat oven', 'risiko' => 'Sedang'],
+        json_decode($j[0]['nilai_sebelum'], true), 'nilai sebelum');
+});
+
+uji('UJ-81', 'Status, nomor, dan pabrik tidak dapat diubah lewat formulir', function () use ($D, $T) {
+    $b = panggil('POST', '/bahaya', ['area_id' => $D['area_cbt'], 'isi' => 'Kabel terkelupas'], $T['qhse']);
+    $id = $b['data']['id'];
+    foreach (['status' => 'Ditangani', 'nomor' => 'HZ-PALSU', 'pabrik_id' => $D['pabrik_smg'],
+              'diverifikasi_oleh' => $D['qhse']] as $k => $v) {
+        $h = panggil('POST', "/bahaya/$id/ubah", ['isi' => 'Kabel terkelupas di panel', $k => $v], $T['qhse']);
+        sama(400, $h['status'], "kolom $k ditolak");
+    }
+    $r = Db::baris('SELECT status, isi FROM bahaya WHERE id = :i', [':i' => $id]);
+    sama('Terbuka', $r['status'], 'status utuh');
+    sama('Kabel terkelupas', $r['isi'], 'kiriman yang ditolak tidak menyimpan sebagian');
+});
+
+uji('UJ-82', 'Catatan yang sudah diverifikasi terkunci, juga bagi verifikator', function () use ($D, $T) {
+    $b = panggil('POST', '/bahaya', ['area_id' => $D['area_cbt'], 'isi' => 'Pintu darurat terhalang'], $T['operator']);
+    $id = $b['data']['id'];
+    sama(200, panggil('POST', "/bahaya/$id/verifikasi", [], $T['qhse'])['status'], 'diverifikasi');
+    foreach (['operator', 'qhse', 'admin'] as $siapa) {
+        $h = panggil('POST', "/bahaya/$id/ubah", ['isi' => 'Diganti sesudah verifikasi'], $T[$siapa]);
+        sama(409, $h['status'], "$siapa ditolak");
+        sama('TERKUNCI', $h['galat']['kode'] ?? null, 'kode');
+    }
+    sama(409, panggil('POST', "/bahaya/$id/hapus", ['alasan' => 'Coba hapus'], $T['qhse'])['status'],
+        'yang terverifikasi juga tidak dapat dihapus');
+});
+
+uji('UJ-83', 'Bukan pembuat dan bukan verifikator: tidak dapat mengubah, tidak dapat menghapus', function () use ($D, $T) {
+    $b = panggil('POST', '/bahaya', ['area_id' => $D['area_cbt'], 'isi' => 'Tangga tanpa pegangan'], $T['qhse']);
+    $id = $b['data']['id'];
+    sama(403, panggil('POST', "/bahaya/$id/ubah", ['isi' => 'Diubah orang lain'], $T['operator'])['status'],
+        'operator tidak dapat mengubah laporan orang lain');
+
+    $milik = panggil('POST', '/bahaya', ['area_id' => $D['area_cbt'], 'isi' => 'Laporan sendiri'], $T['operator']);
+    sama(403, panggil('POST', '/bahaya/' . $milik['data']['id'] . '/hapus', ['alasan' => 'Salah kirim'],
+        $T['operator'])['status'], 'pelapor tidak dapat menghapus laporannya sendiri');
+
+    sama(403, panggil('POST', "/bahaya/$id/ubah", ['isi' => 'Dari pabrik lain'], $T['qhse_smg'])['status'],
+        'verifikator pabrik lain ditolak cakupannya');
+});
+
+uji('UJ-84', 'AB-04 · laporan anonim tidak menyimpan pengirimnya di kolom mana pun', function () use ($D, $T) {
+    $b = panggil('POST', '/bahaya', ['area_id' => $D['area_cbt'], 'isi' => 'Atasan menyuruh lepas APD',
+                                     'anonim' => true], $T['operator']);
+    $id = $b['data']['id'];
+    $r = Db::baris('SELECT pelapor_id, dibuat_oleh, diubah_oleh FROM bahaya WHERE id = :i', [':i' => $id]);
+    sama([null, null, null], [$r['pelapor_id'], $r['dibuat_oleh'], $r['diubah_oleh']], 'tiga kolom kosong');
+    sama([null], array_column(jejakDari('bahaya', $id), 'pengguna_id'), 'jejak buat tanpa akun');
+
+    $daftar = panggil('GET', '/bahaya', [], $T['operator'])['data'];
+    $baris = array_values(array_filter($daftar, fn($x) => $x['id'] === $id))[0];
+    sama(false, $baris['milik_saya'], 'daftar tidak mengakuinya sebagai milik pengirim');
+
+    sama(403, panggil('POST', "/bahaya/$id/ubah", ['isi' => 'Ubah'], $T['operator'])['status'],
+        'pengirim anonim tidak dapat mengubah (perubahan akan menamainya)');
+    sama(200, panggil('POST', "/bahaya/$id/ubah", ['risiko' => 'Tinggi'], $T['qhse'])['status'],
+        'verifikator dapat');
+});
+
+uji('UJ-85', 'Hapus lunak: wajib beralasan, hilang dari daftar, tercatat di jejak', function () use ($D, $T) {
+    $b = panggil('POST', '/bahaya', ['area_id' => $D['area_cbt'], 'isi' => 'Laporan ganda'], $T['operator']);
+    $id = $b['data']['id'];
+    sama(400, panggil('POST', "/bahaya/$id/hapus", [], $T['qhse'])['status'], 'tanpa alasan ditolak');
+    sama(400, panggil('POST', "/bahaya/$id/hapus", ['alasan' => '  '], $T['qhse'])['status'], 'alasan kosong ditolak');
+
+    $h = panggil('POST', "/bahaya/$id/hapus", ['alasan' => 'Ganda dengan ' . $b['data']['nomor']], $T['qhse']);
+    sama(200, $h['status'], 'status');
+    benar(Db::nilai('SELECT dihapus_pada FROM bahaya WHERE id = :i', [':i' => $id]) !== null, 'baris tetap ada, bertanda');
+    benar(!in_array($id, array_column(panggil('GET', '/bahaya', [], $T['qhse'])['data'], 'id'), true),
+        'tidak muncul di daftar');
+
+    $j = array_values(array_filter(jejakDari('bahaya', $id), fn($r) => $r['aksi'] === 'hapus_lunak'));
+    sama(1, count($j), 'jejak hapus');
+    sama($D['qhse'], $j[0]['pengguna_id'], 'atas nama penghapus');
+    benar(str_starts_with(json_decode($j[0]['nilai_sesudah'], true)['alasan'], 'Ganda dengan'), 'alasan tersimpan');
+
+    sama(404, panggil('POST', "/bahaya/$id/hapus", ['alasan' => 'Sekali lagi'], $T['qhse'])['status'],
+        'yang sudah terhapus tidak ditemukan lagi');
+    sama(404, panggil('POST', "/bahaya/$id/ubah", ['isi' => 'Hidupkan lagi'], $T['qhse'])['status'],
+        'dan tidak dapat diubah');
+});
+
+uji('UJ-86', 'Kejadian: AB-02 pada kenaikan keparahan, AB-01 menahan penghapusan', function () use ($D, $T) {
+    $i = panggil('POST', '/insiden', ['area_id' => $D['area_cbt'], 'jenis' => 'Incident', 'keparahan' => 'Ringan',
+                                      'ringkas' => 'Jari tergores'], $T['operator']);
+    $id = $i['data']['id'];
+
+    $u = panggil('POST', "/insiden/$id/ubah", ['keparahan' => 'Serius', 'hari_kerja_hilang' => 2,
+                                               'waktu' => '08:15', 'kronologi' => 'Saat membersihkan pisau'], $T['qhse']);
+    sama(200, $u['status'], 'status');
+    benar(in_array($D['qhse'], $u['data']['pemberitahuan_ke'] ?? [], true), 'QHSE diberi tahu seketika');
+    sama('08:15:00', Db::nilai('SELECT waktu::text FROM insiden WHERE id = :i', [':i' => $id]), 'jam tersimpan');
+    sama([], panggil('POST', "/insiden/$id/ubah", ['waktu' => '08:15:00'], $T['qhse'])['data']['berubah'],
+        '08:15 dan 08:15:00 nilai yang sama');
+
+    $besok = date('Y-m-d', strtotime('+1 day'));
+    sama(400, panggil('POST', "/insiden/$id/ubah", ['tanggal' => $besok], $T['qhse'])['status'], 'tanggal esok ditolak');
+    sama(400, panggil('POST', "/insiden/$id/ubah", ['tanggal' => '2026-02-30'], $T['qhse'])['status'], 'tanggal mustahil ditolak');
+    sama(400, panggil('POST', "/insiden/$id/ubah", ['hari_kerja_hilang' => -1], $T['qhse'])['status'], 'hari negatif ditolak');
+    sama(400, panggil('POST', "/insiden/$id/ubah", ['ringkas' => ''], $T['qhse'])['status'], 'ringkasan wajib');
+    sama(400, panggil('POST', "/insiden/$id/ubah", ['area_id' => $D['area_smg']], $T['admin'])['status'],
+        'area pabrik lain ditolak, juga bagi admin');
+
+    $c = panggil('POST', '/capa', ['judul' => 'Pelindung pisau', 'sumber_jenis' => 'Insiden', 'sumber_id' => $id,
+                                   'pj_id' => $D['operator'], 'tenggat' => date('Y-m-d', strtotime('+7 days'))], $T['qhse']);
+    $h = panggil('POST', "/insiden/$id/hapus", ['alasan' => 'Salah input'], $T['qhse']);
+    sama(409, $h['status'], 'kejadian ber-CAPA tidak dapat dihapus');
+    benar(str_contains($h['galat']['pesan'], $c['data']['nomor']), 'pesan menyebut CAPA penahannya');
+
+    sama(200, panggil('POST', '/capa/' . $c['data']['id'] . '/hapus', ['alasan' => 'Salah input'], $T['qhse'])['status'],
+        'CAPA dihapus lebih dulu');
+    sama(200, panggil('POST', "/insiden/$id/hapus", ['alasan' => 'Salah input'], $T['qhse'])['status'],
+        'lalu kejadiannya');
+});
+
+uji('UJ-87', 'CAPA: penanggung jawab harus akun aktif; yang Selesai terkunci', function () use ($D, $T) {
+    $i = panggil('POST', '/insiden', ['area_id' => $D['area_cbt'], 'jenis' => 'Nearmiss', 'keparahan' => 'Ringan',
+                                      'ringkas' => 'Hampir tertimpa kardus'], $T['qhse']);
+    $c = panggil('POST', '/capa', ['judul' => 'Batasi tinggi tumpukan', 'sumber_jenis' => 'Insiden',
+                                   'sumber_id' => $i['data']['id'], 'pj_id' => $D['operator'],
+                                   'tenggat' => date('Y-m-d', strtotime('+7 days'))], $T['qhse']);
+    $id = $c['data']['id'];
+    $mati = penggunaBersandi($D, 'nonaktif.capa@kg.test', 'Pagar-Oven-Line3', 'operator', 'Nonaktif');
+    sama(400, panggil('POST', "/capa/$id/ubah", ['pj_id' => $mati], $T['qhse'])['status'], 'akun nonaktif ditolak');
+    sama(400, panggil('POST', "/capa/$id/ubah", ['pj_id' => 'bukan-uuid'], $T['qhse'])['status'], 'id rusak ditolak');
+    $u = panggil('POST', "/capa/$id/ubah", ['pj_id' => $D['qhse2'], 'tenggat' => date('Y-m-d', strtotime('+10 days')),
+                                            'prioritas' => 'Tinggi'], $T['qhse']);
+    sama(200, $u['status'], 'diubah');
+    sama(['pj_id', 'tenggat', 'prioritas'], $u['data']['berubah'], 'kolom berubah');
+
+    panggil('POST', "/capa/$id/verifikasi", ['bukti' => 'Foto rak'], $T['qhse']);
+    sama(409, panggil('POST', "/capa/$id/ubah", ['judul' => 'Sesudah selesai'], $T['qhse'])['status'],
+        'CAPA Selesai terkunci');
+});
+
+uji('UJ-88', 'JSA dan izin: yang terlampir tidak dihapus, yang terbit terkunci', function () use ($D, $T) {
+    $h = panggil('POST', '/jsa/' . $D['jsa_aman'] . '/hapus', ['alasan' => 'Coba hapus'], $T['manajemen']);
+    sama(409, $h['status'], 'JSA Disahkan tidak dapat dihapus');
+
+    $j = panggil('POST', '/jsa', [
+        'area_id' => $D['area_cbt'], 'pekerjaan' => 'Ganti sabuk konveyor', 'jenis' => 'Non-rutin',
+        'langkah' => [['kerja' => 'Isolasi energi', 'bahaya' => 'Tersengat', 'kemungkinan' => 2, 'keparahan' => 3,
+                       'kemungkinan_sisa' => 1, 'keparahan_sisa' => 2]],
+    ], $T['qhse']);
+    $jid = $j['data']['id'];
+    sama(200, panggil('POST', "/jsa/$jid/ubah", ['pekerjaan' => 'Ganti sabuk konveyor line 2'], $T['qhse'])['status'],
+        'penyusun (Isi) mengubah drafnya');
+    sama(400, panggil('POST', "/jsa/$jid/ubah", ['jenis' => 'Sekali'], $T['qhse'])['status'], 'pilihan di luar daftar');
+
+    $z = panggil('POST', '/izin', ['area_id' => $D['area_cbt'], 'jenis' => 'panas', 'judul' => 'Las rangka',
+                                   'pengawas' => 'Budi', 'jsa_id' => $jid], $T['qhse']);
+    $hj = panggil('POST', "/jsa/$jid/hapus", ['alasan' => 'Tidak dipakai'], $T['manajemen']);
+    sama(409, $hj['status'], 'JSA yang terlampir pada izin tidak dapat dihapus');
+    benar(str_contains($hj['galat']['pesan'], $z['data']['nomor']), 'pesan menyebut izinnya');
+
+    $zid = $z['data']['id'];
+    sama(400, panggil('POST', "/izin/$zid/ubah", ['pekerja' => 0], $T['qhse'])['status'], 'pekerja nol ditolak');
+    $u = panggil('POST', "/izin/$zid/ubah", ['pekerja' => '3', 'mulai' => '2026-10-05 08:00'], $T['qhse']);
+    sama(200, $u['status'], 'izin menunggu dapat diubah');
+    sama(['pekerja', 'mulai'], $u['data']['berubah'], 'kolom berubah');
+    sama(200, panggil('POST', "/izin/$zid/hapus", ['alasan' => 'Pekerjaan dibatalkan'], $T['qhse'])['status'],
+        'izin menunggu dapat dihapus');
+    sama(200, panggil('POST', "/jsa/$jid/hapus", ['alasan' => 'Pekerjaan dibatalkan'], $T['manajemen'])['status'],
+        'setelah izinnya dihapus, JSA-nya boleh');
+
+    $zs = Db::nilai("SELECT id FROM izin WHERE status = 'Aktif' AND dihapus_pada IS NULL LIMIT 1");
+    if ($zs !== null) {
+        sama(409, panggil('POST', "/izin/$zs/ubah", ['judul' => 'Ubah izin aktif'], $T['admin'])['status'],
+            'izin aktif terkunci');
+    }
+});
+
+uji('UJ-89', 'Penanda catatan yang rusak dijawab 404, bukan galat basis data', function () use ($T) {
+    $kolom = ['bahaya' => 'isi', 'insiden' => 'ringkas', 'capa' => 'judul', 'izin' => 'judul', 'jsa' => 'pekerjaan'];
+    foreach ($kolom as $j => $k) {
+        sama(404, panggil('POST', "/$j/bukan-uuid/ubah", [$k => 'x'], $T['admin'])['status'], "$j ubah");
+        sama(404, panggil('POST', "/$j/bukan-uuid/hapus", ['alasan' => 'Penanda rusak'], $T['admin'])['status'], "$j hapus");
+    }
 });

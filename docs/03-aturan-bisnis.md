@@ -177,6 +177,12 @@ dorong, tanpa menunggu verifikasi.
 **Aturan.** Laporan bahaya anonim masuk antrean verifikasi dengan bobot yang
 sama dengan laporan bernama. Sistem tidak menyimpan identitas pengirimnya.
 
+Di kolom mana pun: bukan hanya `pelapor_id`, tetapi juga `dibuat_oleh`,
+`diubah_oleh`, pengunggah fotonya, dan jejak audit pembuatannya. Sampai
+3 Oktober 2026 dua yang terakhir masih berisi akun pengirim; sejak itu
+kosong, dan diuji (UJ-84). Karena itu pula pengirim anonim tidak dapat
+mengubah laporannya sendiri.
+
 ### AB-05 · Belum diverifikasi belum dihitung
 
 **Aturan.** Catatan yang belum diverifikasi petugas QHSE tidak dihitung dalam

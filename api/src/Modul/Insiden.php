@@ -16,7 +16,9 @@ final class Insiden
 
         $baris = Db::semua(
             "SELECT i.id, i.nomor, i.jenis, i.keparahan, i.tanggal, i.waktu, i.ringkas, i.status,
-                    i.hari_kerja_hilang, a.nama AS area,
+                    i.hari_kerja_hilang, i.area_id, i.kronologi, i.dampak, i.akar, i.cedera,
+                    (i.dibuat_oleh IS NOT DISTINCT FROM :saya::uuid) AS milik_saya,
+                    a.nama AS area,
                     CASE WHEN i.anonim THEN NULL ELSE pl.nama END AS pelapor,
                     (SELECT count(*) FROM capa c
                       WHERE c.sumber_jenis = 'Insiden' AND c.sumber_id = i.id
@@ -25,7 +27,7 @@ final class Insiden
                JOIN area a ON a.id = i.area_id
           LEFT JOIN pengguna pl ON pl.id = i.pelapor_id
               WHERE i.dihapus_pada IS NULL AND $saring
-              ORDER BY i.tanggal DESC, i.waktu DESC", $par
+              ORDER BY i.tanggal DESC, i.waktu DESC", $par + [':saya' => $u['id']]
         );
         Jawab::daftar($baris, 1, count($baris), count($baris));
     }

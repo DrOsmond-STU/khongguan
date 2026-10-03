@@ -3850,7 +3850,7 @@
         + '<button class="btn btn--primary" data-unduh="' + o.unduh + '" data-bentuk="xlsx">'
         + 'Berkas Excel</button>' : ''),
       (o.goto ? '<button class="btn btn--primary" data-goto="' + o.goto + '">' + (o.gotoLabel || 'Buka modul') + '</button>' : ''),
-      (o.ok ? '<button class="btn btn--primary" data-submit="' + (o.toast || '') + '"'
+      (o.ok ? '<button class="btn btn--' + (o.okGaya || 'primary') + '" data-submit="' + (o.toast || '') + '"'
         + ' data-aksi="' + (o.aksi || '') + '">' + o.ok + '</button>' : ''),
       '    </div>',
       '  </div>',

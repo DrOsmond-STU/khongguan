@@ -23,7 +23,8 @@ final class Jsa
 
         $baris = Db::semua(
             "SELECT j.id, j.nomor, j.pekerjaan, j.jenis, j.apd_wajib, j.disusun, j.disahkan,
-                    j.tinjau, j.revisi, j.status, j.penyusun_id,
+                    j.tinjau, j.revisi, j.status, j.penyusun_id, j.area_id,
+                    (j.dibuat_oleh IS NOT DISTINCT FROM :saya::uuid) AS milik_saya,
                     a.nama AS area,
                     ps.nama AS penyusun, pt.nama AS peninjau, pg.nama AS pengesah
                FROM jsa j
@@ -32,7 +33,7 @@ final class Jsa
           LEFT JOIN pengguna pt ON pt.id = j.peninjau_id
           LEFT JOIN pengguna pg ON pg.id = j.pengesah_id
               WHERE j.dihapus_pada IS NULL AND $saring
-              ORDER BY j.nomor DESC", $par
+              ORDER BY j.nomor DESC", $par + [':saya' => $u['id']]
         );
         if ($baris === []) { Jawab::daftar([], 1, 0, 0); }
 

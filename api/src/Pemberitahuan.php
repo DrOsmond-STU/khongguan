@@ -176,7 +176,8 @@ final class Pemberitahuan
             "UPDATE notifikasi n SET selesai_pada = now()
               WHERE n.selesai_pada IS NULL AND n.rujukan_tabel = 'izin'
                 AND EXISTS (SELECT 1 FROM izin z WHERE z.id = n.rujukan_id
-                             AND z.status NOT IN ('Menunggu Supervisor','Menunggu QHSE'))");
+                             AND (z.status NOT IN ('Menunggu Supervisor','Menunggu QHSE')
+                                  OR z.dihapus_pada IS NOT NULL))");
         $n += Db::jalankan(
             "UPDATE notifikasi n SET selesai_pada = now()
               WHERE n.selesai_pada IS NULL AND n.rujukan_tabel = 'unit_periksa'

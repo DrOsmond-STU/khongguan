@@ -163,7 +163,8 @@ window.KGSUMBER = (function () {
       return {
         id: r.nomor, uuid: r.id, kategori: r.kategori, lokasi: r.area, isi: r.isi,
         pelapor: r.pelapor || 'Anonim', waktu: sejak(r.dibuat_pada),
-        status: r.status, risiko: r.risiko
+        status: r.status, risiko: r.risiko,
+        areaId: r.area_id, milikSaya: r.milik_saya === true
       };
     },
     insiden: function (r) {
@@ -173,7 +174,9 @@ window.KGSUMBER = (function () {
         pelapor: r.pelapor || 'Anonim', status: r.status,
         terlambat: false, ringkas: r.ringkas,
         kronologi: r.kronologi || '', dampak: r.dampak || '', akar: r.akar || '',
-        capa: r.capa_terbuka > 0 ? (r.capa_terbuka + ' terbuka') : '—'
+        capa: r.capa_terbuka > 0 ? (r.capa_terbuka + ' terbuka') : '—',
+        areaId: r.area_id, milikSaya: r.milik_saya === true, tanggalIso: r.tanggal,
+        cedera: r.cedera || '', hariHilang: Number(r.hari_kerja_hilang) || 0
       };
     },
     capa: function (r) {
@@ -181,7 +184,8 @@ window.KGSUMBER = (function () {
         id: r.nomor, uuid: r.id, judul: r.judul, sumber: r.sumber_nomor, sumberJenis: r.sumber_jenis,
         pj: r.pj, pjId: r.pj_id, adaBukti: r.ada_bukti === true, terbit: tanggalPanjang(r.terbit), tenggat: tanggalPanjang(r.tenggat),
         umur: Number(r.umur),
-        status: r.status, prioritas: r.prioritas, terlambat: r.terlambat === true
+        status: r.status, prioritas: r.prioritas, terlambat: r.terlambat === true,
+        milikSaya: r.milik_saya === true, tenggatIso: r.tenggat
       };
     },
     izin: function (r) {
@@ -192,7 +196,8 @@ window.KGSUMBER = (function () {
         mulai: [tanggalPanjang(r.mulai), r.durasi].filter(Boolean).join(' \u00b7 '),
         status: r.status, zona: r.zona || '\u2014',
         risikoAwal: angka(r.risiko_awal), risikoSisa: angka(r.risiko_sisa),
-        prasyarat: r.prasyarat || []
+        prasyarat: r.prasyarat || [],
+        milikSaya: r.milik_saya === true, mulaiIso: r.mulai || '', durasi: r.durasi || ''
       };
     },
     observasiAPD: function (r) {
@@ -220,6 +225,7 @@ window.KGSUMBER = (function () {
     jsa: function (r) {
       return {
         id: r.nomor, uuid: r.id, penyusunId: r.penyusun_id,
+        areaId: r.area_id, milikSaya: r.milik_saya === true,
         pekerjaan: r.pekerjaan, area: r.area, jenis: r.jenis,
         penyusun: r.penyusun || '\u2014', peninjau: r.peninjau || '\u2014',
         pengesah: r.pengesah || '\u2014',
@@ -654,6 +660,50 @@ window.KGSUMBER = (function () {
       hasil: function (d) { return (d.email || 'Akun') + ' aktif kembali.'; }
     }]
   };
+
+  /* ─────────────────────────────────────────────────────────────────
+     Ubah dan hapus catatan K3
+
+     Status yang membuka keduanya sama dengan yang ditegakkan peladen
+     (api/src/Modul/Catatan.php). Catatan yang sudah diverifikasi, ditutup,
+     diterbitkan, atau disahkan tidak menawarkan tombolnya sama sekali.
+     ───────────────────────────────────────────────────────────────── */
+
+  var CATATAN = {
+    bahaya:  { modul: 'hazard',   nama: 'Laporan bahaya', ubah: ['Terbuka'], hapus: ['Terbuka'],
+               segarkan: ['bahaya'] },
+    insiden: { modul: 'incident', nama: 'Kejadian',
+               ubah: ['Terbuka', 'Dalam Proses', 'Menunggu Verifikasi'],
+               hapus: ['Terbuka', 'Dalam Proses', 'Menunggu Verifikasi'], segarkan: ['insiden', 'capa'] },
+    capa:    { modul: 'capa',     nama: 'CAPA',
+               ubah: ['Terbuka', 'Dalam Proses', 'Menunggu Verifikasi'],
+               hapus: ['Terbuka', 'Dalam Proses', 'Menunggu Verifikasi'], segarkan: ['capa', 'insiden'] },
+    izin:    { modul: 'permit',   nama: 'Izin kerja', ubah: ['Menunggu Supervisor', 'Menunggu QHSE'],
+               hapus: ['Menunggu Supervisor', 'Menunggu QHSE', 'Ditolak'], segarkan: ['izin', 'jsa'] },
+    jsa:     { modul: 'jsa',      nama: 'JSA', ubah: ['Draf', 'Menunggu Pengesahan'],
+               hapus: ['Draf', 'Menunggu Pengesahan'], segarkan: ['jsa', 'izin'] }
+  };
+
+  /* Verifikator modulnya, atau pembuat catatan yang masih berwenang mengisi.
+     Laporan anonim tidak pernah "milik saya" — peladen tidak tahu pengirimnya. */
+  function bolehUbahCatatan(jenis, r) {
+    var c = CATATAN[jenis];
+    if (c.ubah.indexOf(r.status) === -1) return false;
+    return berwenang(c.modul, 'verifikasi') || (r.milikSaya === true && berwenang(c.modul, 'isi'));
+  }
+
+  Object.keys(CATATAN).forEach(function (jenis) {
+    var c = CATATAN[jenis];
+    AKSI[jenis] = [{
+      kunci: 'hapus', label: 'Hapus', gaya: 'secondary', modul: c.modul, wewenang: 'verifikasi',
+      bila: function (r) { return c.hapus.indexOf(r.status) !== -1; },
+      buka: function (r) { formulirHapusCatatan(jenis, r); }
+    }, {
+      kunci: 'ubah', label: 'Ubah', gaya: 'secondary', modul: c.modul, wewenang: 'isi',
+      bila: function (r) { return bolehUbahCatatan(jenis, r); },
+      buka: function (r) { formulirUbahCatatan(jenis, r); }
+    }].concat(AKSI[jenis]);
+  });
 
   /* Koleksi window.KG tempat mencari catatan menurut jenis rincian. */
   var KOLEKSI_RINCIAN = {
@@ -1093,6 +1143,48 @@ window.KGSUMBER = (function () {
       hasil: function (d) { return 'Perubahan untuk ' + (d.email || 'pengguna') + ' tersimpan.'; }
     },
 
+    /* "ubah-catatan:<jenis>:<uuid>". Seluruh isian formulir dikirim; peladen
+       yang menentukan mana yang sungguh berubah, dan hanya itu yang masuk
+       jejak audit. */
+    'ubah-catatan': {
+      jalur: function (param) { var b = param.split(':'); return '/' + b[0] + '/' + b[1] + '/ubah'; },
+      segarkan: function (param) { return CATATAN[param.split(':')[0]].segarkan; },
+      isi: function () {
+        var isi = {};
+        var el = document.querySelectorAll('#modal-host [data-kolom]');
+        for (var i = 0; i < el.length; i++) {
+          var v = String(el[i].value || '').trim();
+          if (!v && el[i].hasAttribute('data-wajib')) {
+            throw galatJelas('Isian "' + el[i].getAttribute('data-wajib') + '" wajib diisi.');
+          }
+          /* Jam setempat dikirim bersama zonanya; tanpa itu peladen menafsirkannya
+             menurut zona waktunya sendiri, dan izin mulai tujuh jam bergeser. */
+          if (v && el[i].type === 'datetime-local') v = new Date(v).toISOString();
+          isi[el[i].getAttribute('data-kolom')] = v;
+        }
+        return isi;
+      },
+      hasil: function (d) {
+        if (!d.berubah || !d.berubah.length) return 'Tidak ada yang berubah pada ' + d.nomor + '.';
+        var m = 'Perubahan pada ' + d.nomor + ' tersimpan.';
+        /* AB-02: kenaikan ke Serius memberi tahu seketika, seperti laporan baru. */
+        if (d.pemberitahuan_ke) m += ' Keparahan Serius — QHSE dan manajemen pabrik diberi tahu.';
+        return m;
+      }
+    },
+
+    /* "hapus-catatan:<jenis>:<uuid>" — selalu lunak, selalu beralasan. */
+    'hapus-catatan': {
+      jalur: function (param) { var b = param.split(':'); return '/' + b[0] + '/' + b[1] + '/hapus'; },
+      segarkan: function (param) { return CATATAN[param.split(':')[0]].segarkan; },
+      isi: function () {
+        var alasan = nilai('e-alasan');
+        if (alasan.length < 5) throw galatJelas('Alasan penghapusan wajib diisi — auditor akan menanyakannya.');
+        return { alasan: alasan };
+      },
+      hasil: function (d) { return d.nomor + ' dihapus. Catatannya tetap tersimpan untuk auditor.'; }
+    },
+
     'ganti-sandi': {
       jalur: '/sesi/sandi', segarkan: [],
       isi: function () {
@@ -1215,6 +1307,131 @@ window.KGSUMBER = (function () {
     });
   }
 
+  /* ── Formulir ubah dan hapus catatan K3 ──
+     Nilai r.* sudah di-escape PETA, jadi masuk ke value dan textarea apa
+     adanya. Teks dari ACUAN belum, jadi melewati esc(). */
+
+  function bidang(kolom, label, isi, wajib) {
+    return '<div class="field"><label for="e-' + kolom + '">' + label
+      + (wajib ? ' <span class="req">*</span>' : '') + '</label>' + isi + '</div>';
+  }
+
+  function atribut(kolom, label, wajib) {
+    return ' id="e-' + kolom + '" data-kolom="' + kolom + '"' + (wajib ? ' data-wajib="' + label + '"' : '');
+  }
+
+  function isian(kolom, label, nilai, wajib, tipe) {
+    return bidang(kolom, label, '<input type="' + (tipe || 'text') + '"' + atribut(kolom, label, wajib)
+      + ' value="' + (nilai === null || nilai === undefined ? '' : nilai) + '"'
+      + (tipe === 'number' ? ' min="0" step="1"' : '') + '>', wajib);
+  }
+
+  function paragraf(kolom, label, nilai, wajib) {
+    return bidang(kolom, label, '<textarea rows="3"' + atribut(kolom, label, wajib) + '>'
+      + (nilai || '') + '</textarea>', wajib);
+  }
+
+  /* Nilai yang tidak ada pada daftar pilihan tetap ditawarkan, supaya
+     membuka lalu menyimpan formulir tidak diam-diam mengganti isinya. */
+  function pilihan(kolom, label, opsi, nilai) {
+    var daftar = opsi.slice();
+    if (nilai && daftar.indexOf(nilai) === -1) daftar.unshift(nilai);
+    return bidang(kolom, label, '<select' + atribut(kolom, label, true) + '>' + daftar.map(function (o) {
+      return '<option' + (o === nilai ? ' selected' : '') + '>' + o + '</option>';
+    }).join('') + '</select>', true);
+  }
+
+  /* Area hanya dari pabrik catatannya sendiri; pindah pabrik ditolak peladen. */
+  function pilihanArea(r) {
+    var semua = (ACUAN && ACUAN.area) || [];
+    var pabrik = null;
+    for (var i = 0; i < semua.length; i++) if (semua[i].id === r.areaId) pabrik = semua[i].pabrik_id;
+    var opsi = semua.filter(function (a) { return a.pabrik_id === pabrik; }).map(function (a) {
+      return '<option value="' + a.id + '"' + (a.id === r.areaId ? ' selected' : '') + '>' + esc(a.nama) + '</option>';
+    }).join('');
+    /* Area yang sudah dinonaktifkan tidak ada di acuan; isiannya tidak dikirim
+       sama sekali, supaya catatannya tetap pada area lamanya. */
+    if (!opsi) return '';
+    return bidang('area_id', 'Area kerja', '<select' + atribut('area_id', 'Area kerja', true) + '>'
+      + opsi + '</select>', true);
+  }
+
+  /* ISO dari peladen → nilai <input type="datetime-local">, waktu setempat. */
+  function keLokal(iso) {
+    var d = iso ? new Date(iso) : null;
+    if (!d || isNaN(d.getTime())) return '';
+    function dua(n) { return String(n).padStart(2, '0'); }
+    return d.getFullYear() + '-' + dua(d.getMonth() + 1) + '-' + dua(d.getDate())
+      + 'T' + dua(d.getHours()) + ':' + dua(d.getMinutes());
+  }
+
+  var FORMULIR_UBAH = {
+    bahaya: function (r) {
+      return pilihan('kategori', 'Kategori', ['Unsafe Condition', 'Unsafe Action', 'Aspek Lingkungan'], r.kategori)
+        + pilihanArea(r)
+        + paragraf('isi', 'Apa yang dilihat', r.isi, true)
+        + pilihan('risiko', 'Tingkat risiko', ['Rendah', 'Sedang', 'Tinggi'], r.risiko);
+    },
+    insiden: function (r) {
+      return '<div class="row2">' + pilihan('jenis', 'Jenis', ['Nearmiss', 'Incident', 'Accident'], r.jenis)
+        + pilihan('keparahan', 'Keparahan', ['Ringan', 'Sedang', 'Serius'], r.keparahan) + '</div>'
+        + '<div class="row2">' + isian('tanggal', 'Tanggal', r.tanggalIso, true, 'date')
+        + isian('waktu', 'Jam', r.waktu, false, 'time') + '</div>'
+        + pilihanArea(r)
+        + paragraf('ringkas', 'Ringkasan', r.ringkas, true)
+        + paragraf('kronologi', 'Kronologi', r.kronologi, false)
+        + paragraf('dampak', 'Dampak', r.dampak, false)
+        + paragraf('akar', 'Akar masalah', r.akar, false)
+        + '<div class="row2">' + isian('cedera', 'Cedera', r.cedera, false)
+        + isian('hari_kerja_hilang', 'Hari kerja hilang', r.hariHilang, true, 'number') + '</div>';
+    },
+    capa: function (r) {
+      return isian('judul', 'Tindakan', r.judul, true)
+        + '<div class="row2">' + isian('tenggat', 'Tenggat', r.tenggatIso, true, 'date')
+        + pilihan('prioritas', 'Prioritas', ['Rendah', 'Sedang', 'Tinggi'], r.prioritas) + '</div>';
+    },
+    izin: function (r) {
+      return isian('judul', 'Pekerjaan', r.judul, true)
+        + '<div class="row2">' + isian('pelaksana', 'Pelaksana', r.pelaksana, true)
+        + isian('pengawas', 'Pengawas', r.pengawas, true) + '</div>'
+        + '<div class="row2">' + isian('mulai', 'Mulai', keLokal(r.mulaiIso), false, 'datetime-local')
+        + isian('durasi', 'Durasi', r.durasi, false) + '</div>'
+        + isian('pekerja', 'Jumlah pekerja', r.pekerja, true, 'number');
+    },
+    jsa: function (r) {
+      return isian('pekerjaan', 'Pekerjaan', r.pekerjaan, true)
+        + '<div class="row2">' + pilihan('jenis', 'Sifat pekerjaan', ['Rutin', 'Non-rutin'], r.jenis)
+        + '</div>' + pilihanArea(r)
+        + '<div class="tile-note">Langkah kerja dan pengendaliannya tidak berubah lewat formulir ini.</div>';
+    }
+  };
+
+  function formulirUbahCatatan(jenis, r) {
+    if (!window.KG_BUKA) return;
+    window.KG_BUKA({
+      title: 'Ubah ' + CATATAN[jenis].nama, sub: r.id + ' · ' + r.status,
+      body: FORMULIR_UBAH[jenis](r)
+        + '<div class="tile-note">Setiap perubahan tercatat di jejak audit: siapa, kapan, nilai lama dan '
+        + 'nilai barunya. Setelah diverifikasi, catatan ini tidak dapat diubah lagi.</div>',
+      ok: 'Simpan Perubahan', aksi: 'ubah-catatan:' + jenis + ':' + r.uuid
+    });
+  }
+
+  function formulirHapusCatatan(jenis, r) {
+    if (!window.KG_BUKA) return;
+    var ringkas = r.isi || r.ringkas || r.judul || r.pekerjaan || '';
+    window.KG_BUKA({
+      title: 'Hapus ' + CATATAN[jenis].nama, sub: r.id,
+      body: (ringkas ? '<div class="tile-note" style="border:0;padding:0;margin-bottom:var(--space-4)">'
+          + ringkas + '</div>' : '')
+        + '<div class="field"><label for="e-alasan">Alasan penghapusan <span class="req">*</span></label>'
+        + '<input id="e-alasan" type="text" placeholder="Misalnya: ganda dengan HZ-2026-0451"></div>'
+        + '<div class="tile-note">Catatan tidak benar-benar dibuang. Ia hilang dari daftar dan dari '
+        + 'perhitungan KPI, tetapi tetap tersimpan bersama alasan ini untuk auditor.</div>',
+      ok: 'Hapus Catatan', okGaya: 'danger', aksi: 'hapus-catatan:' + jenis + ':' + r.uuid
+    });
+  }
+
   /**
    * Pengganti isi modal purwarupa yang tidak lagi benar saat tersambung.
    * Mengembalikan null untuk aksi lain — app.js lalu memakai modal aslinya.
@@ -1264,27 +1481,29 @@ window.KGSUMBER = (function () {
     if (!API || !SIMPAN[kunci]) return null;
 
     var def = SIMPAN[kunci];
-    var isi, jalur;
+    var isi, jalur, segar;
     try {
       isi = def.isi();
       jalur = typeof def.jalur === 'function' ? def.jalur(param) : def.jalur;
+      segar = typeof def.segarkan === 'function' ? def.segarkan(param) : def.segarkan;
     } catch (e) {
       return Promise.resolve(e.jelas ? e.message : 'Formulir belum dapat dibaca: ' + e.message);
     }
 
     return kirim(jalur, isi)
       .then(function (j) {
-        if (def.hasil) {
-          return segarkan(def.segarkan).then(function () { return def.hasil(j.data || {}); });
-        }
-        var nomor = (j.data && (j.data.nomor || j.data.kode)) || '';
         /* Tren dan KPI ikut disegarkan: hampir setiap catatan masuk ke
            keduanya, dan papan yang menunjukkan delapan sementara grafiknya
-           masih tujuh membuat orang ragu simpanannya berhasil. */
-        var ikut = def.segarkan.slice();
+           masih tujuh membuat orang ragu simpanannya berhasil. Simpanan yang
+           tidak menyentuh koleksi apa pun (sandi) tidak ikut menyegarkan. */
+        var ikut = segar.slice();
         var modul = (window.KG_SAYA && window.KG_SAYA.modul) || [];
-        if (modul.indexOf('kpi') !== -1) ikut = ikut.concat(['tren', 'kpi']);
-        if (modul.indexOf('exec') !== -1) ikut = ikut.concat(['eksekutif']);
+        if (ikut.length && modul.indexOf('kpi') !== -1) ikut = ikut.concat(['tren', 'kpi']);
+        if (ikut.length && modul.indexOf('exec') !== -1) ikut = ikut.concat(['eksekutif']);
+        if (def.hasil) {
+          return segarkan(ikut).then(function () { return def.hasil(j.data || {}); });
+        }
+        var nomor = (j.data && (j.data.nomor || j.data.kode)) || '';
         return segarkan(ikut).then(function () {
           return nomor ? 'Tersimpan. Nomor ' + nomor + '.' : 'Tersimpan.';
         });

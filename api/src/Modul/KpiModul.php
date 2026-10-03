@@ -85,26 +85,49 @@ final class KpiModul
         ]);
     }
 
-    /** Tren 12 bulan; setiap titik menyebut sumbernya. */
+    /**
+     * Tren 12 bulan; setiap titik menyebut sumbernya.
+     *
+     * Administrator yang tidak menyebut pabrik mendapat jumlah seluruh pabrik
+     * — cakupan yang sama dengan daftar yang ia lihat. Sempat tidak: daftar
+     * bahayanya memuat empat pabrik sementara grafiknya hanya pabrik tempat
+     * akunnya terdaftar, dan keduanya tampil berdampingan di layar yang sama.
+     */
     public static function tren(Permintaan $p): never
     {
         $u = Sesi::pengguna($p);
         Wewenang::wajib($u, 'kpi', 'baca');
-        $pabrik = (string) ($p->kueri['pabrik_id'] ?? $u['pabrik_id']);
-        Wewenang::wajibCakupan($u, $pabrik);
+        $diminta = $p->kueri['pabrik_id'] ?? null;
+        if ($diminta === null && $u['peran_kode'] === 'admin') {
+            $pabrik = array_column(Db::semua('SELECT id FROM pabrik WHERE aktif ORDER BY urutan, nama'), 'id');
+        } else {
+            $pabrik = [(string) ($diminta ?? $u['pabrik_id'])];
+            Wewenang::wajibCakupan($u, $pabrik[0]);
+        }
 
         $akhir = Kpi::periode($p->kueri['periode'] ?? null);
         $titik = [];
         for ($i = 11; $i >= 0; $i--) {
             $per = date('Y-m-01', strtotime("$akhir -$i month"));
-            $m   = Kpi::mentah($pabrik, $per);
+            $jumlah = ['insiden' => 0, 'bahaya' => 0, 'trc' => 0, 'jam_kerja' => 0];
+            $sumber = [];
+            foreach ($pabrik as $pb) {
+                $m = Kpi::mentah($pb, $per);
+                foreach ($jumlah as $k => $_) $jumlah[$k] += $m[$k];
+                $sumber[$m['sumber']] = true;
+            }
             $titik[] = [
                 'periode' => $per,
                 'bln'     => self::namaBulanSingkat($per),
-                'insiden' => $m['insiden'],
-                'bahaya'  => $m['bahaya'],
-                'trir'    => Kpi::trir($m['trc'], $m['jam_kerja']),
-                'sumber'  => $m['sumber'],
+                'insiden' => $jumlah['insiden'],
+                'bahaya'  => $jumlah['bahaya'],
+                // TRIR gabungan dari jumlah kejadian dan jumlah jam, bukan
+                // rata-rata TRIR per pabrik: pabrik kecil tidak boleh berbobot
+                // sama dengan pabrik besar.
+                'trir'    => Kpi::trir($jumlah['trc'], $jumlah['jam_kerja']),
+                // Titik yang sebagian dari rekaman dan sebagian dari rekap
+                // awal mengatakannya, alih-alih mengaku salah satunya.
+                'sumber'  => count($sumber) === 1 ? (string) array_key_first($sumber) : 'campuran',
             ];
         }
         Jawab::kirim($titik);

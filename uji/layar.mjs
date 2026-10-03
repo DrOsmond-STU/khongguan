@@ -132,6 +132,10 @@ const tok = await token();
   await p.goto(`${ALAMAT}/#/hazard`, { waitUntil: 'domcontentloaded' });
   await p.waitForTimeout(1000);
   const sebelum = await p.evaluate(() => (window.KG.bahaya || []).length);
+  const trenSebelum = await p.evaluate(() => {
+    const t = window.KG.trenBahaya || [];
+    return t.length ? t[t.length - 1].v : null;
+  });
 
   await p.click('[data-act="lapor-bahaya"]');
   await p.waitForTimeout(500);
@@ -156,10 +160,11 @@ const tok = await token();
   if (sesudah !== sebelum + 1) {
     catat('tulis', `daftar tidak bertambah setelah menyimpan (${sebelum} -> ${sesudah})`);
   }
-  // Papan dan grafik harus sepakat; pernah tidak, karena penyegaran tidak
-  // memecah koleksi gabungan.
-  if (tren !== null && tren !== sesudah) {
-    catat('tulis', `grafik tren (${tren}) tidak sepakat dengan daftar (${sesudah})`);
+  // Papan dan grafik harus bergerak bersama; pernah tidak, karena penyegaran
+  // tidak memecah koleksi gabungan. Yang dibandingkan pertambahannya, bukan
+  // jumlahnya: grafik menghitung bulan berjalan, daftar memuat semua bulan.
+  if (tren !== null && trenSebelum !== null && tren !== trenSebelum + 1) {
+    catat('tulis', `grafik tren tidak ikut bertambah (${trenSebelum} -> ${tren})`);
   }
   await ctx.close();
 }
@@ -233,6 +238,96 @@ const tok = await token();
     }
   }
   await ctx.close();
+}
+
+/* ── Ubah dan hapus catatan lewat antarmuka ─────────────────────────── */
+{
+  rute = 'tindakan/ubah+hapus';
+  const hdr = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok };
+  const api = async (jalur, isi) => (await fetch(`${ALAMAT}/api/v1${jalur}`,
+    { method: 'POST', headers: hdr, body: JSON.stringify(isi) })).json();
+  const acuan = await (await fetch(`${ALAMAT}/api/v1/acuan`, { headers: hdr })).json();
+  const saya = await (await fetch(`${ALAMAT}/api/v1/saya`, { headers: hdr })).json();
+  const area = acuan.data.area.find((a) => a.pabrik_id === saya.data.pabrik.id) || acuan.data.area[0];
+
+  // Satu catatan yang masih dapat diubah untuk setiap modul.
+  const bh = await api('/bahaya', { area_id: area.id, isi: 'Uji ubah: tutup saluran terbuka' });
+  const ins = await api('/insiden', { area_id: area.id, jenis: 'Nearmiss', keparahan: 'Ringan',
+    ringkas: 'Uji ubah: hampir terpeleset', waktu: '07:45', kronologi: 'Baris satu.\nBaris dua & "kutip".' });
+  const ca = await api('/capa', { judul: 'Uji ubah: pasang rambu', sumber_jenis: 'Insiden',
+    sumber_id: ins.data.id, pj_id: saya.data.id, tenggat: '2026-12-31' });
+  const js = await api('/jsa', { area_id: area.id, pekerjaan: 'Uji ubah: bersihkan cerobong', jenis: 'Non-rutin',
+    langkah: [{ kerja: 'Isolasi', bahaya: 'Panas', kemungkinan: 2, keparahan: 2, kemungkinan_sisa: 1, keparahan_sisa: 1 }] });
+  const iz = await api('/izin', { area_id: area.id, jenis: 'panas', judul: 'Uji ubah: las pagar',
+    pengawas: 'Pengawas Uji', mulai: '2026-11-02T01:30:00Z', durasi: '4 jam', jsa_id: js.data.id });
+
+  const ctx = await peramban.newContext({ viewport: { width: 1440, height: 1000 } });
+  await ctx.addInitScript(([a, t]) => {
+    window.KG_KONFIG = { api: a, versi: '4' };
+    try { localStorage.setItem('kg-token', t); } catch (x) {}
+  }, [ALAMAT, tok]);
+  const p = await ctx.newPage();
+  p.on('pageerror', (e) => catat('ubah', e.message));
+  p.on('console', (m) => { if (m.type() === 'error') catat('ubah konsol', m.text()); });
+  const pesan = () => p.evaluate(() => { const t = document.querySelector('.toast'); return t ? t.textContent : ''; });
+
+  await p.goto(`${ALAMAT}/#/hazard`, { waitUntil: 'domcontentloaded' });
+  await p.reload({ waitUntil: 'domcontentloaded' });
+  await p.waitForTimeout(1500);
+
+  // Formulir yang dibuka lalu disimpan tanpa disentuh tidak boleh mengubah
+  // apa pun. Ini yang membuktikan setiap isian terisi dengan nilai yang
+  // sebenarnya — termasuk jam, tanggal, teks berkutip, dan baris baru.
+  for (const [jenis, d] of [['bahaya', bh], ['insiden', ins], ['capa', ca], ['izin', iz], ['jsa', js]]) {
+    rute = `tindakan/ubah-tanpa-perubahan/${jenis}`;
+    const kunci = await p.evaluate(([j, n]) => window.KGSUMBER.aksiRincian(j, n).map((a) => a.kunci), [jenis, d.data.nomor]);
+    if (!kunci.includes('ubah') || !kunci.includes('hapus')) {
+      catat('ubah', `${jenis} ${d.data.nomor} tidak menawarkan Ubah dan Hapus (ada: ${kunci.join(', ')})`);
+      continue;
+    }
+    await p.evaluate(([j, n]) => window.KGSUMBER.jalankanAksi(j, n, 'ubah'), [jenis, d.data.nomor]);
+    await p.waitForTimeout(300);
+    await p.click('[data-submit]');
+    await p.waitForTimeout(1500);
+    const m = await pesan();
+    if (!/Tidak ada yang berubah/.test(m)) catat('ubah', `${jenis}: menyimpan formulir yang tidak disentuh: "${m}"`);
+  }
+
+  // Jalur lengkap lewat modal rincian: ubah, lalu hapus.
+  rute = 'tindakan/ubah+hapus/bahaya';
+  await p.click(`[data-detail="bahaya:${bh.data.nomor}"]`);
+  await p.waitForTimeout(400);
+  await p.click('[data-jalankan="ubah"]');
+  await p.waitForTimeout(300);
+  await p.fill('#e-isi', 'Uji ubah: saluran terbuka di depan gudang');
+  await p.selectOption('#e-risiko', 'Tinggi');
+  await p.click('[data-submit]');
+  await p.waitForTimeout(1800);
+  if (!/Perubahan pada/.test(await pesan())) catat('ubah', `pesan ubah: "${await pesan()}"`);
+  const b2 = await p.evaluate((n) => (window.KG.bahaya || []).find((x) => x.id === n), bh.data.nomor);
+  if (!b2 || b2.isi !== 'Uji ubah: saluran terbuka di depan gudang' || b2.risiko !== 'Tinggi') {
+    catat('ubah', `perubahan tidak tampil di daftar: ${JSON.stringify(b2 && { isi: b2.isi, risiko: b2.risiko })}`);
+  }
+
+  await p.click(`[data-detail="bahaya:${bh.data.nomor}"]`);
+  await p.waitForTimeout(400);
+  await p.click('[data-jalankan="hapus"]');
+  await p.waitForTimeout(300);
+  if (!(await p.$('[data-submit].btn--danger'))) catat('ubah', 'tombol konfirmasi hapus tidak bergaya bahaya');
+  await p.fill('#e-alasan', 'Uji layar: catatan percobaan');
+  await p.click('[data-submit]');
+  await p.waitForTimeout(1800);
+  if (!/dihapus/.test(await pesan())) catat('ubah', `pesan hapus: "${await pesan()}"`);
+  if (await p.evaluate((n) => (window.KG.bahaya || []).some((x) => x.id === n), bh.data.nomor)) {
+    catat('ubah', `${bh.data.nomor} masih di daftar setelah dihapus`);
+  }
+  await ctx.close();
+
+  // Bersih-bersih: catatan percobaan lain tidak tertinggal di daftar.
+  await api(`/izin/${iz.data.id}/hapus`, { alasan: 'Uji layar: catatan percobaan' });
+  await api(`/jsa/${js.data.id}/hapus`, { alasan: 'Uji layar: catatan percobaan' });
+  await api(`/capa/${ca.data.id}/hapus`, { alasan: 'Uji layar: catatan percobaan' });
+  await api(`/insiden/${ins.data.id}/hapus`, { alasan: 'Uji layar: catatan percobaan' });
 }
 
 /* ── Akun: undangan → tautan → setel sandi → masuk ──────────────────── */
@@ -360,5 +455,6 @@ if (galat.length) {
   process.exit(1);
 }
 console.log(`\u001b[32m${RUTE.length + 6} layar dibuka dengan data sungguhan; satu laporan ditulis`
-  + ` lewat formulir, satu diverifikasi, satu berkas ekspor diunduh, satu akun diundang lalu`
+  + ` lewat formulir, satu diverifikasi, lima formulir ubah terisi utuh, satu catatan diubah lalu`
+  + ` dihapus, satu berkas ekspor diunduh, satu akun diundang lalu`
   + ` menyetel sandinya, dan kode di dalam laporan tidak dijalankan — tanpa galat.\u001b[0m`);
