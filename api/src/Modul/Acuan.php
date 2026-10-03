@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace KG\Modul;
 
-use KG\{Db, Jawab, Permintaan, Sesi};
+use KG\{Db, Jawab, Permintaan, Sesi, Wewenang};
 
 /**
  * Seluruh data acuan dalam satu panggilan.
@@ -36,6 +36,12 @@ final class Acuan
             'kategori_bahaya'    => Db::semua('SELECT kode, nama FROM kategori_bahaya ORDER BY urutan'),
             'kategori_observasi' => Db::semua('SELECT kode, nama FROM kategori_observasi ORDER BY urutan'),
             'jenis_izin'         => Db::semua('SELECT kode, nama, prasyarat FROM jenis_izin ORDER BY urutan'),
+            // Pilihan penanggung jawab CAPA. Hanya bagi yang berwenang mengisi
+            // CAPA, hanya akun aktif di pabrik dalam cakupannya, dan hanya nama:
+            // memilih orang tidak memerlukan surel atau perannya.
+            'penanggung_jawab' => $idPabrik === [] || !Wewenang::punya($u, 'capa', 'isi') ? [] : Db::semua(
+                "SELECT id, nama, pabrik_id FROM pengguna
+                  WHERE status = 'Aktif' AND pabrik_id IN ($tanda) ORDER BY nama", $par),
         ]);
     }
 }

@@ -293,6 +293,27 @@ const tok = await token();
     if (!/Tidak ada yang berubah/.test(m)) catat('ubah', `${jenis}: menyimpan formulir yang tidak disentuh: "${m}"`);
   }
 
+  // Penanggung jawab CAPA dipindahkan lewat pilihan di formulir.
+  rute = 'tindakan/ubah/capa-pj';
+  await p.evaluate((n) => window.KGSUMBER.jalankanAksi('capa', n, 'ubah'), ca.data.nomor);
+  await p.waitForTimeout(300);
+  const pjBaru = await p.evaluate((asal) => {
+    const s = document.getElementById('e-pj_id');
+    if (!s) return null;
+    const o = Array.from(s.options).find((x) => x.value !== asal);
+    if (o) s.value = o.value;
+    return o ? o.value : null;
+  }, saya.data.id);
+  if (!pjBaru) {
+    catat('ubah', 'formulir CAPA tidak menawarkan penanggung jawab lain');
+    await p.click('[data-close]');
+  } else {
+    await p.click('[data-submit]');
+    await p.waitForTimeout(1500);
+    const pjSesudah = await p.evaluate((n) => ((window.KG.capa || []).find((x) => x.id === n) || {}).pjId, ca.data.nomor);
+    if (pjSesudah !== pjBaru) catat('ubah', `penanggung jawab CAPA tidak berpindah (${pjSesudah} ≠ ${pjBaru})`);
+  }
+
   // Jalur lengkap lewat modal rincian: ubah, lalu hapus.
   rute = 'tindakan/ubah+hapus/bahaya';
   await p.click(`[data-detail="bahaya:${bh.data.nomor}"]`);

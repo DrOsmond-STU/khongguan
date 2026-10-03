@@ -26,7 +26,7 @@ final class Capa
 
         $baris = Db::semua(
             "SELECT c.id, c.nomor, c.judul, c.sumber_jenis, c.sumber_nomor, c.terbit, c.tenggat,
-                    c.prioritas, c.status, pj.nama AS pj, c.pj_id,
+                    c.prioritas, c.status, pj.nama AS pj, c.pj_id, c.pabrik_id,
                     (c.dibuat_oleh IS NOT DISTINCT FROM :saya::uuid) AS milik_saya,
                     (c.bukti IS NOT NULL) AS ada_bukti,
                     (current_date - c.terbit) AS umur,

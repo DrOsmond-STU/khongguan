@@ -1860,6 +1860,17 @@ uji('UJ-87', 'CAPA: penanggung jawab harus akun aktif; yang Selesai terkunci', f
         'CAPA Selesai terkunci');
 });
 
+uji('UJ-87b', 'Pilihan penanggung jawab: akun aktif sepabrik, tanpa surel, hanya bagi pengisi CAPA', function () use ($D, $T) {
+    $pj = panggil('GET', '/acuan', [], $T['qhse'])['data']['penanggung_jawab'];
+    benar(count($pj) > 0, 'QHSE mendapat daftar');
+    benar(in_array($D['operator'], array_column($pj, 'id'), true), 'rekan sepabrik ada');
+    benar(!in_array($D['qhse_smg'], array_column($pj, 'id'), true), 'pabrik lain tidak');
+    sama(['id', 'nama', 'pabrik_id'], array_keys($pj[0]), 'hanya id, nama, pabrik');
+    sama([], panggil('GET', '/acuan', [], $T['operator'])['data']['penanggung_jawab'], 'operator tidak mengisi CAPA');
+    benar(in_array($D['qhse_smg'], array_column(panggil('GET', '/acuan', [], $T['admin'])['data']['penanggung_jawab'], 'id'), true),
+        'administrator melihat seluruh pabrik');
+});
+
 uji('UJ-88', 'JSA dan izin: yang terlampir tidak dihapus, yang terbit terkunci', function () use ($D, $T) {
     $h = panggil('POST', '/jsa/' . $D['jsa_aman'] . '/hapus', ['alasan' => 'Coba hapus'], $T['manajemen']);
     sama(409, $h['status'], 'JSA Disahkan tidak dapat dihapus');

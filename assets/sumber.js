@@ -185,7 +185,7 @@ window.KGSUMBER = (function () {
         pj: r.pj, pjId: r.pj_id, adaBukti: r.ada_bukti === true, terbit: tanggalPanjang(r.terbit), tenggat: tanggalPanjang(r.tenggat),
         umur: Number(r.umur),
         status: r.status, prioritas: r.prioritas, terlambat: r.terlambat === true,
-        milikSaya: r.milik_saya === true, tenggatIso: r.tenggat
+        milikSaya: r.milik_saya === true, tenggatIso: r.tenggat, pabrikId: r.pabrik_id
       };
     },
     izin: function (r) {
@@ -1154,6 +1154,7 @@ window.KGSUMBER = (function () {
         var el = document.querySelectorAll('#modal-host [data-kolom]');
         for (var i = 0; i < el.length; i++) {
           var v = String(el[i].value || '').trim();
+          if (el[i].hasAttribute('data-asal') && v === el[i].getAttribute('data-asal')) continue;
           if (!v && el[i].hasAttribute('data-wajib')) {
             throw galatJelas('Isian "' + el[i].getAttribute('data-wajib') + '" wajib diisi.');
           }
@@ -1356,6 +1357,25 @@ window.KGSUMBER = (function () {
       + opsi + '</select>', true);
   }
 
+  /* Penanggung jawab CAPA: akun aktif di pabrik CAPA itu. Penanggung jawab
+     yang akunnya sudah nonaktif tetap tampil sebagai pilihan saat ini dan
+     tidak dikirim bila tidak diganti (data-asal) — justru CAPA seperti itulah
+     yang paling perlu dipindahkan ke orang lain, dan formulirnya tidak boleh
+     menolak disimpan hanya karena orang lamanya sudah keluar. */
+  function pilihanPj(r) {
+    var orang = ((ACUAN && ACUAN.penanggung_jawab) || []).filter(function (o) {
+      return o.pabrik_id === r.pabrikId;
+    });
+    if (!orang.length) return '';
+    var ada = orang.some(function (o) { return o.id === r.pjId; });
+    var opsi = (ada ? '' : '<option value="' + r.pjId + '" selected>' + r.pj + ' (tidak aktif)</option>')
+      + orang.map(function (o) {
+        return '<option value="' + o.id + '"' + (o.id === r.pjId ? ' selected' : '') + '>' + esc(o.nama) + '</option>';
+      }).join('');
+    return bidang('pj_id', 'Penanggung jawab', '<select' + atribut('pj_id', 'Penanggung jawab', true)
+      + ' data-asal="' + r.pjId + '">' + opsi + '</select>', true);
+  }
+
   /* ISO dari peladen → nilai <input type="datetime-local">, waktu setempat. */
   function keLokal(iso) {
     var d = iso ? new Date(iso) : null;
@@ -1387,6 +1407,7 @@ window.KGSUMBER = (function () {
     },
     capa: function (r) {
       return isian('judul', 'Tindakan', r.judul, true)
+        + pilihanPj(r)
         + '<div class="row2">' + isian('tenggat', 'Tenggat', r.tenggatIso, true, 'date')
         + pilihan('prioritas', 'Prioritas', ['Rendah', 'Sedang', 'Tinggi'], r.prioritas) + '</div>';
     },

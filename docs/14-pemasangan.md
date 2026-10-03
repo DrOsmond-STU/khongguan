@@ -18,6 +18,7 @@ Untuk cPanel dengan PHP 8.3 dan PostgreSQL 16 — lingkungan
 | Catatan | Kosong, sebagaimana mestinya untuk basis data produksi baru |
 | `/home/semestat/kg-berkas` | Ada, izin 700, di luar docroot |
 | Cron pemberitahuan | `0 6,13 * * *  /bin/bash /home/semestat/kg-cron.sh` |
+| Peragaan untuk klien | `khongguan-demo.semestateknologiutama.com`, antarmuka saja, data contoh |
 | `assets/konfigurasi.js` | **Mode tersambung**, dari `/home/semestat/kg-konfigurasi.js` — lihat "Menyalakan mode tersambung" |
 | Log galat domain | Bersih untuk `api/` |
 
@@ -138,7 +139,7 @@ luar docroot, `/home/semestat/kg-konfigurasi.js`:
 ```js
 window.KG_KONFIG = Object.assign({
   api: 'https://khongguan.semestateknologiutama.com',
-  versi: '6'
+  versi: '7'
 }, window.KG_KONFIG || {});
 ```
 
@@ -149,11 +150,14 @@ mode peragaan. Kembali ke peragaan: hapus berkas itu lalu jalankan
 
 Sejak saat itu situs menampilkan layar masuk sungguhan — akun demo dan
 `demo1234` tidak lagi tampil maupun berlaku — dan seluruh layar membaca serta
-menulis ke basis data. **Mode peragaan untuk klien hilang dari alamat ini.**
-Bila peragaan masih dibutuhkan, pasang salinan dengan `api: ''` di subdomain
-terpisah. Bukan di `/demo/` pada domain yang sama: antrean luring aplikasi
-lapangan disimpan per domain, dan kiriman peragaan akan ikut terkirim ke
-peladen sungguhan.
+menulis ke basis data. **Mode peragaan untuk klien pindah ke
+`https://khongguan-demo.semestateknologiutama.com`** — salinan antarmuka saja
+(`assets/`, `m/`, `index.html`, tanpa `api/`), dengan `konfigurasi.js` dari
+repositori (`api: ''`). `kg-salin.sh` memperbaruinya bersama situs utama, jadi
+peragaan selalu sama dengan versi yang terpasang. Sengaja subdomain terpisah,
+bukan `/demo/` pada domain yang sama: antrean luring aplikasi lapangan
+disimpan per domain, dan kiriman peragaan akan ikut terkirim ke peladen
+sungguhan.
 
 Karyawan diundang dari layar **Pengguna → Tambah Pengguna**. Selama surel
 sistem belum dinyalakan, tautan undangan tampil di layar untuk diteruskan
