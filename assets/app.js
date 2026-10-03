@@ -211,7 +211,9 @@
   }
 
   /* ───────── Potongan yang dipakai ulang ───────── */
-  const tile = (t) => `
+  /* Saat tersambung, angka ubin purwarupa yang tertulis tetap diganti angka
+     yang dihitung dari data (sumber.js · ubin). Peragaan tidak berubah. */
+  const tile = (t0) => { const t = TERSAMBUNG ? window.KGSUMBER.ubin(current, t0) : t0; return `
     <article class="card tile is-clickable" ${infoAttr({
       title: t.label,
       sub: t.sub || `${D.plant} · ${D.periode}`,
@@ -238,7 +240,7 @@
         /\bvs\b/.test(t.delta) && t.arah === 'good' ? I(icon.up, 12)
         : /\bvs\b/.test(t.delta) && t.arah === 'bad' ? I(icon.down, 12) : ''}${t.delta}</span>
       <div class="tile-note">${t.note}</div>
-    </article>`;
+    </article>`; };
 
   const hero = (o) => `
     <header class="hero">
@@ -3759,10 +3761,12 @@
       if (!items.length) return '';
       return (g.group ? '<div class="nav-group">' + g.group + '</div>' : '') +
         items.map(function (it) {
+          /* Angka pada menu: tetap pada peragaan, dihitung dari data saat tersambung. */
+          const count = TERSAMBUNG ? window.KGSUMBER.hitungMenu(it.id) : it.count;
           return '<a class="nav-item" href="#/' + it.id + '"' +
             (current === it.id ? ' aria-current="page"' : '') + '>' +
             I(icon[it.icon], 18) + '<span>' + it.label + '</span>' +
-            (it.count ? '<span class="nav-count">' + it.count + '</span>' : '') + '</a>';
+            (count ? '<span class="nav-count">' + count + '</span>' : '') + '</a>';
         }).join('');
     }).join('');
   }
@@ -3857,6 +3861,7 @@
       '</div>'
     ].join(''));
     host.hidden = false;
+    if (TERSAMBUNG) window.KGSUMBER.tanggalBawaan(host);
     const first = host.querySelector('button, select, input, textarea');
     if (first) first.focus();
   }
@@ -3957,6 +3962,13 @@
         ? window.KGSUMBER.simpan(submit.dataset.aksi || '') : null;
       closeModal();
       if (tersimpan) { tersimpan.then(function (m) { if (m) toast(m); }); return; }
+      /* Saat tersambung, pesan bernomor tetap purwarupa adalah kebohongan:
+         ia berkata "tersimpan" padahal tidak ada yang dikirim. Formulir yang
+         belum punya jalur simpan mengatakannya terus terang. */
+      if (TERSAMBUNG && submit.dataset.submit) {
+        toast('Belum tersimpan: formulir ini belum tersambung ke basis data.');
+        return;
+      }
       if (submit.dataset.submit) toast(submit.dataset.submit);
       return;
     }

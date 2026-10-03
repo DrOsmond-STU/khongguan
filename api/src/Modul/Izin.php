@@ -16,7 +16,7 @@ final class Izin
 
         $baris = Db::semua(
             "SELECT z.id, z.nomor, z.nomor_asal, z.jenis, z.judul, z.pelaksana, z.vendor, z.pekerja,
-                    z.pengawas, z.mulai, z.durasi, z.prasyarat, z.status,
+                    z.pengawas, z.mulai, z.durasi, z.prasyarat, z.status, z.dibuat_pada,
                     (z.dibuat_oleh IS NOT DISTINCT FROM :saya::uuid) AS milik_saya,
                     a.nama AS area, ji.nama AS jenis_nama,
                     j.nomor AS jsa_nomor, j.status AS jsa_status,

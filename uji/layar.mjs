@@ -351,6 +351,111 @@ const tok = await token();
   await api(`/insiden/${ins.data.id}/hapus`, { alasan: 'Uji layar: catatan percobaan' });
 }
 
+/* ── Formulir tambah tersambung: yang disimpan adalah yang diketik ──── */
+{
+  rute = 'tambah/lengkap';
+  const hdr = { Authorization: 'Bearer ' + tok };
+  const ctx = await peramban.newContext({ viewport: { width: 1440, height: 1000 } });
+  await ctx.addInitScript(([a, t]) => {
+    window.KG_KONFIG = { api: a, versi: '4' };
+    try { localStorage.setItem('kg-token', t); } catch (x) {}
+  }, [ALAMAT, tok]);
+  const p = await ctx.newPage();
+  p.on('pageerror', (e) => catat('tambah', e.message));
+  p.on('console', (m) => { if (m.type() === 'error') catat('tambah konsol', m.text()); });
+  const pesan = () => p.evaluate(() => { const t = document.querySelector('.toast'); return t ? t.textContent : ''; });
+  const tanda = 'Uji-' + Date.now().toString(36);
+
+  const kasus = [
+    ['bbs', 'observasi-apd', async () => {
+      await p.fill('#e-diamati', '10'); await p.fill('#e-patuh', '7');
+      await p.fill('[data-apd] >> nth=0', '9');
+      await p.fill('#e-catatan', tanda + ' APD');
+    }, async () => {
+      const r = (await (await fetch(`${ALAMAT}/api/v1/observasi-apd`, { headers: hdr })).json()).data
+        .find((x) => x.catatan === tanda + ' APD');
+      return r && Number(r.patuh) === 7 && Number(r.diamati) === 10 && r.rincian.length === 1
+        ? '' : 'observasi APD tidak tersimpan dengan patuh 7 dari 10: ' + JSON.stringify(r);
+    }],
+    ['permit', 'izin-baru', async () => {
+      await p.fill('#e-judul', tanda + ' izin');
+      await p.selectOption('#e-area_id', { index: 2 });
+      await p.fill('#e-pengawas', 'Pengawas Uji Layar');
+    }, async () => {
+      const r = (await (await fetch(`${ALAMAT}/api/v1/izin`, { headers: hdr })).json()).data.find((x) => x.judul === tanda + ' izin');
+      const area = await p.evaluate(() => null);
+      return r && r.pengawas === 'Pengawas Uji Layar' && r.mulai ? '' : 'izin tidak membawa pengawas/mulai: ' + JSON.stringify(r);
+    }],
+    ['hiradc', 'hiradc-baru', async () => {
+      await p.fill('#e-proses', tanda + ' hiradc'); await p.fill('#e-aktivitas', 'Pembersihan');
+      await p.fill('#e-bahaya', 'Terjepit'); await p.fill('#e-risiko', 'Luka tangan'); await p.fill('#e-korban', 'Operator');
+      await p.selectOption('#e-kemungkinan', '4'); await p.selectOption('#e-keparahan', '2');
+    }, async () => {
+      const r = (await (await fetch(`${ALAMAT}/api/v1/hiradc`, { headers: hdr })).json()).data.find((x) => x.proses === tanda + ' hiradc');
+      return r && Number(r.skor_awal) === 8 && r.korban === 'Operator' ? '' : 'HIRADC tidak berskor 4×2: ' + JSON.stringify(r);
+    }],
+    ['risk', 'risiko-baru', async () => {
+      await p.fill('#e-proses', tanda + ' risiko'); await p.fill('#e-ancaman', 'Kebocoran');
+      await p.fill('#e-penyebab', 'Seal aus'); await p.fill('#e-dampak', 'Produksi berhenti');
+      await p.fill('#e-mitigasi', 'Ganti seal berkala');
+    }, async () => {
+      const r = (await (await fetch(`${ALAMAT}/api/v1/risiko`, { headers: hdr })).json()).data.find((x) => x.proses === tanda + ' risiko');
+      return r && r.dampak === 'Produksi berhenti' && r.mitigasi === 'Ganti seal berkala' ? '' : 'risiko tidak membawa dampak/mitigasi: ' + JSON.stringify(r);
+    }],
+    ['regulasi', 'regulasi-baru', async () => {
+      await p.fill('#e-nomor', tanda + ' reg'); await p.fill('#e-judul', 'Judul uji');
+      await p.fill('#e-penerbit', 'Kemnaker'); await p.fill('#e-pasal', 'Pasal 1'); await p.fill('#e-penerapan', 'Diterapkan');
+    }, async () => {
+      const r = (await (await fetch(`${ALAMAT}/api/v1/regulasi`, { headers: hdr })).json()).data.find((x) => x.nomor === tanda + ' reg');
+      return r && r.penerbit === 'Kemnaker' ? '' : 'regulasi tidak membawa penerbit: ' + JSON.stringify(r);
+    }],
+    ['jsa', 'jsa-baru', async () => {
+      await p.fill('#e-pekerjaan', tanda + ' jsa');
+      await p.fill('[data-langkah] >> nth=0 >> [data-l="kerja"]', 'Isolasi energi');
+      await p.fill('[data-langkah] >> nth=0 >> [data-l="bahaya"]', 'Tersengat listrik');
+      await p.selectOption('[data-langkah] >> nth=0 >> [data-l="kemungkinan"]', '3');
+      await p.selectOption('[data-langkah] >> nth=0 >> [data-l="keparahan"]', '4');
+      await p.click('[data-tambah-langkah]');
+      await p.fill('[data-langkah] >> nth=1 >> [data-l="kerja"]', 'Ganti sabuk');
+      await p.fill('[data-langkah] >> nth=1 >> [data-l="bahaya"]', 'Terjepit');
+    }, async () => {
+      const r = (await (await fetch(`${ALAMAT}/api/v1/jsa`, { headers: hdr })).json()).data.find((x) => x.pekerjaan === tanda + ' jsa');
+      return r && r.langkah.length === 2 && Number(r.langkah[0].kemungkinan) === 3 && r.langkah[0].kerja === 'Isolasi energi'
+        ? '' : 'JSA tidak membawa dua langkah yang diketik: ' + JSON.stringify(r && r.langkah);
+    }],
+  ];
+
+  for (const [layar, aksi, isi, periksa] of kasus) {
+    rute = `tambah/${aksi}`;
+    await p.goto(`${ALAMAT}/#/${layar}`, { waitUntil: 'domcontentloaded' });
+    await p.reload({ waitUntil: 'domcontentloaded' });
+    await p.waitForTimeout(1500);
+    await p.click(`[data-act="${aksi}"]`);
+    await p.waitForTimeout(300);
+    try { await isi(); } catch (e) { catat('tambah', `${aksi}: formulir tidak dapat diisi — ${e.message.split('\n')[0]}`); continue; }
+    await p.click('[data-submit]');
+    await p.waitForTimeout(1800);
+    const m = await pesan();
+    if (!/Tersimpan\. Nomor/.test(m)) { catat('tambah', `${aksi}: "${m}"`); continue; }
+    const salah = await periksa();
+    if (salah) catat('tambah', `${aksi}: ${salah}`);
+  }
+
+  // Formulir yang belum punya jalur simpan tidak boleh berkata "tersimpan".
+  rute = 'tambah/tanpa-jalur';
+  await p.goto(`${ALAMAT}/#/docext`, { waitUntil: 'domcontentloaded' });
+  await p.reload({ waitUntil: 'domcontentloaded' });
+  await p.waitForTimeout(1200);
+  const tombolTanpaJalur = await p.$('[data-act="compliance-baru"]');
+  if (tombolTanpaJalur) {
+    await tombolTanpaJalur.click(); await p.waitForTimeout(300);
+    await p.click('[data-submit]'); await p.waitForTimeout(800);
+    const m = await pesan();
+    if (/terdaftar dan mulai dipantau|CMP-013/.test(m)) catat('tambah', `formulir tanpa jalur berpura-pura tersimpan: "${m}"`);
+  }
+  await ctx.close();
+}
+
 /* ── Akun: undangan → tautan → setel sandi → masuk ──────────────────── */
 {
   rute = 'akun/undangan';
