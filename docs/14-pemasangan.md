@@ -125,18 +125,33 @@ orang yang membuatnya.
 
 ## Menyalakan mode tersambung
 
-Setelah administrator pertama berhasil masuk, satu baris pada
-`assets/konfigurasi.js`:
+**Urutannya: mode tersambung lebih dulu, baru tautan administrator dipakai.**
+Halaman penyetel sandi (`#/sandi/…`) adalah bagian dari aplikasi tersambung;
+pada mode peragaan tautan itu tidak membuka apa pun.
+
+`assets/konfigurasi.js` di repositori tetap `api: ''`, karena uji layar dan
+perbandingan piksel bersandar padanya. Salinan untuk peladen ini disimpan di
+luar docroot, `/home/semestat/kg-konfigurasi.js`:
 
 ```js
-window.KG_KONFIG = Object.assign({ api: 'https://khongguan.semestateknologiutama.com', versi: '5' }, …
+window.KG_KONFIG = Object.assign({
+  api: 'https://khongguan.semestateknologiutama.com',
+  versi: '6'
+}, window.KG_KONFIG || {});
 ```
+
+`kg-salin.sh` menimpakannya ke `assets/konfigurasi.js` setiap kali selesai
+menyalin, sehingga pembaruan berikutnya tidak diam-diam mengembalikan situs ke
+mode peragaan. Kembali ke peragaan: hapus berkas itu lalu jalankan
+`kg-salin.sh`. Bila `versi` dinaikkan di repositori, naikkan juga di sini.
 
 Sejak saat itu situs menampilkan layar masuk sungguhan — akun demo dan
 `demo1234` tidak lagi tampil maupun berlaku — dan seluruh layar membaca serta
 menulis ke basis data. **Mode peragaan untuk klien hilang dari alamat ini.**
 Bila peragaan masih dibutuhkan, pasang salinan dengan `api: ''` di subdomain
-terpisah.
+terpisah. Bukan di `/demo/` pada domain yang sama: antrean luring aplikasi
+lapangan disimpan per domain, dan kiriman peragaan akan ikut terkirim ke
+peladen sungguhan.
 
 Karyawan diundang dari layar **Pengguna → Tambah Pengguna**. Selama surel
 sistem belum dinyalakan, tautan undangan tampil di layar untuk diteruskan

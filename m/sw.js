@@ -19,14 +19,15 @@
    v3: menu ikon di Beranda; berkas pendukung dipanggil dengan penanda ?v=.
    v4: antrean dikirim ke peladen; konfigurasi.js ikut disimpan.
    v5: masuk dengan akun sungguhan; profil disimpan untuk dibuka tanpa sinyal.
+   v6: mode tersambung di peladen produksi; konfigurasi.js berisi alamat API.
 
    Penanda ?v= pada alamat di bawah harus sama persis dengan yang tertulis di
    index.html. Berkas yang sama dengan penanda berbeda adalah dua alamat yang
    berbeda bagi simpanan — itulah yang membuat pembaruan benar-benar sampai,
    dan itu pula yang membuat ketidakcocokan menjadi salinan ganda yang
    diam-diam memenuhi penyimpanan perangkat. */
-const TANDA = '?v=5';
-const VERSI = 'kg-lapangan-v5';
+const TANDA = '?v=6';
+const VERSI = 'kg-lapangan-v6';
 const INTI = [
   './',
   './index.html',
