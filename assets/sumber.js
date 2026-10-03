@@ -33,6 +33,7 @@ window.KGSUMBER = (function () {
   /* Data acuan, diambil sekali saat tersambung. Formulir memakai nama area
      ("Line 3 — Oven Biskuit"); peladen memakai id-nya. */
   var ACUAN = null;
+  var UNIT = [];
 
   /* Koleksi yang endpoint-nya sudah ada. Ditambah seiring modul disambungkan. */
   var TERSAMBUNG = {
@@ -1148,6 +1149,67 @@ window.KGSUMBER = (function () {
     }]);
   });
 
+  /* ── Isi hasil inspeksi dan checklist ── */
+  var PERIKSA = {
+    inspeksi:  { jalur: 'inspeksi',  modul: 'inspection', segarkan: ['inspeksi'] },
+    checklist: { jalur: 'checklist', modul: 'checklist',  segarkan: ['checklistHarian'] }
+  };
+
+  Object.keys(PERIKSA).forEach(function (jenis) {
+    var d = PERIKSA[jenis];
+    AKSI[jenis] = (AKSI[jenis] || []).concat([{
+      kunci: 'hasil', label: 'Isi Hasil', modul: d.modul, wewenang: 'isi',
+      bila: function (r) { return r.status !== 'Selesai'; },
+      buka: function (r) { formulirHasil(jenis, r); }
+    }]);
+  });
+
+  function formulirHasil(jenis, r) {
+    if (!window.KG_BUKA) return;
+    ambil('/' + PERIKSA[jenis].jalur + '/' + r.uuid + '/butir').then(function (j) {
+      var butir = j.data || [];
+      var opsi = ['', 'Sesuai', 'Tidak Sesuai', 'Tidak Berlaku'];
+      window.KG_BUKA({
+        title: 'Isi Hasil ' + r.id, sub: (r.jenis || r.nama || '') + ' · ' + butir.length + ' butir',
+        body: butir.map(function (b, i) {
+          return '<div class="card" data-hasil="' + b.id + '" style="padding:var(--space-4);margin-bottom:var(--space-3)">'
+            + '<div style="font-weight:600;margin-bottom:var(--space-3)">' + (i + 1) + '. ' + esc(b.butir) + '</div>'
+            + '<div class="row2"><div class="field"><label>Jawaban</label><select data-h="jawab">' + opsi.map(function (o) {
+                return '<option value="' + o + '"' + ((b.jawab || '') === o ? ' selected' : '') + '>' + (o || '— Belum dijawab —') + '</option>';
+              }).join('') + '</select></div>'
+            + '<div class="field"><label>Catatan / uraian temuan</label><input type="text" data-h="catatan" value="'
+            + esc(b.catatan || '') + '"></div></div></div>';
+        }).join('')
+          + bidang('selesai', 'Simpan sebagai', '<select id="e-selesai"><option value="">Sementara — dilanjutkan nanti</option>'
+            + '<option value="1">Selesai — seluruh butir sudah dijawab</option></select>', true)
+          + catatanKaki('"Tidak Sesuai" wajib diuraikan. Setelah selesai, hasil tidak diubah lagi; temuan dijadikan CAPA dari rinciannya.'),
+        ok: 'Simpan Hasil', aksi: 'hasil-periksa:' + jenis + ':' + r.uuid
+      });
+    }).catch(function (e) {
+      if (window.KG_PESAN) window.KG_PESAN('Butir tidak dapat dimuat: ' + e.message);
+    });
+  }
+
+  /* ── Temuan audit ── */
+  AKSI.audit = (AKSI.audit || []).concat([{
+    kunci: 'temuan', label: 'Tambah Temuan', gaya: 'secondary', modul: 'audit', wewenang: 'isi',
+    bila: function (r) { return r.status !== 'Selesai'; },
+    buka: function (r) {
+      if (!window.KG_BUKA) return;
+      var orang = ((ACUAN && ACUAN.penanggung_jawab) || []).map(function (o) { return [o.id, esc(o.nama)]; });
+      window.KG_BUKA({
+        title: 'Tambah Temuan', sub: r.id + ' · ' + r.standar,
+        body: '<div class="row2">' + isian('klausul', 'Klausul / elemen', '', true)
+          + pilihan('kategori', 'Kategori', ['Major', 'Minor', 'Observasi'], 'Minor') + '</div>'
+          + paragraf('isi', 'Uraian temuan', '', true)
+          + '<div class="row2">' + pilihanNilai('pj_id', 'Penanggung jawab', [['', '— Belum ditentukan —']].concat(orang), '', false)
+          + isian('tenggat', 'Tenggat', '', false, 'date') + '</div>'
+          + catatanKaki('Temuan Major dan Minor wajib ber-CAPA sebelum audit dapat ditutup (AB-18).'),
+        ok: 'Simpan Temuan', aksi: 'temuan-baru:' + r.uuid
+      });
+    }
+  }]);
+
   function formulirCapa(sumberJenis, r) {
     if (!window.KG_BUKA) return;
     var orang = ((ACUAN && ACUAN.penanggung_jawab) || []).map(function (o) {
@@ -1543,20 +1605,20 @@ window.KGSUMBER = (function () {
     'inspeksi-baru': {
       jalur: '/inspeksi', segarkan: ['inspeksi'],
       isi: function () {
-        return {
-          jenis: nilai('i-jenis'), area: nilai('i-area'), jadwal: 'Bulanan',
-          butir: [{ butir: nilai('i-jenis') + ' — butir 1' }]
-        };
+        var isi = bacaIsian();
+        isi.jenis = nilai('e-jenis-periksa');
+        isi.butir = bacaButir();
+        return isi;
       }
     },
     'checklist-mulai': {
       jalur: '/checklist', segarkan: ['checklistHarian'],
       isi: function () {
-        return {
-          nama: nilai('k-jenis'), frekuensi: 'Harian',
-          lokasi: nilai('k-unit'), shift: nilai('k-shift'),
-          butir: [{ butir: nilai('k-jenis') + ' — butir 1' }]
-        };
+        var isi = bacaIsian();
+        isi.nama = nilai('e-jenis-periksa');
+        isi.frekuensi = 'Harian';
+        isi.butir = bacaButir();
+        return isi;
       }
     },
     'izin-baru': {
@@ -1648,6 +1710,33 @@ window.KGSUMBER = (function () {
         return d.melewati && d.melewati.length ? m + ' Melewati baku mutu: ' + d.melewati.join(', ') + '.' : m + ' Seluruhnya memenuhi baku mutu.';
       }
     },
+    'hasil-periksa': {
+      jalur: function (param) { var b = param.split(':'); return '/' + PERIKSA[b[0]].jalur + '/' + b[1] + '/jawab'; },
+      segarkan: function (param) { return PERIKSA[param.split(':')[0]].segarkan; },
+      isi: function () {
+        var baris = document.querySelectorAll('#modal-host [data-hasil]'), jawaban = [];
+        for (var i = 0; i < baris.length; i++) {
+          var j = baris[i].querySelector('[data-h="jawab"]').value;
+          var c = baris[i].querySelector('[data-h="catatan"]').value.trim();
+          if (j === 'Tidak Sesuai' && !c) throw galatJelas('Butir ' + (i + 1) + ' dijawab Tidak Sesuai: uraikan temuannya.');
+          jawaban.push({ id: baris[i].getAttribute('data-hasil'), jawab: j, catatan: c });
+        }
+        return { jawaban: jawaban, selesai: nilai('e-selesai') === '1' };
+      },
+      hasil: function (d) {
+        var m = d.nomor + ': ' + d.dijawab + ' dari ' + d.butir + ' butir terjawab, status ' + d.status + '.';
+        if (d.tidak_sesuai) m += ' ' + d.tidak_sesuai + ' tidak sesuai.';
+        if (d.unit) m += ' Unit ' + d.unit.kode + ' ' + (d.unit.status === 'Terkunci' ? 'TERKUNCI dari operasi.' : 'layak beroperasi.');
+        return m;
+      }
+    },
+    'temuan-baru': {
+      jalur: function (id) { return '/audit/' + id + '/temuan'; },
+      segarkan: ['temuanAudit', 'audit'],
+      isi: function () { return bacaIsian(); },
+      hasil: function (d) { return 'Temuan ' + (d.nomor || '') + ' tersimpan.'; }
+    },
+
     /* "capa-baru:<SumberJenis>:<uuid>" — dari rincian sumbernya. */
     'capa-baru': {
       jalur: '/capa',
@@ -2237,7 +2326,89 @@ window.KGSUMBER = (function () {
     return out;
   }
 
+  /* ── Templat butir periksa ──
+     Daftar butir standar per jenis. Dapat disunting sebelum disimpan —
+     tiap pabrik punya alat dan kebiasaan sendiri — tetapi tidak pernah
+     dimulai dari satu butir kosong. APAR dan P2H forklift memakai butir
+     yang sama dengan purwarupa. */
+  var TEMPLAT = {
+    'APAR & Hydrant': function () { return (window.KG.checklistAPAR || []).map(function (x) { return x.butir; }); },
+    'P2H Forklift': function () { return (window.KG.checklistP2H || []).map(function (x) { return x.butir; }); },
+    'Forklift & Alat Angkat': function () { return (window.KG.checklistP2H || []).map(function (x) { return x.butir; }); },
+    'Jalur Evakuasi': ['Jalur evakuasi bebas hambatan', 'Rambu dan lampu darurat menyala', 'Pintu darurat dapat dibuka dari dalam',
+      'Titik kumpul bertanda dan bebas hambatan', 'Denah evakuasi terpasang dan terbaca'],
+    'P3K': ['Kotak P3K lengkap sesuai daftar isi', 'Tidak ada isi yang kedaluwarsa', 'Petugas P3K terlatih tercantum',
+      'Kotak mudah dijangkau dan bertanda'],
+    'Panel Listrik': ['Pintu panel tertutup dan terkunci', 'Tidak ada kabel terkelupas atau terbakar', 'Label sirkuit terbaca',
+      'Area depan panel bebas 1 meter', 'Grounding terpasang', 'Tidak ada bau atau suara tidak wajar'],
+    'Higiene & Sanitasi Produksi': ['Pekerja memakai penutup kepala dan masker', 'Tempat cuci tangan berfungsi dan bersabun',
+      'Tidak ada hama atau tanda hama', 'Permukaan kontak pangan bersih', 'Tempat sampah tertutup'],
+    'Boiler': ['Tekanan kerja dalam batas izin', 'Safety valve bertanggal uji yang berlaku', 'Level air terbaca di gelas penduga',
+      'Tidak ada kebocoran uap atau bahan bakar', 'Operator bersertifikat bertugas', 'Logbook harian terisi'],
+    'IPAL': ['Pompa dan blower beroperasi', 'Tidak ada luapan atau bau menyengat', 'Debit outlet tercatat',
+      'Sampel harian diambil', 'Logbook operasi terisi'],
+    'Pra-nyala Boiler': ['Level air normal', 'Katup bahan bakar tertutup sebelum penyalaan', 'Safety valve bebas hambatan',
+      'Alarm level air rendah berfungsi', 'Ventilasi ruang boiler terbuka'],
+    'Kepatuhan APD Lini Produksi': ['Helm pengaman dipakai', 'Sepatu safety dipakai', 'Masker dipakai di area berdebu',
+      'Sarung tangan dipakai di area panas', 'Pelindung telinga dipakai di area bising'],
+    'Kebersihan & Kerapian Area (5R)': ['Barang tidak perlu disingkirkan', 'Peralatan di tempat bertanda', 'Lantai bersih dan kering',
+      'Jalur pejalan kaki bebas', 'Papan 5R diperbarui'],
+    'Ruang Panel & Genset': ['Ruang bersih dan kering', 'APAR CO2 tersedia', 'Level BBM genset cukup', 'Uji jalan genset mingguan tercatat',
+      'Tidak ada kebocoran oli']
+  };
+
+  function butirTemplat(jenis) {
+    var t = TEMPLAT[jenis];
+    var daftar = typeof t === 'function' ? t() : (t || []);
+    return daftar.join('\n');
+  }
+
+  document.addEventListener('change', function (e) {
+    var id = e.target && e.target.id;
+    if (id !== 'e-jenis-periksa') return;
+    var area = document.getElementById('e-butir');
+    if (area) area.value = butirTemplat(e.target.value);
+  });
+
+  function bacaButir() {
+    var el = document.getElementById('e-butir');
+    var baris = String(el ? el.value : '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
+    if (!baris.length) throw galatJelas('Isi sedikitnya satu butir periksa.');
+    return baris.map(function (b) { return { butir: b }; });
+  }
+
+  var JENIS_INSPEKSI = ['APAR & Hydrant', 'Jalur Evakuasi', 'P3K', 'Forklift & Alat Angkat', 'Panel Listrik',
+                        'Higiene & Sanitasi Produksi', 'Boiler', 'IPAL'];
+  var JENIS_CHECKLIST = ['P2H Forklift', 'Pra-nyala Boiler', 'Kepatuhan APD Lini Produksi',
+                         'Kebersihan & Kerapian Area (5R)', 'Ruang Panel & Genset'];
+
+  function pilihJenisPeriksa(daftar) {
+    return bidang('jenis-periksa', 'Jenis', '<select id="e-jenis-periksa">' + daftar.map(function (j) {
+      return '<option>' + esc(j) + '</option>'; }).join('') + '</select>', true);
+  }
+
   var FORMULIR_BARU = {
+    'inspeksi-baru': function () {
+      var area = areaSaya().map(function (a) { return esc(a.nama); });
+      return { title: 'Mulai Inspeksi', sub: 'Pilih jenis checklist yang akan dikerjakan',
+        body: pilihJenisPeriksa(JENIS_INSPEKSI)
+          + '<div class="row2">' + pilihan('area', 'Area', area, area[0]) + pilihan('jadwal', 'Jadwal', ['Harian', 'Mingguan', 'Bulanan', 'Triwulanan', 'Tahunan'], 'Bulanan') + '</div>'
+          + bidang('butir', 'Butir periksa (satu per baris)', '<textarea id="e-butir" rows="8">' + esc(butirTemplat(JENIS_INSPEKSI[0])) + '</textarea>', true)
+          + catatanKaki('Hasil per butir diisi lewat "Isi Hasil" pada rincian inspeksi. Jawaban "Tidak Sesuai" wajib diuraikan dan dapat dijadikan CAPA.'),
+        ok: 'Mulai', toast: '' };
+    },
+    'checklist-mulai': function () {
+      var unit = [['', '— Bukan unit/alat —']].concat(UNIT.map(function (x) {
+        return [x.id, esc(x.kode + ' · ' + x.nama) + (x.status === 'Terkunci' ? ' (TERKUNCI)' : '')]; }));
+      return { title: 'Kerjakan Checklist', sub: 'Alat tidak boleh beroperasi sebelum checklist selesai',
+        body: pilihJenisPeriksa(JENIS_CHECKLIST)
+          + '<div class="row2">' + pilihanNilai('unit_id', 'Unit / alat', unit, '', false)
+          + isian('lokasi', 'Area / lokasi', '', false) + '</div>'
+          + pilihan('shift', 'Shift', ['Shift 1', 'Shift 2', 'Shift 3'], 'Shift 1')
+          + bidang('butir', 'Butir periksa (satu per baris)', '<textarea id="e-butir" rows="8">' + esc(butirTemplat(JENIS_CHECKLIST[0])) + '</textarea>', true)
+          + catatanKaki('Satu butir dijawab "Tidak Sesuai" mengunci unitnya dari operasi. Kuncinya dibuka oleh checklist ulang pada unit yang sama yang lulus seluruhnya.'),
+        ok: 'Mulai Checklist', toast: '' };
+    },
     'input-uji': function () {
       var kode = 'pppa';
       var domain = [['pppa', 'PPPA — Pengendalian Pencemaran Air'], ['pppu', 'PPPU — Pengendalian Pencemaran Udara'],
@@ -2597,6 +2768,9 @@ window.KGSUMBER = (function () {
       /* Data acuan diambil sekali: formulir memakai nama area, peladen
          memakai id-nya. */
       janji.push(ambil('/acuan').then(function (a) { ACUAN = a.data; }).catch(function () {}));
+      if (saya.modul.indexOf('checklist') !== -1) {
+        janji.push(ambil('/checklist/unit').then(function (a) { UNIT = a.data || []; }).catch(function () {}));
+      }
       Object.keys(TERSAMBUNG).forEach(function (koleksi) {
         var t = TERSAMBUNG[koleksi];
         if (saya.modul.indexOf(t.modul) === -1) return;

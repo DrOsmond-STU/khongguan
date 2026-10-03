@@ -2150,3 +2150,57 @@ uji('UJ-99b', 'CAPA: penanggung jawab aktif, tenggat sah, prioritas dikenal', fu
     sama(400, panggil('POST', '/capa', ['tenggat' => date('Y-m-d', strtotime('-1 day'))] + $dasar, $T['qhse'])['status'], 'tenggat lampau');
     sama(400, panggil('POST', '/capa', ['prioritas' => 'Darurat'] + $dasar, $T['qhse'])['status'], 'prioritas asing');
 });
+
+echo "\nHasil inspeksi dan checklist\n";
+
+uji('UJ-100', 'Inspeksi: jawaban per butir, Tidak Sesuai wajib berurai, selesai menuntut semua terjawab', function () use ($D, $T) {
+    $i = panggil('POST', '/inspeksi', ['jenis' => 'APAR', 'area' => 'Gudang',
+        'butir' => [['butir' => 'Tekanan normal'], ['butir' => 'Segel utuh'], ['butir' => 'Selang baik']]], $T['qhse']);
+    $id = $i['data']['id'];
+    $b = panggil('GET', "/inspeksi/$id/butir", [], $T['qhse'])['data'];
+    sama(3, count($b), 'tiga butir');
+    benar(isset($b[0]['id']), 'butir membawa penanda');
+
+    sama(400, panggil('POST', "/inspeksi/$id/jawab", ['jawaban' => [['id' => $b[0]['id'], 'jawab' => 'Tidak Sesuai']]],
+        $T['qhse'])['status'], 'Tidak Sesuai tanpa uraian ditolak');
+    $h = panggil('POST', "/inspeksi/$id/jawab", ['jawaban' => [
+        ['id' => $b[0]['id'], 'jawab' => 'Sesuai'], ['id' => $b[1]['id'], 'jawab' => 'Tidak Sesuai', 'catatan' => 'Segel putus']]], $T['qhse']);
+    sama('Dalam Proses', $h['data']['status'], 'sebagian terjawab');
+    sama(400, panggil('POST', "/inspeksi/$id/jawab", ['jawaban' => [], 'selesai' => true], $T['qhse'])['status'],
+        'belum semua terjawab tidak dapat diselesaikan');
+    $s = panggil('POST', "/inspeksi/$id/jawab", ['jawaban' => [['id' => $b[2]['id'], 'jawab' => 'Tidak Berlaku']], 'selesai' => true], $T['qhse']);
+    sama('Selesai', $s['data']['status'], 'selesai');
+    sama(1, $s['data']['tidak_sesuai'], 'satu temuan');
+    sama(409, panggil('POST', "/inspeksi/$id/jawab", ['jawaban' => [['id' => $b[0]['id'], 'jawab' => 'Tidak Sesuai', 'catatan' => 'x']]],
+        $T['qhse'])['status'], 'yang selesai terkunci');
+
+    $lain = panggil('POST', '/inspeksi', ['jenis' => 'P3K', 'area' => 'Klinik', 'butir' => [['butir' => 'Isi lengkap']]], $T['qhse']);
+    sama(400, panggil('POST', '/inspeksi/' . $lain['data']['id'] . '/jawab', ['jawaban' => [['id' => $b[0]['id'], 'jawab' => 'Sesuai']]],
+        $T['qhse'])['status'], 'butir inspeksi lain ditolak');
+    sama(403, panggil('POST', "/inspeksi/$id/jawab", ['jawaban' => []], $T['qhse_smg'])['status'], 'pabrik lain ditolak');
+});
+
+uji('UJ-101', 'AB-08 · Tidak Sesuai mengunci unit; dibuka hanya oleh checklist ulang yang lulus seluruhnya', function () use ($D, $T) {
+    $unit = (string) Db::nilai("INSERT INTO unit_periksa (pabrik_id, kode, nama, jenis)
+        VALUES (:p, :k, 'Forklift Uji', 'Forklift') RETURNING id", [':p' => $D['pabrik_cbt'], ':k' => 'FL-UJI-' . uniqid()]);
+    $smgUnit = (string) Db::nilai("INSERT INTO unit_periksa (pabrik_id, kode, nama, jenis)
+        VALUES (:p, :k, 'Forklift SMG', 'Forklift') RETURNING id", [':p' => $D['pabrik_smg'], ':k' => 'FL-SMG-' . uniqid()]);
+    sama(400, panggil('POST', '/checklist', ['nama' => 'P2H Forklift', 'unit_id' => $smgUnit,
+        'butir' => [['butir' => 'Rem']]], $T['qhse'])['status'], 'unit pabrik lain ditolak');
+
+    $c1 = panggil('POST', '/checklist', ['nama' => 'P2H Forklift', 'unit_id' => $unit,
+        'butir' => [['butir' => 'Rem'], ['butir' => 'Klakson']]], $T['qhse'])['data']['id'];
+    $b1 = panggil('GET', "/checklist/$c1/butir", [], $T['qhse'])['data'];
+    $h = panggil('POST', "/checklist/$c1/jawab", ['jawaban' => [
+        ['id' => $b1[0]['id'], 'jawab' => 'Tidak Sesuai', 'catatan' => 'Rem blong'], ['id' => $b1[1]['id'], 'jawab' => 'Sesuai']],
+        'selesai' => true], $T['qhse']);
+    sama('Terkunci', $h['data']['unit']['status'], 'unit terkunci');
+
+    $c2 = panggil('POST', '/checklist', ['nama' => 'P2H Forklift', 'unit_id' => $unit,
+        'butir' => [['butir' => 'Rem'], ['butir' => 'Klakson']]], $T['qhse'])['data']['id'];
+    $b2 = panggil('GET', "/checklist/$c2/butir", [], $T['qhse'])['data'];
+    $sebagian = panggil('POST', "/checklist/$c2/jawab", ['jawaban' => [['id' => $b2[0]['id'], 'jawab' => 'Sesuai']]], $T['qhse']);
+    sama('Terkunci', $sebagian['data']['unit']['status'], 'belum selesai: tetap terkunci');
+    $lulus = panggil('POST', "/checklist/$c2/jawab", ['jawaban' => [['id' => $b2[1]['id'], 'jawab' => 'Sesuai']], 'selesai' => true], $T['qhse']);
+    sama('Layak', $lulus['data']['unit']['status'], 'checklist ulang yang lulus membuka kunci');
+});

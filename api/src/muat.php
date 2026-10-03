@@ -66,6 +66,10 @@ function rute(): Rute
 
     // Ubah dan hapus lunak untuk seluruh modul catatan. Satu penangan,
     // satu kumpulan aturan — lihat Modul\Catatan.
+    // Hasil inspeksi dan checklist, butir demi butir.
+    $r->post('/inspeksi/{id}/jawab',  fn($p, $par) => Modul\Periksa::jawab($p, $par, 'inspeksi'));
+    $r->post('/checklist/{id}/jawab', fn($p, $par) => Modul\Periksa::jawab($p, $par, 'checklist'));
+
     foreach (Modul\Catatan::jenis() as $jenis) {
         $r->post("/$jenis/{id}/ubah",  fn($p, $par) => Modul\Catatan::ubah($p, $par, $jenis));
         $r->post("/$jenis/{id}/hapus", fn($p, $par) => Modul\Catatan::hapus($p, $par, $jenis));

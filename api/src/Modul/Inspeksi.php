@@ -49,7 +49,7 @@ final class Inspeksi
         Wewenang::wajibCakupan($u, $i['pabrik_id']);
 
         Jawab::kirim(Db::semua(
-            'SELECT urutan, butir, jawab, catatan FROM inspeksi_butir
+            'SELECT id, urutan, butir, jawab, catatan FROM inspeksi_butir
               WHERE inspeksi_id = :i ORDER BY urutan', [':i' => $i['id']]
         ));
     }

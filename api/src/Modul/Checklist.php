@@ -53,7 +53,7 @@ final class Checklist
         Wewenang::wajibCakupan($u, $c['pabrik_id']);
 
         Jawab::kirim(Db::semua(
-            'SELECT urutan, butir, jawab, catatan FROM checklist_butir
+            'SELECT id, urutan, butir, jawab, catatan FROM checklist_butir
               WHERE checklist_id = :i ORDER BY urutan', [':i' => $c['id']]
         ));
     }
@@ -72,6 +72,17 @@ final class Checklist
         $pabrik = (string) $p->isi('pabrik_id', $u['pabrik_id']);
         Wewenang::wajibCakupan($u, $pabrik);
 
+        // Unit harus milik pabrik yang sama: checklist yang mengunci alat
+        // di pabrik lain adalah penguncian yang tidak dilihat siapa pun.
+        $unitId = $p->isi('unit_id');
+        if ($unitId !== null && $unitId !== '') {
+            $pbUnit = preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', (string) $unitId)
+                ? Db::nilai('SELECT pabrik_id FROM unit_periksa WHERE id = :i', [':i' => $unitId]) : null;
+            if ($pbUnit === null || $pbUnit !== $pabrik) {
+                throw Galat::isian('Unit tidak dikenal di pabrik ini.', ['kolom' => 'unit_id']);
+            }
+        }
+
         $hasil = Db::transaksi(function () use ($p, $u, $pabrik, $nama, $butir) {
             $nomor = Nomor::berikut('checklist');
             $id = (string) Db::nilai(
@@ -81,7 +92,7 @@ final class Checklist
                 [':n' => $nomor, ':pb' => $pabrik, ':nm' => $nama,
                  ':f' => (string) $p->isi('frekuensi', 'Harian'),
                  ':a' => $p->isi('area_id'), ':lk' => $p->isi('lokasi'),
-                 ':un' => $p->isi('unit_id'), ':sh' => $p->isi('shift'),
+                 ':un' => $p->isi('unit_id') ?: null, ':sh' => $p->isi('shift'),
                  ':pj' => $p->isi('pj_id', $u['id']),
                  ':tg' => (string) $p->isi('tanggal', date('Y-m-d')), ':w' => $p->isi('waktu'),
                  ':st' => (string) $p->isi('status', 'Terbuka'), ':o' => $u['id']]
@@ -126,7 +137,7 @@ final class Checklist
         [$saring, $par] = Wewenang::saringCakupan($u, 'up');
 
         Jawab::kirim(Db::semua(
-            "SELECT up.kode, up.nama, up.jenis, up.status, up.dikunci_pada, c.nomor AS dikunci_oleh
+            "SELECT up.id, up.kode, up.nama, up.jenis, up.status, up.dikunci_pada, c.nomor AS dikunci_oleh
                FROM unit_periksa up
           LEFT JOIN checklist c ON c.id = up.dikunci_oleh_checklist
               WHERE $saring

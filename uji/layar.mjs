@@ -480,6 +480,56 @@ const tok = await token();
     if (salah) catat('tambah', `${aksi}: ${salah}`);
   }
 
+  // Inspeksi dari templat → isi hasil → selesai.
+  rute = 'periksa/inspeksi';
+  await p.goto(`${ALAMAT}/#/inspection`, { waitUntil: 'domcontentloaded' });
+  await p.reload({ waitUntil: 'domcontentloaded' });
+  await p.waitForTimeout(1500);
+  await p.click('[data-act="inspeksi-baru"]');
+  await p.waitForTimeout(300);
+  const nButir = await p.evaluate(() => document.getElementById('e-butir').value.split('\n').filter(Boolean).length);
+  if (nButir < 5) catat('periksa', `templat APAR hanya ${nButir} butir`);
+  await p.click('[data-submit]');
+  await p.waitForTimeout(1800);
+  const mInsp = await pesan();
+  const nomorInsp = (mInsp.match(/INS-\d{4}-\d+/) || [])[0];
+  if (!nomorInsp) {
+    catat('periksa', `inspeksi tidak dimulai: "${mInsp}"`);
+  } else {
+    await p.evaluate((n) => window.KGSUMBER.jalankanAksi('inspeksi', n, 'hasil'), nomorInsp);
+    await p.waitForTimeout(1200);
+    const baris = await p.$$('[data-hasil]');
+    if (baris.length !== nButir) catat('periksa', `formulir hasil ${baris.length} butir, dibuat ${nButir}`);
+    for (const b of baris) await (await b.$('[data-h="jawab"]')).selectOption('Sesuai');
+    await (await baris[0].$('[data-h="jawab"]')).selectOption('Tidak Sesuai');
+    await (await baris[0].$('[data-h="catatan"]')).fill('Manometer di zona merah');
+    await p.selectOption('#e-selesai', '1');
+    await p.click('[data-submit]');
+    await p.waitForTimeout(1800);
+    const mHasil = await pesan();
+    if (!/status Selesai\. 1 tidak sesuai/.test(mHasil)) catat('periksa', `hasil inspeksi: "${mHasil}"`);
+  }
+
+  // Temuan audit dari rincian audit.
+  rute = 'periksa/temuan-audit';
+  await p.goto(`${ALAMAT}/#/audit`, { waitUntil: 'domcontentloaded' });
+  await p.reload({ waitUntil: 'domcontentloaded' });
+  await p.waitForTimeout(1500);
+  const auditBuka = await p.evaluate(() => {
+    const a = (window.KG.audit || []).find((x) => window.KGSUMBER.aksiRincian('audit', x.id).some((k) => k.kunci === 'temuan'));
+    return a && a.id;
+  });
+  if (!auditBuka) {
+    catat('periksa', 'tidak ada audit terbuka yang menawarkan Tambah Temuan');
+  } else {
+    await p.evaluate((n) => window.KGSUMBER.jalankanAksi('audit', n, 'temuan'), auditBuka);
+    await p.waitForTimeout(300);
+    await p.fill('#e-klausul', '7.2'); await p.fill('#e-isi', tanda + ' temuan');
+    await p.click('[data-submit]');
+    await p.waitForTimeout(1800);
+    if (!/Temuan .* tersimpan/.test(await pesan())) catat('periksa', `temuan audit: "${await pesan()}"`);
+  }
+
   // CAPA dibuat dari rincian sumbernya. Tombolnya ada di rincian kejadian,
   // dan formulirnya membawa sumber tanpa disalin orang.
   rute = 'tambah/capa-dari-sumber';
