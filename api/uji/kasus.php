@@ -1915,3 +1915,63 @@ uji('UJ-89', 'Penanda catatan yang rusak dijawab 404, bukan galat basis data', f
         sama(404, panggil('POST', "/$j/bukan-uuid/hapus", ['alasan' => 'Penanda rusak'], $T['admin'])['status'], "$j hapus");
     }
 });
+
+echo "\nYang sebelumnya belum dapat disimpan\n";
+
+uji('UJ-90', 'Dokumen kepatuhan: masa berlaku wajib, kode CMP berurutan, jejak tercatat', function () use ($T) {
+    sama(400, panggil('POST', '/dokumen/eksternal', ['jenis' => 'Izin Peralatan', 'judul' => 'SKLO Kompresor',
+        'penerbit' => 'Disnaker'], $T['qhse'])['status'], 'tanpa masa berlaku ditolak');
+    sama(400, panggil('POST', '/dokumen/eksternal', ['jenis' => 'Izin Peralatan', 'judul' => 'SKLO', 'penerbit' => 'Disnaker',
+        'berlaku' => '2027-02-30'], $T['qhse'])['status'], 'tanggal mustahil ditolak');
+    sama(400, panggil('POST', '/dokumen/eksternal', ['jenis' => 'Lain-lain', 'judul' => 'SKLO', 'penerbit' => 'Disnaker',
+        'berlaku' => '2027-02-01'], $T['qhse'])['status'], 'jenis di luar daftar ditolak');
+    $a = panggil('POST', '/dokumen/eksternal', ['jenis' => 'Izin Peralatan', 'judul' => 'SKLO Bejana Tekan',
+        'penerbit' => 'Disnaker', 'nomor' => '560/123', 'berlaku' => '2027-06-30'], $T['qhse']);
+    sama(201, $a['status'], 'terdaftar');
+    $b = panggil('POST', '/dokumen/eksternal', ['jenis' => 'Izin Lingkungan', 'judul' => 'Persetujuan Teknis',
+        'penerbit' => 'DLH', 'berlaku' => '2028-01-01'], $T['qhse']);
+    benar((int) substr($b['data']['kode'], 4) === (int) substr($a['data']['kode'], 4) + 1, 'kode berikutnya');
+    $daftar = panggil('GET', '/dokumen/eksternal', [], $T['qhse'])['data'];
+    benar(in_array($a['data']['kode'], array_column($daftar, 'kode'), true), 'muncul di daftar');
+    sama(403, panggil('POST', '/dokumen/eksternal', ['jenis' => 'Izin Peralatan', 'judul' => 'x', 'penerbit' => 'x',
+        'berlaku' => '2027-01-01'], $T['operator'])['status'], 'operator tidak berwenang');
+});
+
+uji('UJ-91', 'Hasil uji lingkungan: memenuhi dihitung dari angka, bukan dari centang', function () use ($T) {
+    $h = panggil('POST', '/lingkungan', ['kode' => 'pppa', 'tanggal' => date('Y-m-d'), 'lab' => 'Lab Uji KAN',
+        'parameter' => [
+            ['nama' => 'BOD', 'nilai' => '62', 'satuan' => 'mg/L', 'ambang' => '≤ 50', 'memenuhi' => true],
+            ['nama' => 'pH', 'nilai' => '7,2', 'ambang' => '6,0 – 9,0'],
+            ['nama' => 'Bau', 'nilai' => 'Tidak berbau', 'ambang' => 'Tidak berbau', 'memenuhi' => true],
+        ]], $T['qhse']);
+    sama(201, $h['status'], 'tersimpan');
+    sama(['BOD'], $h['data']['melewati'], 'BOD 62 > 50 melewati walau dicentang memenuhi');
+
+    sama(400, panggil('POST', '/lingkungan', ['kode' => 'pppa', 'tanggal' => date('Y-m-d'), 'lab' => 'Lab',
+        'parameter' => [['nama' => 'Warna', 'nilai' => 'Jernih', 'ambang' => 'Jernih']]], $T['qhse'])['status'],
+        'ambang bukan angka tanpa pilihan memenuhi ditolak');
+    sama(400, panggil('POST', '/lingkungan', ['kode' => 'pppa', 'tanggal' => date('Y-m-d', strtotime('+2 days')),
+        'lab' => 'Lab', 'parameter' => [['nama' => 'BOD', 'nilai' => '1', 'ambang' => '≤ 50']]], $T['qhse'])['status'],
+        'tanggal esok ditolak');
+
+    $ulang = panggil('POST', '/lingkungan', ['kode' => 'pppa', 'tanggal' => date('Y-m-d'), 'lab' => 'Lab Uji KAN',
+        'parameter' => [['nama' => 'BOD', 'nilai' => '41', 'ambang' => '≤ 50']]], $T['qhse']);
+    sama(true, $ulang['data']['mengganti'], 'uji ulang bulan yang sama menggantikan');
+    $tampil = panggil('GET', '/lingkungan', [], $T['qhse'])['data']['pppa'];
+    sama(1, count($tampil['param']), 'parameter lama diganti, tidak ditumpuk');
+    sama(true, $tampil['param'][0]['memenuhi'], 'hasil uji ulang memenuhi');
+    sama(403, panggil('POST', '/lingkungan', ['kode' => 'pppa', 'tanggal' => date('Y-m-d'), 'lab' => 'x',
+        'parameter' => [['nama' => 'BOD', 'nilai' => '1', 'ambang' => '≤ 50']]], $T['operator'])['status'], 'operator tidak berwenang');
+});
+
+uji('UJ-92', 'Tandai semua terbaca: hanya kotak masuk sendiri, pengingat tidak berhenti', function () use ($D, $T) {
+    Db::jalankan("INSERT INTO notifikasi (pabrik_id, penerima_id, jenis, modul, judul, isi, sebab, aksi)
+                  VALUES (:pb, :q, 'high', 'capa', 'Uji 1', 'isi', 'lewat_tenggat', 'capa'),
+                         (:pb, :q2, 'high', 'capa', 'Uji 2', 'isi', 'lewat_tenggat', 'capa')",
+        [':pb' => $D['pabrik_cbt'], ':q' => $D['qhse'], ':q2' => $D['qhse2']]);
+    $h = panggil('POST', '/notifikasi/terbaca-semua', [], $T['qhse']);
+    sama(200, $h['status'], 'status');
+    benar($h['data']['ditandai'] >= 1, 'sedikitnya satu ditandai');
+    sama(null, Db::nilai("SELECT dibaca_pada FROM notifikasi WHERE judul = 'Uji 2'"), 'milik orang lain tidak tersentuh');
+    sama(null, Db::nilai("SELECT selesai_pada FROM notifikasi WHERE judul = 'Uji 1'"), 'tidak menutup (AB-31)');
+});

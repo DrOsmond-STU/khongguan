@@ -66,4 +66,24 @@ final class Notifikasi
             'catatan' => 'Terbaca tidak menghentikan pengingat; item ditutup di modulnya (AB-31).',
         ]);
     }
+
+    /**
+     * POST /notifikasi/terbaca-semua — seluruh pemberitahuan yang tampil di
+     * kotak masuk pengguna ini. Sama dengan menandai satu per satu, termasuk
+     * bahwa pengingatnya tidak berhenti (AB-31).
+     */
+    public static function tandaiSemua(Permintaan $p): never
+    {
+        $u = Sesi::pengguna($p);
+        Wewenang::wajib($u, 'notif', 'baca');
+
+        $jumlah = Db::jalankan(
+            "UPDATE notifikasi SET dibaca_pada = now()
+              WHERE pabrik_id = :pb AND (penerima_id IS NULL OR penerima_id = :me)
+                AND selesai_pada IS NULL AND dibaca_pada IS NULL",
+            [':pb' => $u['pabrik_id'], ':me' => $u['id']]
+        );
+        Jawab::kirim(['ditandai' => $jumlah,
+            'catatan' => 'Terbaca tidak menghentikan pengingat; item ditutup di modulnya (AB-31).']);
+    }
 }

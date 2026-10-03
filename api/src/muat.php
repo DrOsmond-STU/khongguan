@@ -114,11 +114,13 @@ function rute(): Rute
 
     // Modul 12 · Lingkungan
     $r->get('/lingkungan', [Modul\Lingkungan::class, 'tampil']);
+    $r->post('/lingkungan', [Modul\Lingkungan::class, 'simpan']);
 
     // Modul 13/14 · Dokumen
     $r->get('/dokumen/internal',  [Modul\Dokumen::class, 'internal']);
     $r->post('/dokumen/internal', [Modul\Dokumen::class, 'buatInternal']);
     $r->get('/dokumen/eksternal', [Modul\Dokumen::class, 'eksternal']);
+    $r->post('/dokumen/eksternal', [Modul\Dokumen::class, 'buatEksternal']);
 
     // Modul 17 · Regulasi K3
     $r->get('/regulasi',  [Modul\Regulasi::class, 'daftar']);
@@ -137,6 +139,7 @@ function rute(): Rute
     // Modul 25 · Pemberitahuan
     $r->get('/notifikasi',              [Modul\Notifikasi::class, 'daftar']);
     $r->post('/notifikasi/{id}/terbaca', [Modul\Notifikasi::class, 'tandaiTerbaca']);
+    $r->post('/notifikasi/terbaca-semua', [Modul\Notifikasi::class, 'tandaiSemua']);
 
     // Modul 21 · SHE KPI & Analytics
     $r->get('/kpi',      [Modul\KpiModul::class, 'tampil']);

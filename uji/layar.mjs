@@ -423,9 +423,27 @@ const tok = await token();
       return r && r.langkah.length === 2 && Number(r.langkah[0].kemungkinan) === 3 && r.langkah[0].kerja === 'Isolasi energi'
         ? '' : 'JSA tidak membawa dua langkah yang diketik: ' + JSON.stringify(r && r.langkah);
     }],
+    ['environment', 'input-uji', async () => {
+      await p.fill('#e-lab', tanda + ' lab');
+      await p.fill('[data-param] >> nth=0 >> [data-p="nama"]', 'BOD');
+      await p.fill('[data-param] >> nth=0 >> [data-p="nilai"]', '62');
+      await p.fill('[data-param] >> nth=0 >> [data-p="ambang"]', '≤ 50');
+    }, async () => {
+      const r = (await (await fetch(`${ALAMAT}/api/v1/lingkungan`, { headers: hdr })).json()).data.pppa;
+      const bod = r && r.param.find((x) => x.nama === 'BOD');
+      return r && r.sub.includes(tanda + ' lab') && bod && bod.memenuhi === false ? '' : 'hasil uji tidak tersimpan/BOD 62 tidak melewati: ' + JSON.stringify(r);
+    }, /Melewati baku mutu: BOD/],
+    ['docext', 'compliance-baru', async () => {
+      await p.fill('#e-judul', tanda + ' sklo'); await p.fill('#e-penerbit', 'Disnaker');
+      await p.fill('#e-berlaku', '2028-03-31');
+    }, async () => {
+      const r = (await (await fetch(`${ALAMAT}/api/v1/dokumen/eksternal`, { headers: hdr })).json()).data.find((x) => x.judul === tanda + ' sklo');
+      return r && r.berlaku === '2028-03-31' ? '' : 'dokumen kepatuhan tidak tersimpan: ' + JSON.stringify(r);
+    }, /terdaftar dan mulai dipantau/],
+    ['notif', 'tandai-baca', async () => {}, async () => '', /ditandai terbaca/],
   ];
 
-  for (const [layar, aksi, isi, periksa] of kasus) {
+  for (const [layar, aksi, isi, periksa, harapPesan] of kasus) {
     rute = `tambah/${aksi}`;
     await p.goto(`${ALAMAT}/#/${layar}`, { waitUntil: 'domcontentloaded' });
     await p.reload({ waitUntil: 'domcontentloaded' });
@@ -436,23 +454,11 @@ const tok = await token();
     await p.click('[data-submit]');
     await p.waitForTimeout(1800);
     const m = await pesan();
-    if (!/Tersimpan\. Nomor/.test(m)) { catat('tambah', `${aksi}: "${m}"`); continue; }
+    if (!(harapPesan || /Tersimpan\. Nomor/).test(m)) { catat('tambah', `${aksi}: "${m}"`); continue; }
     const salah = await periksa();
     if (salah) catat('tambah', `${aksi}: ${salah}`);
   }
 
-  // Formulir yang belum punya jalur simpan tidak boleh berkata "tersimpan".
-  rute = 'tambah/tanpa-jalur';
-  await p.goto(`${ALAMAT}/#/docext`, { waitUntil: 'domcontentloaded' });
-  await p.reload({ waitUntil: 'domcontentloaded' });
-  await p.waitForTimeout(1200);
-  const tombolTanpaJalur = await p.$('[data-act="compliance-baru"]');
-  if (tombolTanpaJalur) {
-    await tombolTanpaJalur.click(); await p.waitForTimeout(300);
-    await p.click('[data-submit]'); await p.waitForTimeout(800);
-    const m = await pesan();
-    if (/terdaftar dan mulai dipantau|CMP-013/.test(m)) catat('tambah', `formulir tanpa jalur berpura-pura tersimpan: "${m}"`);
-  }
   await ctx.close();
 }
 

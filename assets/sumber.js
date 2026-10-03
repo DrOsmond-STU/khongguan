@@ -1530,6 +1530,30 @@ window.KGSUMBER = (function () {
       hasil: function (d) { return 'Perubahan untuk ' + (d.email || 'pengguna') + ' tersimpan.'; }
     },
 
+    'input-uji': {
+      jalur: '/lingkungan', segarkan: ['lingkungan'],
+      isi: function () {
+        var isi = bacaIsian();
+        isi.parameter = bacaParameter();
+        return isi;
+      },
+      hasil: function (d) {
+        var m = 'Hasil uji ' + String(d.kode || '').toUpperCase() + ' tersimpan, ' + d.parameter + ' parameter'
+          + (d.mengganti ? ' (menggantikan hasil bulan ini)' : '') + '.';
+        return d.melewati && d.melewati.length ? m + ' Melewati baku mutu: ' + d.melewati.join(', ') + '.' : m + ' Seluruhnya memenuhi baku mutu.';
+      }
+    },
+    'compliance-baru': {
+      jalur: '/dokumen/eksternal', segarkan: ['dokEksternal'],
+      isi: function () { return bacaIsian(); },
+      hasil: function (d) { return 'Dokumen ' + d.kode + ' terdaftar dan mulai dipantau.'; }
+    },
+    'tandai-baca': {
+      jalur: '/notifikasi/terbaca-semua', segarkan: ['notifikasi'],
+      isi: function () { return {}; },
+      hasil: function (d) { return d.ditandai + ' pemberitahuan ditandai terbaca.'; }
+    },
+
     /* "ubah-catatan:<jenis>:<uuid>". Seluruh isian formulir dikirim; peladen
        yang menentukan mana yang sungguh berubah, dan hanya itu yang masuk
        jejak audit. */
@@ -1926,7 +1950,88 @@ window.KGSUMBER = (function () {
     if (wadah) wadah.insertAdjacentHTML('beforeend', barisLangkah(wadah.querySelectorAll('[data-langkah]').length + 1));
   });
 
+  /* Baris parameter hasil uji lingkungan. Daftar parameternya diambil dari
+     hasil uji terakhir domain itu, supaya yang diketik hanya nilainya. */
+  function barisParameter(v) {
+    v = v || {};
+    return '<div class="card" data-param style="padding:var(--space-4);margin-bottom:var(--space-3)">'
+      + '<div class="row2">'
+      + '<div class="field"><label>Parameter</label><input type="text" data-p="nama" value="' + (v.nama || '') + '" placeholder="Contoh: BOD"></div>'
+      + '<div class="field"><label>Nilai hasil uji <span class="req">*</span></label><input type="text" data-p="nilai" placeholder="Contoh: 38"></div>'
+      + '</div><div class="row2">'
+      + '<div class="field"><label>Satuan</label><input type="text" data-p="satuan" value="' + (v.satuan || '') + '" placeholder="mg/L"></div>'
+      + '<div class="field"><label>Baku mutu</label><input type="text" data-p="ambang" value="' + (v.ambang || '') + '" placeholder="Contoh: ≤ 50 atau 6,0 – 9,0"></div>'
+      + '</div>'
+      + '<div class="field"><label>Memenuhi baku mutu?</label><select data-p="memenuhi">'
+      + '<option value="">Dihitung dari angka</option><option value="1">Memenuhi</option><option value="0">Tidak memenuhi</option>'
+      + '</select><span class="hint">Bila baku mutunya berupa angka, peladen yang menghitung; pilihan ini dipakai hanya bila tidak.</span></div>'
+      + '</div>';
+  }
+
+  function isiParameter(kode) {
+    var wadah = document.getElementById('uji-param');
+    if (!wadah) return;
+    var lalu = ((window.KG.lingkungan || {})[kode] || {}).param || [];
+    wadah.innerHTML = lalu.length ? lalu.map(barisParameter).join('') : barisParameter();
+  }
+
+  document.addEventListener('change', function (e) {
+    if (e.target && e.target.id === 'e-kode') isiParameter(e.target.value);
+  });
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest && e.target.closest('[data-tambah-param]');
+    var wadah = document.getElementById('uji-param');
+    if (t && wadah) wadah.insertAdjacentHTML('beforeend', barisParameter());
+  });
+
+  function bacaParameter() {
+    var baris = document.querySelectorAll('#uji-param [data-param]'), out = [];
+    for (var i = 0; i < baris.length; i++) {
+      var v = function (k) { var el = baris[i].querySelector('[data-p="' + k + '"]'); return el ? String(el.value || '').trim() : ''; };
+      if (!v('nilai')) continue;
+      if (!v('nama')) throw galatJelas('Parameter ke-' + (i + 1) + ': namanya wajib diisi.');
+      var r = { nama: v('nama'), nilai: v('nilai'), satuan: v('satuan'), ambang: v('ambang') };
+      if (v('memenuhi') !== '') r.memenuhi = v('memenuhi') === '1';
+      out.push(r);
+    }
+    if (!out.length) throw galatJelas('Isi nilai sedikitnya satu parameter.');
+    return out;
+  }
+
   var FORMULIR_BARU = {
+    'input-uji': function () {
+      var kode = 'pppa';
+      var domain = [['pppa', 'PPPA — Pengendalian Pencemaran Air'], ['pppu', 'PPPU — Pengendalian Pencemaran Udara'],
+                    ['plb3', 'PLB3 — Limbah B3'], ['limbah', 'Waste Management']];
+      var lalu = ((window.KG.lingkungan || {})[kode] || {}).param || [];
+      return { title: 'Input Hasil Uji Lingkungan', sub: 'Nilai dibandingkan otomatis dengan baku mutu',
+        body: bidang('kode', 'Domain', '<select' + atribut('kode', 'Domain', true) + '>' + domain.map(function (d) {
+            return '<option value="' + d[0] + '">' + d[1] + '</option>'; }).join('') + '</select>', true)
+          + '<div class="row2">' + isian('tanggal', 'Tanggal pengujian', hariIni(), true, 'date')
+          + isian('lab', 'Laboratorium', '', true) + '</div>'
+          + isian('titik', 'Titik / sumber uji', '', false)
+          + '<div class="label-caps" style="margin:var(--space-4) 0 var(--space-2)">HASIL PER PARAMETER</div>'
+          + '<div id="uji-param">' + (lalu.length ? lalu.map(barisParameter).join('') : barisParameter()) + '</div>'
+          + '<button type="button" class="btn btn--secondary" data-tambah-param>Tambah parameter</button>'
+          + catatanKaki('Parameter yang melewati baku mutu ditandai merah di layar Lingkungan dan dihitung pada ubin "Melewati Ambang". Uji ulang pada bulan yang sama menggantikan hasil sebelumnya.'),
+        ok: 'Simpan Hasil', toast: '' };
+    },
+    'compliance-baru': function () {
+      return { title: 'Daftarkan Dokumen Kepatuhan', sub: 'Peringatan otomatis H-60, H-30, H-14, H-7',
+        body: pilihan('jenis', 'Jenis', ['Sertifikat Sistem', 'Izin Lingkungan', 'Izin Peralatan', 'Pelaporan Wajib'], 'Izin Peralatan')
+          + isian('judul', 'Nama dokumen', '', true)
+          + '<div class="row2">' + isian('penerbit', 'Penerbit', '', true) + isian('nomor', 'Nomor dokumen', '', false) + '</div>'
+          + '<div class="row2">' + isian('terbit', 'Tanggal terbit', '', false, 'date') + isian('berlaku', 'Berlaku sampai', '', true, 'date') + '</div>'
+          + catatanKaki('Masa berlaku diambil dari dokumennya, tidak ditebak: dokumen tanpa tanggal berakhir tidak pernah memicu peringatan.'),
+        ok: 'Daftarkan', toast: '' };
+    },
+    'tandai-baca': function () {
+      var n = daftarKG('notifikasi').filter(function (x) { return !x.baca; }).length;
+      return { title: 'Tandai Semua Terbaca', sub: 'Pemberitahuan tetap tersimpan di riwayat',
+        body: '<div class="tile-note" style="border:0;padding:0">' + (n ? n + ' pemberitahuan belum dibaca akan ditandai terbaca.'
+          : 'Tidak ada pemberitahuan yang belum dibaca.') + ' Item yang lewat tenggat tetap dikirim ulang setiap hari sampai ditutup di modulnya, jadi menandai terbaca tidak menghentikan pengingat.</div>',
+        ok: 'Tandai Terbaca', toast: '' };
+    },
     'observasi-apd': function () {
       var apd = ((ACUAN && ACUAN.jenis_apd) || []).map(function (a) {
         return '<div class="row2" style="align-items:end"><div class="field"><label>' + esc(a.nama) + '</label>'

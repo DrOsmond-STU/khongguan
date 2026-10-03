@@ -79,4 +79,65 @@ final class Dokumen
 
         Jawab::kirim($hasil, 201);
     }
+
+    /**
+     * POST /dokumen/eksternal — sertifikat, izin, dan pelaporan wajib yang
+     * masa berlakunya dipantau (H-60, H-30, H-14, H-7).
+     *
+     * Masa berlaku wajib diisi dan tidak ditebak: dokumen yang terdaftar
+     * tanpa tanggal berakhir tidak pernah memicu peringatan, dan izin yang
+     * kedaluwarsa tanpa diketahui adalah temuan audit yang paling mudah.
+     */
+    public static function buatEksternal(Permintaan $p): never
+    {
+        $u = Sesi::pengguna($p);
+        Wewenang::wajib($u, 'docext', 'isi');
+
+        $jenis   = $p->wajibPilihan('jenis', ['Sertifikat Sistem', 'Izin Lingkungan', 'Izin Peralatan', 'Pelaporan Wajib']);
+        $judul   = $p->wajibTeks('judul');
+        $berlaku = self::tanggal($p->wajibTeks('berlaku'), 'berlaku');
+        $terbitT = trim((string) $p->isi('terbit', ''));
+        $terbit  = $terbitT === '' ? null : self::tanggal($terbitT, 'terbit');
+        if ($terbit !== null && $terbit > $berlaku) {
+            throw Galat::isian('Tanggal terbit tidak boleh setelah tanggal berakhir.', ['kolom' => 'terbit']);
+        }
+
+        $pabrik = (string) $p->isi('pabrik_id', $u['pabrik_id']);
+        Wewenang::wajibCakupan($u, $pabrik);
+
+        $hasil = Db::transaksi(function () use ($p, $u, $pabrik, $jenis, $judul, $berlaku, $terbit) {
+            // Pencacah CMP disusulkan ke kode tertinggi yang sudah ada, supaya
+            // dokumen yang dimuat sebelum pencacah dipakai tidak ditabrak.
+            Db::jalankan("INSERT INTO pencacah_nomor (awalan, tahun, nilai) VALUES ('CMP', 0, 0)
+                          ON CONFLICT (awalan, tahun) DO NOTHING");
+            $nilai = (int) Db::nilai(
+                "UPDATE pencacah_nomor SET nilai = GREATEST(nilai,
+                        coalesce((SELECT max(substring(kode FROM 5)::int) FROM dokumen_eksternal
+                                   WHERE kode ~ '^CMP-[0-9]+$'), 0)) + 1
+                  WHERE awalan = 'CMP' AND tahun = 0 RETURNING nilai");
+            $kode = 'CMP-' . str_pad((string) $nilai, 3, '0', STR_PAD_LEFT);
+
+            $id = (string) Db::nilai(
+                'INSERT INTO dokumen_eksternal (kode, pabrik_id, jenis, judul, penerbit, nomor, terbit, berlaku,
+                                                dibuat_oleh, diubah_oleh)
+                 VALUES (:k, :pb, :j, :jd, :pn, :n, :tb, :bl, :o, :o) RETURNING id',
+                [':k' => $kode, ':pb' => $pabrik, ':j' => $jenis, ':jd' => $judul,
+                 ':pn' => $p->wajibTeks('penerbit'), ':n' => trim((string) $p->isi('nomor', '')) ?: '—',
+                 ':tb' => $terbit, ':bl' => $berlaku, ':o' => $u['id']]
+            );
+            Jejak::catat('dokumen_eksternal', $id, 'buat', null, ['kode' => $kode, 'berlaku' => $berlaku], $u['id']);
+            return ['id' => $id, 'kode' => $kode, 'berlaku' => $berlaku];
+        });
+
+        Jawab::kirim($hasil, 201);
+    }
+
+    private static function tanggal(string $s, string $kolom): string
+    {
+        $d = \DateTimeImmutable::createFromFormat('!Y-m-d', $s);
+        if ($d === false || $d->format('Y-m-d') !== $s) {
+            throw Galat::isian("Isian '$kolom' harus tanggal YYYY-MM-DD.", ['kolom' => $kolom]);
+        }
+        return $s;
+    }
 }
