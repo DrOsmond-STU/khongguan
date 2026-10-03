@@ -22,14 +22,15 @@
    v6: mode tersambung di peladen produksi; konfigurasi.js berisi alamat API.
    v7: penanggung jawab CAPA dapat dipindahkan dari formulir ubah.
    v8: ubin dan formulir lengkap saat tersambung; ubah dan hapus seluruh modul.
+   v9: CAPA dari sumbernya, hasil inspeksi per butir, tanpa data contoh saat tersambung.
 
    Penanda ?v= pada alamat di bawah harus sama persis dengan yang tertulis di
    index.html. Berkas yang sama dengan penanda berbeda adalah dua alamat yang
    berbeda bagi simpanan — itulah yang membuat pembaruan benar-benar sampai,
    dan itu pula yang membuat ketidakcocokan menjadi salinan ganda yang
    diam-diam memenuhi penyimpanan perangkat. */
-const TANDA = '?v=8';
-const VERSI = 'kg-lapangan-v8';
+const TANDA = '?v=9';
+const VERSI = 'kg-lapangan-v9';
 const INTI = [
   './',
   './index.html',

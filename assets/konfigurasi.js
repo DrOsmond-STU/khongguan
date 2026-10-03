@@ -15,5 +15,5 @@
  */
 window.KG_KONFIG = Object.assign({
   api: '',
-  versi: '8'
+  versi: '9'
 }, window.KG_KONFIG || {});

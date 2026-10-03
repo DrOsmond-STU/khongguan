@@ -7,7 +7,7 @@ Untuk cPanel dengan PHP 8.3 dan PostgreSQL 16 — lingkungan
 
 | Hal | Keadaan |
 |---|---|
-| Berkas aplikasi | Terpasang dari komit `b3d780d`: `api/`, `assets/`, `m/`, `index.html`. `api/uji/` sengaja tidak ikut |
+| Berkas aplikasi | Terpasang dari komit `9` (lihat log git): `api/`, `assets/`, `m/`, `index.html`. `api/uji/` sengaja tidak ikut |
 | Pengguna `semestat_kgapp` | Dibuat dari sandi yang disediakan manusia; hak ALL pada `semestat_kgsafe` |
 | `api/config.php` | Terpasang, izin 600, **tanpa rahasia** — lihat "Rahasia dari berkas" |
 | Migrasi | 001, 002, 004, 006, 008, 009, 010 tercatat; 007 (data contoh) tidak dimuat |
@@ -139,7 +139,7 @@ luar docroot, `/home/semestat/kg-konfigurasi.js`:
 ```js
 window.KG_KONFIG = Object.assign({
   api: 'https://khongguan.semestateknologiutama.com',
-  versi: '8'
+  versi: '9'
 }, window.KG_KONFIG || {});
 ```
 
