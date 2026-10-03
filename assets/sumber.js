@@ -201,6 +201,7 @@ window.KGSUMBER = (function () {
         risikoAwal: angka(r.risiko_awal), risikoSisa: angka(r.risiko_sisa),
         prasyarat: r.prasyarat || [],
         milikSaya: r.milik_saya === true, mulaiIso: r.mulai || '', durasi: r.durasi || '',
+        jsaNomor: r.jsa_nomor || '', jsaStatus: r.jsa_status || '',
         dibuatIso: r.dibuat_pada || ''
       };
     },
@@ -1102,6 +1103,62 @@ window.KGSUMBER = (function () {
   function hitungMenu(id) {
     if (!MENU[id]) return 0;
     try { return MENU[id](); } catch (e) { return 0; }
+  }
+
+  /* ── Dashboard: ubin dan angka besar di kepala layar ── */
+  function kpiBernama(pola) {
+    return daftarKG('kpiLagging').filter(function (k) { return pola.test(k.nama || ''); })[0] || null;
+  }
+
+  UBIN['dashboard|TOTAL INSIDEN'] = UBIN['incident|BULAN INI'];
+  UBIN['dashboard|SAFE MANHOURS'] = function () {
+    var k = kpiBernama(/man\s*hours|jam kerja aman/i);
+    if (!k || k.nilai === '\u2014') return belumAda('Jam kerja bulanan belum diisi');
+    return { value: k.nilai, arah: 'good', delta: k.delta, note: 'Jam kerja sejak LTI terakhir · Lagging' };
+  };
+  UBIN['dashboard|TEMUAN TERBUKA'] = function () {
+    var insp = daftarKG('inspeksi').filter(function (x) { return x.status !== 'Selesai'; })
+      .reduce(function (a, x) { return a + (x.temuan || 0); }, 0);
+    var aud = daftarKG('temuanAudit').filter(function (x) { return x.status !== 'Selesai'; }).length;
+    return { value: String(insp + aud), arah: insp + aud ? 'bad' : 'good', delta: 'inspeksi ' + insp + ' · audit ' + aud,
+      note: 'Temuan yang belum ditutup, lintas modul' };
+  };
+  UBIN['dashboard|CAPA JATUH TEMPO'] = function () {
+    var batas = new Date(Date.now() + 7 * 86400000);
+    var L = daftarKG('capa').filter(function (x) {
+      var t = tanggal(x.tenggatIso); return x.status !== 'Selesai' && t && t <= batas;
+    });
+    var lewat = L.filter(function (x) { return x.terlambat; }).length;
+    return { value: String(L.length), arah: L.length ? 'bad' : 'good', delta: lewat + ' lewat tenggat',
+      note: 'Belum selesai dengan tenggat ≤ 7 hari' };
+  };
+
+  /**
+   * Angka besar di kepala layar. Purwarupa menulisnya tetap ("238 hari
+   * tanpa LTI", "TRIR 0,42"); saat tersambung dihitung, atau "—" dengan
+   * keterangan yang jujur.
+   */
+  function metrikHero(layar, o) {
+    if (!API || !o.metric) return o;
+    var m = null;
+    try {
+      if (layar === 'dashboard') {
+        var lti = daftarKG('insiden').filter(function (x) { return x.hariHilang > 0; })
+          .map(function (x) { return x.tanggalIso; }).sort().pop();
+        m = lti ? { metric: String(hariSejak(lti)), metricLabel: 'HARI TANPA KECELAKAAN HILANG WAKTU KERJA' }
+                : { metric: '\u2014', metricLabel: 'BELUM ADA LTI TERCATAT DI SISTEM' };
+      } else if (layar === 'kpi') {
+        var trir = kpiBernama(/^TRIR/i);
+        m = { metric: trir ? trir.nilai : '\u2014', metricLabel: 'TRIR BULAN BERJALAN · TARGET ≤ 0,50' };
+      } else if (layar === 'capa') {
+        var t = UBIN['capa|TEPAT WAKTU']();
+        m = { metric: t.value === '\u2014' ? '\u2014' : t.value + '%', metricLabel: 'PENYELESAIAN TEPAT WAKTU · TARGET ≥ 90%' };
+      } else if (layar === 'exec') {
+        var g = UBIN['exec|TRIR GRUP']();
+        m = { metric: g.value, metricLabel: 'TRIR GRUP BULAN BERJALAN · TARGET ≤ 0,50' };
+      }
+    } catch (e) { m = { metric: '\u2014', metricLabel: o.metricLabel }; }
+    return m ? Object.assign({}, o, m) : o;
   }
 
   /**
@@ -2820,8 +2877,104 @@ window.KGSUMBER = (function () {
         console.info('[KG] tersambung ke ' + API + ' sebagai ' + saya.nama
           + ' (' + saya.peran.nama + '). Koleksi langsung: ' + (hidup.sort().join(', ') || 'belum ada')
           + '. Sisanya masih data contoh.');
+        return isiContohSungguhan();
       });
     });
+  }
+
+  /**
+   * Panel "satu catatan contoh" — checklist APAR berjalan, P2H forklift
+   * FL-03, JSEA tangki T-04, elemen SMK3, umpan aktivitas — diisi dari
+   * catatan sungguhan terbaru. Bila belum ada catatannya, koleksinya
+   * dikosongkan dan layar tidak menampilkan panel itu: lebih baik tidak ada
+   * daripada contoh yang tampak seperti catatan pabrik ini.
+   */
+  function isiContohSungguhan() {
+    var K = window.KG;
+    var janji = [];
+    var terbaru = function (arr, kunci) {
+      return arr.slice().sort(function (a, b) { return String(b[kunci] || '') < String(a[kunci] || '') ? -1 : 1; })[0];
+    };
+
+    // Inspeksi selesai terbaru, dengan butirnya.
+    K.checklistAPAR = [];
+    K.inspeksiContoh = null;
+    var insp = terbaru((K.inspeksi || []).filter(function (x) { return x.status === 'Selesai' && x.uuid; }), 'tanggalIso');
+    if (insp) {
+      janji.push(ambil('/inspeksi/' + insp.uuid + '/butir').then(function (j) {
+        var b = (j.data || []).filter(function (x) { return x.jawab === 'Sesuai' || x.jawab === 'Tidak Sesuai'; });
+        K.checklistAPAR = amanHtml(b.map(function (x) {
+          return { butir: x.butir, jawab: x.jawab, temuan: x.jawab === 'Tidak Sesuai' ? (x.catatan || '') : '' };
+        }));
+        K.inspeksiContoh = { judul: insp.id + ' · ' + insp.jenis, sub: insp.area + ' · ' + insp.tanggal };
+      }).catch(function () {}));
+    }
+
+    // Checklist selesai terbaru, dengan butirnya.
+    K.checklistP2H = [];
+    K.checklistContoh = null;
+    var ck = terbaru((K.checklistHarian || []).filter(function (x) { return x.status === 'Selesai' && x.uuid; }), 'id');
+    if (ck) {
+      janji.push(ambil('/checklist/' + ck.uuid + '/butir').then(function (j) {
+        var b = (j.data || []).filter(function (x) { return x.jawab === 'Sesuai' || x.jawab === 'Tidak Sesuai'; });
+        K.checklistP2H = amanHtml(b.map(function (x) { return { butir: x.butir, jawab: x.jawab, catatan: x.catatan || '' }; }));
+        var unit = ck.mentah && ck.mentah.unit_kode ? ck.mentah.unit_kode + ' — ' + (ck.mentah.unit || '') : ck.area;
+        K.checklistContoh = { judul: ck.id + ' · ' + ck.nama + (ck.mentah && ck.mentah.unit_kode ? ' ' + ck.mentah.unit_kode : ''),
+          sub: [ck.shift, ck.pj, ck.waktu].filter(function (x) { return x && x !== '—'; }).join(' · '), unit: unit };
+      }).catch(function () {}));
+    }
+
+    // JSEA: izin terbaru yang punya JSA, dengan jenjang persetujuannya.
+    K.jsea = null;
+    var izin = terbaru((K.izin || []).filter(function (z) { return z.jsaNomor; }), 'dibuatIso');
+    var jsa = izin && (K.jsa || []).filter(function (j) { return j.id === izin.jsaNomor; })[0];
+    if (izin && jsa && jsa.langkah && jsa.langkah.length) {
+      var urut = ['Menunggu Supervisor', 'Menunggu QHSE', 'Aktif'];
+      var posisi = izin.status === 'Aktif' || izin.status === 'Selesai' ? 3 : Math.max(0, urut.indexOf(izin.status));
+      var langkah = [
+        { peran: 'PENGAJU', nama: izin.pelaksana, catatan: 'Pengajuan dan JSEA ' + jsa.id },
+        { peran: 'SUPERVISOR', nama: izin.pengawas, catatan: 'Pemeriksaan lapangan dan prasyarat' },
+        { peran: 'QHSE', nama: 'Petugas QHSE', catatan: 'Penerbitan izin (AB-09, AB-10, AB-11)' }
+      ];
+      K.jsea = {
+        permit: izin.id, judul: izin.judul,
+        tertahan: izin.status === 'Ditolak' ? 'Ditolak' : posisi >= 3 ? 'Izin sudah diterbitkan' : 'Menunggu langkah ' + (posisi + 2),
+        langkah: jsa.langkah.map(function (l) {
+          return { no: l.no, kerja: l.kerja, bahaya: l.bahaya, awal: { k: l.k, s: l.s }, sisa: { k: l.sk, s: l.ss }, kendali: l.kendali };
+        }),
+        persetujuan: langkah.map(function (x, i) {
+          var state = i === 0 || i <= posisi ? 'done' : (i === posisi + 1 ? 'now' : 'next');
+          return Object.assign(x, { state: state, waktu: state === 'done' ? 'selesai' : '—', tunggu: state === 'now' ? 'menunggu' : '' });
+        })
+      };
+    }
+
+    // Elemen SMK3: belum ada penilaian di sistem.
+    K.elemenSMK3 = [];
+
+    // Umpan aktivitas: catatan terbaru lintas modul.
+    var feed = [];
+    (K.insiden || []).forEach(function (x) {
+      feed.push({ t: x.tanggalIso, judul: x.id + ' · ' + x.jenis, meta: x.ringkas + ' · ' + x.lokasi,
+        jenis: { Serius: 'critical', Sedang: 'high', Ringan: 'medium' }[x.keparahan] || 'info' });
+    });
+    (K.bahaya || []).forEach(function (x) {
+      feed.push({ t: x.dibuatIso, judul: x.id + ' · laporan bahaya', meta: x.isi + ' · ' + x.lokasi,
+        jenis: { Tinggi: 'high', Sedang: 'medium', Rendah: 'low' }[x.risiko] || 'info' });
+    });
+    (K.izin || []).forEach(function (x) {
+      feed.push({ t: x.dibuatIso, judul: x.id + ' · izin kerja ' + x.status.toLowerCase(), meta: x.judul, jenis: 'info' });
+    });
+    (K.capa || []).forEach(function (x) {
+      feed.push({ t: x.terbitIso, judul: x.id + ' · CAPA ' + x.status.toLowerCase(), meta: x.judul + ' · PJ ' + x.pj,
+        jenis: x.terlambat ? 'high' : 'medium' });
+    });
+    K.aktivitas = feed.filter(function (f) { return f.t; })
+      .sort(function (a, b) { return String(b.t) < String(a.t) ? -1 : 1; })
+      .slice(0, 6)
+      .map(function (f) { return { judul: f.judul, meta: f.meta, when: sejakJam(f.t), jenis: f.jenis }; });
+
+    return Promise.all(janji);
   }
 
   function mula() {
@@ -2853,7 +3006,7 @@ window.KGSUMBER = (function () {
     masukSandi: masukSandi, keluar: keluar, sesiDariSaya: sesiDariSaya, pesanMasuk: pesanMasuk,
     periksaTautan: periksaTautan, pakaiTautan: pakaiTautan, aksiTersambung: aksiTersambung,
     aksiRincian: aksiRincian, jalankanAksi: jalankanAksi, ubin: ubin, hitungMenu: hitungMenu,
-    tanggalBawaan: tanggalBawaan,
+    tanggalBawaan: tanggalBawaan, metrikHero: metrikHero,
     ekspor: ekspor, unduh: unduh
   };
 })();

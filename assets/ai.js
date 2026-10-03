@@ -173,7 +173,9 @@ window.KGAI = (function () {
       }));
     });
 
-    D.jsea.langkah.forEach(function (s) {
+    /* Saat tersambung JSEA contoh diganti izin sungguhan, atau tidak ada sama
+       sekali pada basis data yang baru dipasang. */
+    (D.jsea ? D.jsea.langkah : []).forEach(function (s) {
       X.push(rekam({
         id: D.jsea.permit + '/L' + s.no, judul: s.kerja, modul: 'Work Permit & JSEA', rute: 'permit',
         badge: 'Langkah JSEA ' + s.no,

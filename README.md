@@ -139,10 +139,48 @@ di `assets/konfigurasi.js`:
 | **Peragaan** | kosong | `assets/data.js` — persis purwarupa yang selama ini diperagakan |
 | **Tersambung** | alamat peladen | PostgreSQL lewat API pada `api/` |
 
-Tampilannya sama persis pada kedua mode. `app.js`, `app.css`, dan `tokens.css`
+Tampilannya sama pada kedua mode. `app.js`, `app.css`, dan `tokens.css`
 tidak tahu-menahu soal peladen: `sumber.js` mengisi `window.KG` dengan bentuk
-yang sama sebelum `app.js` dimuat. Kesamaan itu diuji dengan membandingkan 12
-layar piksel demi piksel sebelum dan sesudah setiap perubahan.
+yang sama sebelum `app.js` dimuat. Mode peragaan diuji tetap identik dengan
+purwarupa dengan membandingkan layar piksel demi piksel sebelum dan sesudah
+setiap perubahan.
+
+Yang hanya ada saat tersambung — dengan komponen yang sama dengan purwarupa:
+
+- **Ubah dan Hapus** pada rincian setiap catatan, hanya bila status dan
+  kewenangan mengizinkan. Hapus selalu lunak dan beralasan.
+- **Formulir lengkap.** Formulir purwarupa memperlihatkan alur; saat
+  tersambung setiap isian yang disimpan diisi orang (skor HIRADC dan JSA,
+  kepatuhan APD, area dan pengawas izin, …), tidak pernah nilai pengganti.
+- **Angka dihitung dari data** — ubin ringkasan, angka menu, angka besar di
+  kepala layar, umpan aktivitas. Yang belum punya sumber data tampil "—",
+  tidak pernah angka contoh.
+- **Buat CAPA** dari rincian sumbernya; **Isi Hasil** inspeksi dan checklist
+  per butir; **Tambah Temuan** audit.
+
+### Yang dapat diisi, dibaca, diubah, dan dihapus (mode tersambung)
+
+| Modul | Tambah | Ubah | Hapus | Tindakan lain |
+|---|---|---|---|---|
+| Laporan Bahaya | ✓ | ✓ (sebelum diverifikasi) | ✓ | Verifikasi, Buat CAPA |
+| Incident & Nearmiss | ✓ | ✓ (sebelum ditutup) | ✓ (tanpa CAPA) | Tutup, Buat CAPA |
+| CAPA | dari sumbernya | ✓ (sebelum selesai) | ✓ | Verifikasi |
+| Izin Kerja | ✓ | ✓ (sebelum terbit) | ✓ | Terbitkan |
+| JSA | ✓ dengan langkah | ✓ (sebelum disahkan) | ✓ (tanpa izin) | Sahkan |
+| HIRADC, Risiko | ✓ | ✓ | ✓ (Plant Manager) | Turunkan sisa (HIRADC), Buat CAPA |
+| Inspeksi, Checklist | ✓ dari templat | ✓ | ✓ | Isi Hasil, Buat CAPA |
+| Audit | — | ✓ | ✓ (tanpa temuan) | Tambah Temuan, Tutup |
+| Observasi perilaku & APD | ✓ | ✓ | ✓ | Buat CAPA (perilaku berisiko) |
+| Lingkungan | ✓ hasil uji | uji ulang | — | Buat CAPA (melewati baku mutu) |
+| Dokumen internal & kepatuhan, Regulasi, Induksi, Pelatihan, Kegiatan | ✓ | ✓ | ✓ | |
+| Pengguna | ✓ undangan | ✓ | nonaktifkan | Atur ulang sandi |
+
+Audit baru belum dapat dibuat dari layar — purwarupa tidak punya formulirnya.
+
+Uji yang dijalankan sebelum setiap rilis: `php api/uji/jalankan.php`
+(peladen), `node uji/layar.mjs` (layar dengan data), `node uji/kosong.mjs`
+(layar pada basis data kosong, seperti produksi hari pertama), dan
+perbandingan piksel mode peragaan.
 
 Cara menyiapkan peladen ada di **[`api/README.md`](api/README.md)**.
 

@@ -148,6 +148,11 @@
   let infoSeq = 0;
   function resetInfo() { INFO = Object.create(null); infoSeq = 0; }
   function regInfo(o) { const k = 'i' + (++infoSeq); INFO[k] = o; return k; }
+  /* Teks yang pada purwarupa menyebut bulan atau angka contoh. Saat
+     tersambung diganti kalimat yang benar untuk data apa pun; peragaan
+     tetap memakai kalimat aslinya. */
+  const kt = (purwarupa, tersambung) => TERSAMBUNG ? tersambung : purwarupa;
+
   /* Tombol tindakan (ubah, hapus, …) pada modal rincian yang dibuka lewat
      infoAttr. Kosong pada peragaan, jadi modalnya tetap seperti purwarupa. */
   function rinci(jenis, id) {
@@ -248,7 +253,7 @@
       <div class="tile-note">${t.note}</div>
     </article>`; };
 
-  const hero = (o) => `
+  const hero = (o0) => { const o = TERSAMBUNG ? window.KGSUMBER.metrikHero(current, o0) : o0; return `
     <header class="hero">
       <div class="hero-row">
         <div>
@@ -261,7 +266,7 @@
         ${eksporHero()}
         ${o.action ? `<div><button class="btn btn--hero" data-act="${o.action.act}">${I(icon[o.action.icon], 18)}${o.action.label}</button></div>` : ''}
       </div>
-    </header>`;
+    </header>`; };
 
   /* Tombol ekspor hanya muncul saat aplikasi tersambung ke peladen dan modul
      layar ini memang punya ekspor. Purwarupa tidak mengunduh apa pun, dan
@@ -314,9 +319,9 @@
       <section class="section">
         <div class="card">
           <h3>Tren Insiden 12 Bulan</h3>
-          <div class="card-sub">${D.plant} · Okt 2025 – Sep 2026 · target internal ≤ 4 kejadian per bulan</div>
+          <div class="card-sub">${D.plant} · ${kt('Okt 2025 – Sep 2026', '12 bulan terakhir')} · target internal ≤ 4 kejadian per bulan</div>
           ${lineChart(D.trenInsiden, { target: 4, targetLabel: 'target 4',
-            aria: 'Grafik garis jumlah insiden per bulan, puncak 9 pada Januari, turun ke 3 pada September.' })}
+            aria: kt('Grafik garis jumlah insiden per bulan, puncak 9 pada Januari, turun ke 3 pada September.', 'Grafik garis jumlah insiden per bulan, 12 bulan terakhir.') })}
         </div>
       </section>
 
@@ -483,14 +488,14 @@
         </div>
       </section>
 
-      <section class="section">
-        <div class="section-head"><h2>Checklist berjalan — INS-2026-0912 · APAR &amp; Hydrant</h2>
-          <span class="sub">8 butir contoh dari 42 · ${ts.length} temuan menjadi CAPA</span></div>
+      ${TERSAMBUNG && !c.length ? '' : `<section class="section">
+        <div class="section-head"><h2>${kt('Checklist berjalan — INS-2026-0912 · APAR &amp; Hydrant', 'Inspeksi selesai terbaru — ' + (D.inspeksiContoh ? D.inspeksiContoh.judul : ''))}</h2>
+          <span class="sub">${kt('8 butir contoh dari 42 · ' + ts.length + ' temuan menjadi CAPA', c.length + ' butir · ' + ts.length + ' tidak sesuai' + (D.inspeksiContoh ? ' · ' + D.inspeksiContoh.sub : ''))}</span></div>
         <div class="card">
           ${c.map((b, i) => `
             <div class="param is-clickable" style="grid-template-columns:1fr auto" ${infoAttr({
               title: `Butir ${i + 1}`,
-              sub: 'INS-2026-0912 · APAR & Hydrant',
+              sub: kt('INS-2026-0912 · APAR & Hydrant', D.inspeksiContoh ? D.inspeksiContoh.judul : ''),
               body: chipRow([
                 chip(b.jawab === 'Sesuai' ? 'SESUAI' : 'TIDAK SESUAI', b.jawab === 'Sesuai' ? 'low' : 'critical'),
                 b.risiko ? chip('RISIKO ' + b.risiko, zone(b.risiko)) : ''
@@ -508,15 +513,15 @@
                 <div class="param-name">${i + 1}. ${b.butir}</div>
                 ${b.temuan ? `<div style="font-size:13px;color:var(--ink-500);margin-top:4px">${b.temuan}</div>
                   <div style="display:flex;gap:var(--space-2);margin-top:8px;flex-wrap:wrap">
-                    ${chip('RISIKO ' + b.risiko, zone(b.risiko))}
-                    <span class="chip chip--neutral">PJ: ${b.pj}</span>
-                    <span class="chip chip--neutral">TENGGAT ${b.tenggat.toUpperCase()}</span>
+                    ${b.risiko ? chip('RISIKO ' + b.risiko, zone(b.risiko)) : ''}
+                    ${b.pj ? `<span class="chip chip--neutral">PJ: ${b.pj}</span>` : ''}
+                    ${b.tenggat ? `<span class="chip chip--neutral">TENGGAT ${b.tenggat.toUpperCase()}</span>` : ''}
                   </div>` : ''}
               </div>
               <div>${b.jawab === 'Sesuai' ? chip('SESUAI', 'low') : chip('TIDAK SESUAI', 'critical')}</div>
             </div>`).join('')}
         </div>
-      </section>
+      </section>`}
     </div>`;
   }
 
@@ -573,6 +578,7 @@
 
   function jseaSection() {
     const j = D.jsea;
+    if (!j) return '';
     const worst = j.langkah.reduce((a, s) => Math.max(a, s.awal.k * s.awal.s), 0);
     const worstSisa = j.langkah.reduce((a, s) => Math.max(a, s.sisa.k * s.sisa.s), 0);
     const cells = [];
@@ -605,7 +611,7 @@
         </div>
         <div class="card">
           <h3>Persetujuan ${j.permit}</h3>
-          <div class="card-sub">Tertahan pada langkah ketiga</div>
+          <div class="card-sub">${j.tertahan || 'Tertahan pada langkah ketiga'}</div>
           <ol class="timeline">
             ${j.persetujuan.map((s, i) => `
               <li class="${s.state} is-clickable" ${infoAttr({
@@ -693,9 +699,9 @@
       <section class="section">
         <div class="card">
           <h3>Tren Laporan Bahaya 12 Bulan</h3>
-          <div class="card-sub">Naik itu baik. Penurunan September perlu ditindaklanjuti sebagai masalah partisipasi, bukan dirayakan sebagai perbaikan.</div>
+          <div class="card-sub">${kt('Naik itu baik. Penurunan September perlu ditindaklanjuti sebagai masalah partisipasi, bukan dirayakan sebagai perbaikan.', 'Naik itu baik. Penurunan perlu ditindaklanjuti sebagai masalah partisipasi, bukan dirayakan sebagai perbaikan.')}</div>
           ${lineChart(D.trenBahaya, { target: 80, targetLabel: 'target 80',
-            aria: 'Grafik garis jumlah laporan bahaya per bulan, naik dari 52 pada Oktober ke puncak 101 pada Agustus, turun ke 87 pada September.' })}
+            aria: kt('Grafik garis jumlah laporan bahaya per bulan, naik dari 52 pada Oktober ke puncak 101 pada Agustus, turun ke 87 pada September.', 'Grafik garis jumlah laporan bahaya per bulan, 12 bulan terakhir.') })}
         </div>
       </section>
 
@@ -731,7 +737,7 @@
   function viewAudit() {
     const totalK = D.elemenSMK3.reduce((a, e) => a + e.kriteria, 0);
     const totalP = D.elemenSMK3.reduce((a, e) => a + e.penuhi, 0);
-    const pct = Math.round(totalP / totalK * 100);
+    const pct = totalK ? Math.round(totalP / totalK * 100) : 0;
     return hero({
       eyebrow: 'MODUL 05 · AUDIT',
       title: 'Audit SHE',
@@ -808,7 +814,7 @@
         </div>
         <div class="card">
           <h3>Pemenuhan 12 Elemen SMK3</h3>
-          <div class="card-sub">PP 50/2012 · ${totalK} kriteria · audit internal Sep 2026</div>
+          <div class="card-sub">${kt('PP 50/2012 · ' + totalK + ' kriteria · audit internal Sep 2026', D.elemenSMK3.length ? 'PP 50/2012 · ' + totalK + ' kriteria' : 'PP 50/2012 · belum ada penilaian elemen di sistem')}</div>
           ${D.elemenSMK3.map(e => {
             const p = Math.round(e.penuhi / e.kriteria * 100);
             return `<div class="is-clickable" style="margin-bottom:var(--space-3)" ${infoAttr({
@@ -837,7 +843,9 @@
 
   /* ───────── Modul 6 · Lingkungan ───────── */
   function viewEnvironment() {
-    const blok = (b) => `
+    /* Domain yang belum punya hasil uji tetap tampil, kosong dan berkata
+       begitu — bukan menghilang, dan bukan membuat layar berhenti. */
+    const blok = (b0, judul) => { const b = b0 || { judul, sub: 'Belum ada hasil uji tercatat', acuan: '\u2014', param: [] }; return `
       <div class="card">
         <h3>${b.judul}</h3>
         <div class="card-sub">${b.sub}</div>
@@ -867,7 +875,7 @@
             </div>
           </div>`).join('')}
         <div class="tile-note" style="margin-top:var(--space-4)">Acuan: ${b.acuan}</div>
-      </div>`;
+      </div>`; };
     return hero({
       eyebrow: 'MODUL 06 · ENVIRONMENT',
       title: 'Aspek Lingkungan',
@@ -882,10 +890,10 @@
         ${tile({ label: 'LIMBAH DIDAUR ULANG', value: '93', unit: '%', icon: 'kpi', arah: 'good', delta: '4% vs Agustus', note: 'Dari 18,5 ton timbulan non-B3 bulan ini' })}
       </div>
       <section class="section grid grid--2">
-        ${blok(D.lingkungan.pppa)}
-        ${blok(D.lingkungan.pppu)}
-        ${blok(D.lingkungan.limbah)}
-        ${blok(D.lingkungan.plb3)}
+        ${blok(D.lingkungan.pppa, 'PPPA — Pengendalian Pencemaran Air')}
+        ${blok(D.lingkungan.pppu, 'PPPU — Pengendalian Pencemaran Udara')}
+        ${blok(D.lingkungan.limbah, 'Waste Management')}
+        ${blok(D.lingkungan.plb3, 'PLB3 — Limbah Bahan Berbahaya & Beracun')}
       </section>
     </div>`;
   }
@@ -929,13 +937,13 @@
           <h3>Insiden vs Target</h3>
           <div class="card-sub">Lagging · makin rendah makin baik</div>
           ${lineChart(D.trenInsiden, { target: 4, targetLabel: 'target 4',
-            aria: 'Grafik insiden per bulan, puncak 9 pada Januari, turun ke 3 pada September.' })}
+            aria: kt('Grafik insiden per bulan, puncak 9 pada Januari, turun ke 3 pada September.', 'Grafik insiden per bulan, 12 bulan terakhir.') })}
         </div>
         <div class="card">
           <h3>Laporan Bahaya vs Target</h3>
           <div class="card-sub">Leading · makin tinggi makin baik</div>
           ${lineChart(D.trenBahaya, { target: 80, targetLabel: 'target 80',
-            aria: 'Grafik laporan bahaya per bulan, puncak 101 pada Agustus, turun ke 87 pada September.' })}
+            aria: kt('Grafik laporan bahaya per bulan, puncak 101 pada Agustus, turun ke 87 pada September.', 'Grafik laporan bahaya per bulan, 12 bulan terakhir.') })}
         </div>
       </section>
       <section class="section">
@@ -1013,7 +1021,7 @@
             </article>`).join('')}
           <article class="card act-empty">
             ${I(icon.plus, 28)}
-            <div style="font-size:14px;font-weight:600;color:var(--ink-700)">Rapat P2K3 September belum diunggah</div>
+            <div style="font-size:14px;font-weight:600;color:var(--ink-700)">${kt('Rapat P2K3 September belum diunggah', 'Rapat P2K3 ' + D.periode.split(' ')[0] + ' belum diunggah')}</div>
             <div style="font-size:13px">Rapat P2K3 wajib bulanan. Kartu ini tidak disembunyikan sampai buktinya masuk.</div>
             <button class="btn btn--secondary btn--sm" data-act="unggah-kegiatan">Unggah sekarang</button>
           </article>
@@ -1706,7 +1714,7 @@
           <h3>Arah TRIR Grup 12 Bulan</h3>
           <div class="card-sub">Lagging · makin rendah makin baik · target ≤ 0,50</div>
           ${lineChart(D.trenTrir, { target: 0.5, targetLabel: 'target 0,50',
-            aria: 'Grafik TRIR grup per bulan, turun dari 0,71 pada Oktober ke 0,42 pada September.' })}
+            aria: kt('Grafik TRIR grup per bulan, turun dari 0,71 pada Oktober ke 0,42 pada September.', 'Grafik TRIR grup per bulan, 12 bulan terakhir.') })}
         </div>
         <div class="card">
           <h3>Program Strategis QHSE</h3>
@@ -1767,8 +1775,10 @@
   /* ───────── Modul 11 · Manajemen Pelatihan ───────── */
   function viewTraining() {
     const selesai = D.pelatihan.filter(p => p.status === 'Selesai');
-    const realisasi = Math.round(selesai.reduce((a, p) => a + p.aktualPeserta, 0) /
-      D.pelatihan.reduce((a, p) => a + p.rencanaPeserta, 0) * 100);
+    /* Basis data yang baru dipasang belum punya pelatihan: 0 ÷ 0 tidak boleh
+       tampil sebagai "NaN%". */
+    const rencanaTotal = D.pelatihan.reduce((a, p) => a + p.rencanaPeserta, 0);
+    const realisasi = rencanaTotal ? Math.round(selesai.reduce((a, p) => a + (Number(p.aktualPeserta) || 0), 0) / rencanaTotal * 100) : 0;
     return hero({
       eyebrow: 'MODUL 11 · MANAJEMEN PELATIHAN',
       title: 'Pelatihan & Sertifikasi K3',
@@ -1962,7 +1972,7 @@
                 + foot('Tidak ada risiko sisa yang boleh berada di zona Ekstrem. Bila ada, pekerjaan terkait tidak boleh berjalan sampai skornya turun.')
             })}>
               <span class="chip chip--${z}" style="min-width:132px">${label.toUpperCase()}</span>
-              <div class="bar bar--${z === 'critical' ? 'critical' : z === 'low' ? 'low' : 'medium'}" style="flex:1"><span style="width:${n / R.length * 100}%"></span></div>
+              <div class="bar bar--${z === 'critical' ? 'critical' : z === 'low' ? 'low' : 'medium'}" style="flex:1"><span style="width:${R.length ? n / R.length * 100 : 0}%"></span></div>
               <span class="mono" style="width:24px;text-align:right">${n}</span>
             </div>`; }).join('')}
           <div class="tile-note" style="margin-top:var(--space-5)">Tidak ada risiko sisa di zona Ekstrem. Bila ada, pekerjaan terkait tidak boleh berjalan sampai skornya turun.</div>
@@ -2274,23 +2284,24 @@
         </div>
       </section>
 
-      <section class="section">
-        <div class="section-head"><h2>CHK-2026-1841 · P2H Forklift FL-03</h2>
-          <span class="sub">Pemeriksaan sebelum operasi · Shift 1 · Agus Prasetyo · 06:40</span></div>
+      ${TERSAMBUNG && !D.checklistP2H.length ? '' : `<section class="section">
+        <div class="section-head"><h2>${kt('CHK-2026-1841 · P2H Forklift FL-03', D.checklistContoh ? D.checklistContoh.judul : '')}</h2>
+          <span class="sub">${kt('Pemeriksaan sebelum operasi · Shift 1 · Agus Prasetyo · 06:40', 'Checklist selesai terbaru' + (D.checklistContoh && D.checklistContoh.sub ? ' · ' + D.checklistContoh.sub : ''))}</span></div>
         <div class="card">
           ${D.checklistP2H.map((b, i) => `
             <div class="param is-clickable" style="grid-template-columns:1fr auto" ${infoAttr({
               title: `Butir ${i + 1}`,
-              sub: 'CHK-2026-1841 · P2H Forklift FL-03 · Shift 1',
+              sub: kt('CHK-2026-1841 · P2H Forklift FL-03 · Shift 1', D.checklistContoh ? D.checklistContoh.judul : ''),
               body: chipRow([chip(b.jawab === 'Sesuai' ? 'SESUAI' : 'TIDAK SESUAI', b.jawab === 'Sesuai' ? 'low' : 'critical')])
                 + lead(b.butir) + kv([
                   ['Jawaban', b.jawab],
                   b.catatan && ['Catatan pemeriksa', b.catatan],
-                  ['Pemeriksa', 'Agus Prasetyo · Shift 1 · 06:40'],
-                  ['Unit', 'FL-03 — forklift Gudang Bahan Baku']
+                  ['Pemeriksa', kt('Agus Prasetyo · Shift 1 · 06:40', D.checklistContoh ? D.checklistContoh.sub : '')],
+                  ['Unit', kt('FL-03 — forklift Gudang Bahan Baku', D.checklistContoh ? D.checklistContoh.unit : '')]
                 ]) + foot(b.jawab === 'Sesuai'
                   ? 'Butir yang sesuai tetap disimpan sebagai rekaman. Checklist yang hanya mencatat pelanggaran tidak dapat membuktikan bahwa pemeriksaan benar-benar dilakukan.'
-                  : 'Satu butir Tidak Sesuai membuat unit FL-03 otomatis berstatus tidak boleh dioperasikan sampai temuan ditutup. Ini gerbang, bukan peringatan yang bisa dilewati.')
+                  : kt('Satu butir Tidak Sesuai membuat unit FL-03 otomatis berstatus tidak boleh dioperasikan sampai temuan ditutup. Ini gerbang, bukan peringatan yang bisa dilewati.',
+                    'Satu butir Tidak Sesuai membuat unitnya otomatis tidak boleh dioperasikan. Ini gerbang, bukan peringatan yang bisa dilewati.'))
             })}>
               <div>
                 <div class="param-name">${i + 1}. ${b.butir}</div>
@@ -2299,11 +2310,12 @@
               <div>${b.jawab === 'Sesuai' ? chip('SESUAI', 'low') : chip('TIDAK SESUAI', 'critical')}</div>
             </div>`).join('')}
           <div class="tile-note" style="margin-top:var(--space-4)">
-            Satu butir tidak sesuai membuat unit FL-03 otomatis berstatus tidak boleh dioperasikan sampai temuan ditutup.
-            Purwarupa menampilkan aturan ini sebagai gerbang, bukan sebagai peringatan yang bisa dilewati.
+            ${kt(`Satu butir tidak sesuai membuat unit FL-03 otomatis berstatus tidak boleh dioperasikan sampai temuan ditutup.
+            Purwarupa menampilkan aturan ini sebagai gerbang, bukan sebagai peringatan yang bisa dilewati.`,
+            'Satu butir tidak sesuai membuat unitnya otomatis tidak boleh dioperasikan, sampai checklist ulang pada unit yang sama lulus seluruhnya.')}
           </div>
         </div>
-      </section>
+      </section>`}
     </div>`;
   }
 
@@ -2381,7 +2393,7 @@
       <section class="section grid grid--2">
         <div class="card">
           <h3>Perilaku per Kategori</h3>
-          <div class="card-sub">${(aman + risk).toLocaleString('id-ID')} perilaku teramati · September 2026</div>
+          <div class="card-sub">${(aman + risk).toLocaleString('id-ID')} perilaku teramati · ${kt('September 2026', D.periode)}</div>
           ${K.map(k => {
             const t = k.aman + k.berisiko, p = k.berisiko / t * 100;
             return `<div class="is-clickable" style="margin-bottom:var(--space-4)" ${infoAttr({
@@ -2423,7 +2435,7 @@
       </section>
 
       <section class="section">
-        <div class="section-head"><h2>Observasi Terbaru</h2><span class="sub">Lima catatan terakhir dari 302 bulan ini</span></div>
+        <div class="section-head"><h2>Observasi Terbaru</h2><span class="sub">${kt('Lima catatan terakhir dari 302 bulan ini', 'Catatan terbaru')}</span></div>
         ${D.observasi.map(o => `
           <article class="card obs-card is-clickable" ${infoAttr({ ...rinci('observasi', o.id),
             title: o.id,
@@ -2632,7 +2644,14 @@
           </div>
           <div class="field" style="margin-bottom:0">
             <label for="s-period">Periode laporan</label>
-            <select id="s-period"><option>September 2026</option><option>Agustus 2026</option><option>Triwulan III 2026</option><option>Tahun berjalan 2026</option></select>
+            <select id="s-period">${kt('<option>September 2026</option><option>Agustus 2026</option><option>Triwulan III 2026</option><option>Tahun berjalan 2026</option>',
+              (function () {
+                const b = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                const d = new Date(), l = new Date(d.getFullYear(), d.getMonth() - 1, 1);
+                return ['<option>' + b[d.getMonth()] + ' ' + d.getFullYear() + '</option>',
+                        '<option>' + b[l.getMonth()] + ' ' + l.getFullYear() + '</option>',
+                        '<option>Tahun berjalan ' + d.getFullYear() + '</option>'].join('');
+              })())}</select>
           </div>
           <div class="tile-note" style="margin-top:var(--space-4)">Mengubah pabrik akan memuat ulang seluruh ubin KPI dan daftar modul. Pada purwarupa ini data hanya tersedia untuk Pabrik Cibitung.</div>
         </div>
@@ -2850,8 +2869,8 @@
         ${tile({ label: 'MENUNGGU PENGESAHAN', value: String(tunggu.length), icon: 'clock', arah: tunggu.length ? 'bad' : 'good',
           delta: tunggu.length ? tunggu.map(j => j.id).join(', ') : 'tidak ada', note: 'Belum dapat dipakai menerbitkan izin',
           rumus: 'JSA berstatus selain Disahkan', sumber: 'Modul Analisis JSA' })}
-        ${tile({ label: 'RISIKO SISA TERTINGGI', value: String(Math.max.apply(null, L.map(skorSisa))), icon: 'risk',
-          arah: Math.max.apply(null, L.map(skorSisa)) >= 15 ? 'bad' : 'good',
+        ${tile({ label: 'RISIKO SISA TERTINGGI', value: L.length ? String(Math.max.apply(null, L.map(skorSisa))) : '\u2014', icon: 'risk',
+          arah: L.length && Math.max.apply(null, L.map(skorSisa)) >= 15 ? 'bad' : 'good',
           delta: 'dari seluruh langkah pada pustaka', note: 'Zona Ekstrem dimulai pada skor 15',
           rumus: 'Nilai tertinggi kemungkinan × keparahan setelah pengendalian',
           sumber: 'Seluruh langkah pada seluruh JSA',
@@ -3083,7 +3102,7 @@
     const sebagian = R.filter(r => r.status === 'Terpenuhi Sebagian');
     const tidak = R.filter(r => r.status === 'Tidak Terpenuhi');
     const bidang = {}; R.forEach(r => { bidang[r.bidang] = (bidang[r.bidang] || 0) + 1; });
-    const persen = Math.round(penuh.length / R.length * 100);
+    const persen = R.length ? Math.round(penuh.length / R.length * 100) : 0;
 
     return hero({
       eyebrow: 'MODUL 25 · REGULASI K3',
@@ -3617,6 +3636,18 @@
          tidak ada. */
       const demo = el.querySelector('.login-demo');
       if (demo) demo.hidden = true;
+      /* "238 hari nihil LTI di Pabrik Cibitung" adalah angka contoh. Layar
+         masuk belum tahu siapa yang masuk, jadi tidak menampilkan angka
+         pabrik apa pun; kalimat komitmennya tetap. */
+      const klaim = el.querySelector('.login-claim');
+      if (klaim && !klaim.dataset.tersambung) {
+        klaim.dataset.tersambung = '1';
+        const angka = klaim.querySelector('.login-metric');
+        if (angka) angka.hidden = true;
+        const h2 = klaim.querySelector('h2'), p = klaim.querySelector('p');
+        if (h2) h2.textContent = 'Sistem manajemen QHSE';
+        if (p) p.textContent = 'Khong Guan Group';
+      }
       const pesan = window.KGSUMBER.pesanMasuk();
       if (pesan) loginError(pesan);
     }
