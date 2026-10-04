@@ -1153,6 +1153,9 @@ window.KGSUMBER = (function () {
       } else if (layar === 'capa') {
         var t = UBIN['capa|TEPAT WAKTU']();
         m = { metric: t.value === '\u2014' ? '\u2014' : t.value + '%', metricLabel: 'PENYELESAIAN TEPAT WAKTU · TARGET ≥ 90%' };
+      } else if (layar === 'audit') {
+        m = (window.KG.elemenSMK3 || []).length ? null
+          : { metric: '\u2014', metricLabel: 'PENILAIAN SMK3 BELUM ADA DI SISTEM' };
       } else if (layar === 'exec') {
         var g = UBIN['exec|TRIR GRUP']();
         m = { metric: g.value, metricLabel: 'TRIR GRUP BULAN BERJALAN · TARGET ≤ 0,50' };
@@ -1754,6 +1757,10 @@ window.KGSUMBER = (function () {
       hasil: function (d) { return 'Perubahan untuk ' + (d.email || 'pengguna') + ' tersimpan.'; }
     },
 
+    'audit-baru': {
+      jalur: '/audit', segarkan: ['audit'],
+      isi: function () { return bacaIsian(); }
+    },
     'input-uji': {
       jalur: '/lingkungan', segarkan: ['lingkungan'],
       isi: function () {
@@ -2445,6 +2452,18 @@ window.KGSUMBER = (function () {
   }
 
   var FORMULIR_BARU = {
+    'audit-baru': function () {
+      var saya = window.KG_SAYA || {};
+      return { title: 'Rencanakan Audit', sub: 'Temuan ditambahkan selama audit berjalan',
+        body: pilihan('standar', 'Standar', ['ISO 45001:2018', 'ISO 14001:2015', 'SMK3 PP 50/2012',
+            'FSSC 22000', 'Audit Internal K3', 'Audit Kepatuhan Regulasi'], 'ISO 45001:2018')
+          + isian('lingkup', 'Lingkup', '', true)
+          + isian('auditor', 'Auditor / lembaga', '', true)
+          + '<div class="row2">' + isian('mulai', 'Mulai', hariIni(), true, 'date') + isian('selesai', 'Selesai', '', false, 'date') + '</div>'
+          + catatanKaki('Audit dibuat berstatus Terbuka di ' + esc((saya.pabrik && saya.pabrik.nama) ? 'Pabrik ' + saya.pabrik.nama : 'pabrik Anda')
+            + '. Setiap temuan Major dan Minor wajib ber-CAPA sebelum audit dapat ditutup (AB-18).'),
+        ok: 'Simpan Audit', toast: '' };
+    },
     'inspeksi-baru': function () {
       var area = areaSaya().map(function (a) { return esc(a.nama); });
       return { title: 'Mulai Inspeksi', sub: 'Pilih jenis checklist yang akan dikerjakan',

@@ -461,6 +461,14 @@ const tok = await token();
       const r = (await (await fetch(`${ALAMAT}/api/v1/dokumen/eksternal`, { headers: hdr })).json()).data.find((x) => x.judul === tanda + ' sklo');
       return r && r.berlaku === '2028-03-31' ? '' : 'dokumen kepatuhan tidak tersimpan: ' + JSON.stringify(r);
     }, /terdaftar dan mulai dipantau/],
+    ['audit', 'audit-baru', async () => {
+      await p.selectOption('#e-standar', 'ISO 14001:2015');
+      await p.fill('#e-lingkup', tanda + ' audit'); await p.fill('#e-auditor', 'Tim Internal');
+    }, async () => {
+      const d = (await (await fetch(`${ALAMAT}/api/v1/audit`, { headers: hdr })).json()).data;
+      const r = (d.audit || d).find((x) => x.lingkup === tanda + ' audit');
+      return r && r.standar === 'ISO 14001:2015' && r.status === 'Terbuka' ? '' : 'audit tidak tersimpan: ' + JSON.stringify(r);
+    }],
     ['notif', 'tandai-baca', async () => {}, async () => '', /ditandai terbaca/],
   ];
 

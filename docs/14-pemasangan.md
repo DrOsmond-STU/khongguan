@@ -139,7 +139,7 @@ luar docroot, `/home/semestat/kg-konfigurasi.js`:
 ```js
 window.KG_KONFIG = Object.assign({
   api: 'https://khongguan.semestateknologiutama.com',
-  versi: '9'
+  versi: '10'
 }, window.KG_KONFIG || {});
 ```
 

@@ -108,6 +108,7 @@ function rute(): Rute
 
     // Modul 09 · Audit
     $r->get('/audit',                 [Modul\Audit::class, 'daftar']);
+    $r->post('/audit',                [Modul\Audit::class, 'buat']);
     $r->get('/audit/temuan',          [Modul\Audit::class, 'temuan']);
     $r->post('/audit/{id}/temuan',    [Modul\Audit::class, 'buatTemuan']);
     $r->post('/audit/{id}/tutup',     [Modul\Audit::class, 'tutup']);

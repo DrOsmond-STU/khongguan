@@ -169,13 +169,13 @@ Yang hanya ada saat tersambung — dengan komponen yang sama dengan purwarupa:
 | JSA | ✓ dengan langkah | ✓ (sebelum disahkan) | ✓ (tanpa izin) | Sahkan |
 | HIRADC, Risiko | ✓ | ✓ | ✓ (Plant Manager) | Turunkan sisa (HIRADC), Buat CAPA |
 | Inspeksi, Checklist | ✓ dari templat | ✓ | ✓ | Isi Hasil, Buat CAPA |
-| Audit | — | ✓ | ✓ (tanpa temuan) | Tambah Temuan, Tutup |
+| Audit | ✓ (Rencanakan Audit) | ✓ | ✓ (tanpa temuan) | Tambah Temuan, Tutup |
 | Observasi perilaku & APD | ✓ | ✓ | ✓ | Buat CAPA (perilaku berisiko) |
 | Lingkungan | ✓ hasil uji | uji ulang | — | Buat CAPA (melewati baku mutu) |
 | Dokumen internal & kepatuhan, Regulasi, Induksi, Pelatihan, Kegiatan | ✓ | ✓ | ✓ | |
 | Pengguna | ✓ undangan | ✓ | nonaktifkan | Atur ulang sandi |
 
-Audit baru belum dapat dibuat dari layar — purwarupa tidak punya formulirnya.
+Purwarupa tidak punya formulir audit baru; saat tersambung, tombol **Rencanakan Audit** muncul di kepala layar Audit. Mode demo tidak berubah.
 
 Uji yang dijalankan sebelum setiap rilis: `php api/uji/jalankan.php`
 (peladen), `node uji/layar.mjs` (layar dengan data), `node uji/kosong.mjs`

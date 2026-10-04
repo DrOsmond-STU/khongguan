@@ -742,7 +742,10 @@
       eyebrow: 'MODUL 05 · AUDIT',
       title: 'Audit SHE',
       desc: 'ISO 45001, ISO 14001, dan SMK3 PP 50/2012 dalam satu program. Setiap temuan Major dan Minor wajib punya CAPA bertenggat; temuan Major yang lewat tenggat naik ke Dashboard.',
-      metric: pct + '%', metricLabel: 'PEMENUHAN KRITERIA SMK3'
+      metric: pct + '%', metricLabel: 'PEMENUHAN KRITERIA SMK3',
+      /* Purwarupa tidak punya formulir audit baru; saat tersambung ada,
+         dengan tombol di tempat yang sama dengan modul lain. */
+      action: TERSAMBUNG ? { act: 'audit-baru', icon: 'audit', label: 'Rencanakan Audit' } : undefined
     }) + `
     <div class="page">
       <div class="grid grid--4">

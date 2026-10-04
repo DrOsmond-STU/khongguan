@@ -2204,3 +2204,23 @@ uji('UJ-101', 'AB-08 · Tidak Sesuai mengunci unit; dibuka hanya oleh checklist 
     $lulus = panggil('POST', "/checklist/$c2/jawab", ['jawaban' => [['id' => $b2[1]['id'], 'jawab' => 'Sesuai']], 'selesai' => true], $T['qhse']);
     sama('Layak', $lulus['data']['unit']['status'], 'checklist ulang yang lulus membuka kunci');
 });
+
+echo "\nAudit baru\n";
+
+uji('UJ-102', 'Audit direncanakan dari layar: Terbuka, bernomor AUD, tanggal sah', function () use ($D, $T) {
+    $dasar = ['standar' => 'ISO 45001:2018', 'lingkup' => 'Seluruh area produksi', 'auditor' => 'Tim Audit Internal'];
+    sama(400, panggil('POST', '/audit', $dasar, $T['qhse'])['status'], 'tanpa tanggal mulai ditolak');
+    sama(400, panggil('POST', '/audit', $dasar + ['mulai' => '2026-02-30'], $T['qhse'])['status'], 'tanggal mustahil ditolak');
+    sama(400, panggil('POST', '/audit', $dasar + ['mulai' => '2026-11-10', 'selesai' => '2026-11-09'], $T['qhse'])['status'],
+        'selesai sebelum mulai ditolak');
+    $h = panggil('POST', '/audit', $dasar + ['mulai' => '2026-11-10', 'selesai' => '2026-11-12'], $T['qhse']);
+    sama(201, $h['status'], 'dibuat');
+    benar(str_starts_with($h['data']['nomor'], 'AUD-'), 'bernomor AUD');
+    $a = array_values(array_filter(panggil('GET', '/audit', [], $T['qhse'])['data'], fn($x) => $x['id'] === $h['data']['id']))[0];
+    sama('Terbuka', $a['status'], 'berstatus Terbuka');
+    $t = panggil('POST', '/audit/' . $h['data']['id'] . '/temuan', ['klausul' => '6.1', 'kategori' => 'Minor', 'isi' => 'Uji'], $T['qhse']);
+    sama(201, $t['status'], 'temuan dapat ditambahkan pada audit baru');
+    sama(403, panggil('POST', '/audit', $dasar + ['mulai' => '2026-11-10'], $T['operator'])['status'], 'operator tidak berwenang');
+    sama(403, panggil('POST', '/audit', $dasar + ['mulai' => '2026-11-10', 'pabrik_id' => $D['pabrik_smg']], $T['qhse'])['status'],
+        'pabrik lain ditolak');
+});

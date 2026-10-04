@@ -55,6 +55,56 @@ final class Audit
         Jawab::daftar($baris, 1, count($baris), count($baris));
     }
 
+    /**
+     * POST /audit — merencanakan audit.
+     *
+     * Audit dibuat berstatus Terbuka tanpa temuan; temuannya ditambahkan
+     * selama audit berjalan, dan audit ditutup lewat /tutup setelah setiap
+     * temuan Major dan Minor ber-CAPA (AB-18).
+     */
+    public static function buat(Permintaan $p): never
+    {
+        $u = Sesi::pengguna($p);
+        Wewenang::wajib($u, 'audit', 'isi');
+
+        $standar = $p->wajibTeks('standar');
+        $lingkup = $p->wajibTeks('lingkup');
+        $auditor = $p->wajibTeks('auditor');
+        $mulai   = self::tanggal($p->wajibTeks('mulai'), 'mulai');
+        $sel     = trim((string) $p->isi('selesai', ''));
+        $selesai = $sel === '' ? null : self::tanggal($sel, 'selesai');
+        if ($selesai !== null && $selesai < $mulai) {
+            throw Galat::isian('Tanggal selesai tidak boleh sebelum tanggal mulai.', ['kolom' => 'selesai']);
+        }
+
+        $pabrik = (string) $p->isi('pabrik_id', $u['pabrik_id']);
+        Wewenang::wajibCakupan($u, $pabrik);
+
+        $hasil = Db::transaksi(function () use ($u, $pabrik, $standar, $lingkup, $auditor, $mulai, $selesai) {
+            $nomor = Nomor::berikut('audit');
+            $id = (string) Db::nilai(
+                "INSERT INTO audit (nomor, pabrik_id, standar, lingkup, auditor, mulai, selesai, status,
+                                    dibuat_oleh, diubah_oleh)
+                 VALUES (:n, :pb, :s, :l, :a, :m, :sl, 'Terbuka', :o, :o) RETURNING id",
+                [':n' => $nomor, ':pb' => $pabrik, ':s' => $standar, ':l' => $lingkup, ':a' => $auditor,
+                 ':m' => $mulai, ':sl' => $selesai, ':o' => $u['id']]
+            );
+            Jejak::catat('audit', $id, 'buat', null, ['nomor' => $nomor, 'standar' => $standar, 'mulai' => $mulai], $u['id']);
+            return ['id' => $id, 'nomor' => $nomor];
+        });
+
+        Jawab::kirim($hasil, 201);
+    }
+
+    private static function tanggal(string $s, string $kolom): string
+    {
+        $d = \DateTimeImmutable::createFromFormat('!Y-m-d', $s);
+        if ($d === false || $d->format('Y-m-d') !== $s) {
+            throw Galat::isian("Isian '$kolom' harus tanggal YYYY-MM-DD.", ['kolom' => $kolom]);
+        }
+        return $s;
+    }
+
     public static function buatTemuan(Permintaan $p, array $par): never
     {
         $u = Sesi::pengguna($p);
